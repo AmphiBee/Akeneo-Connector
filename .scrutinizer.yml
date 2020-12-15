@@ -1,0 +1,78 @@
+filter:
+    dependency_paths:
+        - wordpress/
+before_commands:
+tools:
+    php_code_sniffer:
+        config: { standard: 'Zend,PSR-1,PSR-2' }
+    php_changetracking: false
+    php_cs_fixer: true
+    php_cpd: true
+    php_sim: true
+    php_mess_detector: true
+    php_pdepend: true
+    #php_analyzer: false
+    php_loc: true
+    #sensiolabs_security_checker: truess
+    js_hint:
+        enabled: true
+        config:
+            esversion: 6
+
+checks:
+    javascript: true
+    php:
+        unused_variables: true
+        use_statement_alias_conflict: true
+        simplify_boolean_return: true
+        useless_calls: false
+        fix_use_statements:
+            remove_unused: true
+            preserve_multiple: false
+            preserve_blanklines: false
+            order_alphabetically: false
+        remove_extra_empty_lines: true
+        properties_in_camelcaps: true
+        parameters_in_camelcaps: true
+        fix_line_ending: true
+        return_doc_comment_if_not_inferrable: true
+        return_doc_comments: true
+        param_doc_comment_if_not_inferrable: true
+        parameter_doc_comments: true
+
+build:
+    environment:
+        php:
+            version: 7.4
+    #  dependencies:
+    #    override:
+    #      - true
+    cache:
+        directories:
+            - ~/.composer/cache
+            - vendor
+    nodes:
+        tests: true
+        analysis:
+            tests:
+                override:
+                    - php-scrutinizer-run
+            dependencies:
+                before:
+                    - composer require --dev johnpbloch/wordpress
+                    - composer require --dev wp-cli/wp-cli
+                    - composer require --dev woocommerce/woocommerce
+
+coding_style:
+    php:
+        spaces:
+            around_operators:
+                concatenation: true
+            other:
+                after_type_cast: false
+
+build_failure_conditions:
+    - 'elements.rating(<= C).new.exists'                        # No new classes/methods with a rating of C or worse allowed
+    - 'issues.label("coding-style").new.exists'                 # No new coding style issues allowed
+    - 'issues.severity(>= MAJOR).new.exists'                    # New issues of major or higher severity
+    - 'project.metric_change("scrutinizer.test_coverage", < 0)' # Code Coverage decreased from previous inspection
