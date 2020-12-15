@@ -1,0 +1,17 @@
+# Temporary files
+.DS_Store
+
+# Circle CI
+.circleci/*
+
+# Github
+.github/*
+
+# Logs
+*.log
+
+# PHP Storm
+.idea/*
+
+# Composer
+/vendor

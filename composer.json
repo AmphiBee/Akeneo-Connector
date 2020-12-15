@@ -1,0 +1,23 @@
+{
+    "name": "akeneo_connector",
+    "description": "Connect Akeneo with WooCommerce",
+    "keywords": ["wordpress", "plugin"],
+    "version": "0.0.1",
+    "homepage": "https://amphibee.fr",
+    "license": "GPL-3.0+",
+    "authors": [{
+        "name": "AmphiBee",
+        "email": "hello@amphibee.fr",
+        "homepage": "https://amphibee.fr"
+    }],
+    "type": "wordpress-plugin",
+    "require": {
+        "php": ">=7.2.0",
+        "composer/installers": "v1.7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "AmphiBee\\AkeneoConnector\\":"src/"
+        }
+    }
+}
