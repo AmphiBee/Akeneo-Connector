@@ -13,7 +13,12 @@
     "type": "wordpress-plugin",
     "require": {
         "php": ">=7.2.0",
-        "composer/installers": "v1.9.0"
+        "composer/installers": "v1.9.0",
+        "akeneo/api-php-client": "^6.0",
+        "php-http/guzzle6-adapter": "^2.0",
+        "http-interop/http-factory-guzzle": "^1.0",
+        "symfony/serializer": "^5.2",
+        "symfony/property-access": "^5.2"
     },
     "require-dev": {
         "phpro/grumphp": "^0.20.0",

@@ -19,10 +19,10 @@ class Plugin
      * @param string $file The file from which the class is being instantiated.
      * @return object       The class instance.
      */
-    public static function getInstance($file)
+    public static function getInstance(string $file): Plugin
     {
-        if (!isset(self::$instance) && !(self::$instance instanceof Plugin)) {
-            self::$instance = new Plugin;
+        if (!isset(self::$instance) && !(self::$instance instanceof self)) {
+            self::$instance = new self;
 
             if (!function_exists('get_plugin_data')) {
                 include_once(ABSPATH . 'wp-admin/includes/plugin.php');
@@ -54,7 +54,7 @@ class Plugin
     /**
      * Load translation files from the indicated directory.
      */
-    public function loadPluginTextdomain()
+    public function loadPluginTextdomain(): void
     {
         load_plugin_textdomain('akeneo_connector', false, dirname(plugin_basename($this->file)) . '/languages');
     }
