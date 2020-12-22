@@ -1,5 +1,6 @@
 <?php
-namespace AmphiBee\AkeneoConnector\Entities;
+
+namespace AmphiBee\AkeneoConnector\DataPersister;
 
 use WC_Product_Attribute;
 

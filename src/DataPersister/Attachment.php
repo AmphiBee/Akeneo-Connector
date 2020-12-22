@@ -1,6 +1,6 @@
 <?php
 
-namespace AmphiBee\AkeneoConnector\Entities;
+namespace AmphiBee\AkeneoConnector\DataPersister;
 
 use WP_Error;
 

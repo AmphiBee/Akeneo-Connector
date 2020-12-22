@@ -1,6 +1,6 @@
 <?php
 
-namespace AmphiBee\AkeneoConnector\Entities;
+namespace AmphiBee\AkeneoConnector\DataPersister;
 
 class Product
 {
@@ -103,7 +103,7 @@ class Product
 
         if (!$virtual) {
             $product->set_sku(isset($args['sku']) ? $args['sku'] : '');
-            $product->set_manage_stock(isset($manage_stock);
+            $product->set_manage_stock($manage_stock);
             $product->set_stock_status($stock_status);
         }
 
@@ -149,7 +149,7 @@ class Product
         // Save product
         $product_id = $product->save();
 
-        VariableProduct::registerVariations($product, $args['variations']);
+        VariableProduct::registerVariations($product_id, $args['variations']);
 
         return $product_id;
     }

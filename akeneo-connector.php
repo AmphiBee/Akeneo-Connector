@@ -41,10 +41,10 @@ if (PHP_VERSION_ID < 70200 || version_compare(get_bloginfo('version'), '5.2', '<
     return;
 }
 
+use AmphiBee\AkeneoConnector\Plugin;
+
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/src/Plugin.php';
-
-use AmphiBee\AkeneoConnector\Plugin;
 
 function akeneo_connector_get_instance(): Plugin
 {

@@ -4,9 +4,8 @@ namespace AmphiBee\AkeneoConnector\WpCli;
 use AmphiBee\AkeneoConnector\Entities\ProductAttribute as ProductAttributeEntity;
 use WP_CLI;
 
-class ProductAttribute
+class AttributeCommand
 {
-
     protected static $dummyProduct = [
             // Taxonomy and term name values
             'pa_color' => [

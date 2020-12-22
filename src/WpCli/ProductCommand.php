@@ -5,7 +5,7 @@ use AmphiBee\AkeneoConnector\Entities\Attachment;
 use AmphiBee\AkeneoConnector\Entities\Product as ProductEntity;
 use WP_CLI;
 
-class Product
+class ProductCommand
 {
 
     protected static $dummyProduct = [

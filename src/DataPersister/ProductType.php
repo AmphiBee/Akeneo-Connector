@@ -1,5 +1,5 @@
 <?php
-namespace AmphiBee\AkeneoConnector\Entities;
+namespace AmphiBee\AkeneoConnector\DataPersister;
 
 use WC_Product_Grouped;
 use WC_Product_Simple;

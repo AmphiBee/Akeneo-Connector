@@ -2,11 +2,11 @@
 
 namespace AmphiBee\AkeneoConnector;
 
-use AmphiBee\AkeneoConnector\WpCli\Loader;
+use AmphiBee\AkeneoConnector\WpCli\CommandLoader;
 
 class Plugin
 {
-    private static Plugin $instance;
+    private static ?Plugin $instance = null;
     public string $name;
     public string $prefix;
     public string $version;
@@ -50,7 +50,7 @@ class Plugin
     {
         add_action('plugins_loaded', array($this, 'loadPluginTextdomain'));
 
-        new Loader();
+        new CommandLoader();
     }
 
     /**
