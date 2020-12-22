@@ -18,7 +18,8 @@
         "php-http/guzzle6-adapter": "^2.0",
         "http-interop/http-factory-guzzle": "^1.0",
         "symfony/serializer": "^5.2",
-        "symfony/property-access": "^5.2"
+        "symfony/property-access": "^5.2",
+        "wp-cli/wp-cli": "^2.4"
     },
     "require-dev": {
         "phpro/grumphp": "^0.20.0",

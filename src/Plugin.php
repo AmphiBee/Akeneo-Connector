@@ -6,18 +6,19 @@ use AmphiBee\AkeneoConnector\WpCli\Loader;
 
 class Plugin
 {
-    private static $instance;
-    public $name = '';
-    public $prefix = '';
-    public $version = '';
-    public $file = '';
+    private static Plugin $instance;
+    public string $name;
+    public string $prefix;
+    public string $version;
+    public string $file;
 
     /**
      * Creates an instance if one isn't already available,
      * then return the current instance.
      *
      * @param string $file The file from which the class is being instantiated.
-     * @return object       The class instance.
+     *
+     * @return Plugin The class instance.
      */
     public static function getInstance(string $file): Plugin
     {
@@ -37,6 +38,7 @@ class Plugin
 
             self::$instance->run();
         }
+
         return self::$instance;
     }
 
@@ -56,6 +58,10 @@ class Plugin
      */
     public function loadPluginTextdomain(): void
     {
-        load_plugin_textdomain('akeneo_connector', false, dirname(plugin_basename($this->file)) . '/languages');
+        load_plugin_textdomain(
+            'akeneo_connector',
+            false,
+            sprintf('%s/languages', dirname(plugin_basename($this->file)))
+        );
     }
 }
