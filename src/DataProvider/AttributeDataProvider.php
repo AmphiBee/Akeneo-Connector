@@ -6,17 +6,18 @@
 
 namespace AmphiBee\AkeneoConnector\DataProvider;
 
-use Generator;
-use Monolog\Logger;
+use Akeneo\Pim\ApiClient\AkeneoPimClientInterface;
+use Akeneo\Pim\ApiClient\Api\AttributeApiInterface;
+use AmphiBee\AkeneoConnector\Entity\Akeneo\Attribute;
 use AmphiBee\AkeneoConnector\Entity\Akeneo\Category;
 use AmphiBee\AkeneoConnector\Service\LoggerService;
-use Akeneo\Pim\ApiClient\AkeneoPimClientInterface;
-use Akeneo\Pim\ApiClient\Api\CategoryApiInterface;
+use Generator;
+use Monolog\Logger;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 
-class CategoryDataProvider extends AbstractDataProvider
+class AttributeDataProvider extends AbstractDataProvider
 {
-    private CategoryApiInterface $categoryApi;
+    private AttributeApiInterface $attributeApi;
 
     /**
      * Category constructor.
@@ -25,7 +26,7 @@ class CategoryDataProvider extends AbstractDataProvider
      */
     public function __construct(AkeneoPimClientInterface $client)
     {
-        $this->categoryApi = $client->getCategoryApi();
+        $this->attributeApi = $client->getAttributeApi();
 
         parent::__construct();
     }
@@ -38,18 +39,17 @@ class CategoryDataProvider extends AbstractDataProvider
      */
     public function getAll(int $pageSize = 10, array $queryParameters = []): Generator
     {
-        foreach ($this->categoryApi->all($pageSize, $queryParameters) as $category) {
+        foreach ($this->attributeApi->all($pageSize, $queryParameters) as $attribute) {
             try {
-                $category = $this->getSerializer()->denormalize($category, Category::class);
+                $attribute = $this->getSerializer()->denormalize($attribute, Attribute::class);
 
-                yield $category;
+                yield $attribute;
             } catch (ExceptionInterface $exception) {
                 LoggerService::log(Logger::ERROR, sprintf(
-                    'Cannot Denormalize category (CategoryCode %s) %s',
-                    print_r($category, true),
+                    'Cannot Denormalize attribute (AttrCode %s) %s',
+                    print_r($attribute, true),
                     $exception->getMessage()
                 ));
-
                 continue;
             }
         }

@@ -1,8 +1,12 @@
 <?php
+/**
+ * This file is part of the Amphibee package.
+ * (c) Amphibee <hello@amphibee.fr>
+ */
+
 namespace AmphiBee\AkeneoConnector\WpCli;
 
-use AmphiBee\AkeneoConnector\Entities\Attachment;
-use AmphiBee\AkeneoConnector\Entities\Product as ProductEntity;
+use AmphiBee\AkeneoConnector\DataPersister\Product as ProductPersister;
 use WP_CLI;
 
 class ProductCommand
@@ -62,13 +66,13 @@ class ProductCommand
         ]
     ];
 
-    public function import()
+    public function import(): void
     {
         $launcher_text = sprintf('Import de %s produit(s)', count(self::$dummyProduct));
         WP_CLI::line(WP_CLI::colorize("%B{$launcher_text}%n"));
         $progress = WP_CLI\Utils\make_progress_bar('Import en court', self::$dummyProduct);
         foreach (self::$dummyProduct as $product) {
-            ProductEntity::addProduct($product);
+            ProductPersister::addProduct($product);
             $progress->tick();
         }
         $progress->tick();

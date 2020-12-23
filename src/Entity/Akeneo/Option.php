@@ -1,28 +1,27 @@
 <?php declare(strict_types=1);
-
 /**
- * This file is part of the Amphibee package.
- * (c) Amphibee <hello@amphibee.fr>
+ * This file is part of the Adexos package.
+ * (c) Adexos <contact@adexos.fr>
  */
 
 namespace AmphiBee\AkeneoConnector\Entity\Akeneo;
 
-class Category implements LocalizableEntityInterface
+class Option implements LocalizableEntityInterface
 {
-    /**
-     * @var string
-     */
     private string $code;
-
-    /**
-     * @var ?string
-     */
-    private ?string $parent;
-
-    /**
-     * @var string[]
-     */
     private array $labels;
+
+    /**
+     * Attribute constructor.
+     *
+     * @param string $code
+     * @param array  $labels
+     */
+    public function __construct(string $code, array $labels)
+    {
+        $this->code = $code;
+        $this->labels = $labels;
+    }
 
     /**
      * @return string
@@ -40,26 +39,6 @@ class Category implements LocalizableEntityInterface
     public function setCode(string $code): self
     {
         $this->code = $code;
-
-        return $this;
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getParent(): ?string
-    {
-        return $this->parent;
-    }
-
-    /**
-     * @param ?string $parent
-     *
-     * @return $this
-     */
-    public function setParent(?string $parent): self
-    {
-        $this->parent = $parent;
 
         return $this;
     }

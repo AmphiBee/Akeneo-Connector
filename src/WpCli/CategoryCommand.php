@@ -1,9 +1,13 @@
 <?php
+/**
+ * This file is part of the Amphibee package.
+ * (c) Amphibee <hello@amphibee.fr>
+ */
 
 namespace AmphiBee\AkeneoConnector\WpCli;
 
 use AmphiBee\AkeneoConnector\Adapter\CategoryAdapter;
-use AmphiBee\AkeneoConnector\DataPersister\CategoryPersister;
+use AmphiBee\AkeneoConnector\DataPersister\CategoryDataPersister;
 use AmphiBee\AkeneoConnector\Service\LoggerService;
 use Monolog\Logger;
 use WP_CLI;
@@ -12,20 +16,14 @@ use AmphiBee\AkeneoConnector\Entity\Akeneo\Category as AkeneoCategory;
 
 class CategoryCommand
 {
-    /**
-     * Returns 'Hello World'
-     *
-     * @since  0.0.1
-     * @author Scott Anderson
-     */
-    public function import()
+    public function import(): void
     {
         WP_CLI::warning('Import OK');
         LoggerService::log(Logger::DEBUG, 'Starting category import');
 
         $categoryApi = AkeneoClientBuilder::create()->getCategoryProvider();
         $categoryAdapter = new CategoryAdapter();
-        $categoryPersister = new CategoryPersister();
+        $categoryPersister = new CategoryDataPersister();
 
         /** @var AkeneoCategory $category */
         foreach ($categoryApi->getAll() as $AknCategory) {

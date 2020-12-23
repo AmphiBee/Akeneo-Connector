@@ -8,6 +8,8 @@ namespace AmphiBee\AkeneoConnector\Service;
 
 use Akeneo\Pim\ApiClient\AkeneoPimClientBuilder;
 use Akeneo\Pim\ApiClient\AkeneoPimClientInterface;
+use AmphiBee\AkeneoConnector\DataProvider\AttributeDataProvider;
+use AmphiBee\AkeneoConnector\DataProvider\AttributeOptionDataProvider;
 use AmphiBee\AkeneoConnector\DataProvider\CategoryDataProvider;
 use AmphiBee\AkeneoConnector\Entity\Akeneo\Credentials;
 
@@ -17,6 +19,8 @@ class AkeneoClientBuilder
 
     private Credentials $credentials;
     private CategoryDataProvider $category;
+    private AttributeDataProvider $attribute;
+    private AttributeOptionDataProvider $attributeOption;
 
     /**
      * AkeneoClientBuilder constructor.
@@ -24,7 +28,10 @@ class AkeneoClientBuilder
     public function __construct()
     {
         $this->credentials = AkeneoCredentialsBuilder::getCredentials();
+
         $this->category = new CategoryDataProvider($this->getClient());
+        $this->attribute = new AttributeDataProvider($this->getClient());
+        $this->attributeOption = new AttributeOptionDataProvider($this->getClient());
     }
 
     /**
@@ -59,5 +66,21 @@ class AkeneoClientBuilder
     public function getCategoryProvider(): CategoryDataProvider
     {
         return $this->category;
+    }
+
+    /**
+     * @return AttributeDataProvider
+     */
+    public function getAttributeProvider(): AttributeDataProvider
+    {
+        return $this->attribute;
+    }
+
+    /**
+     * @return AttributeOptionDataProvider
+     */
+    public function getAttributeOptionProvider(): AttributeOptionDataProvider
+    {
+        return $this->attributeOption;
     }
 }

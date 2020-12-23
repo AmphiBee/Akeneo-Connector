@@ -1,42 +1,35 @@
 <?php
+/**
+ * This file is part of the Amphibee package.
+ * (c) Amphibee <hello@amphibee.fr>
+ */
+
 namespace AmphiBee\AkeneoConnector\WpCli;
 
-use AmphiBee\AkeneoConnector\Entities\ProductAttribute as ProductAttributeEntity;
+use AmphiBee\AkeneoConnector\Adapter\AttributeAdapter;
+use AmphiBee\AkeneoConnector\DataPersister\AttributeDataPersister;
+use AmphiBee\AkeneoConnector\Entity\Akeneo\Attribute;
+use AmphiBee\AkeneoConnector\Service\AkeneoClientBuilder;
+use AmphiBee\AkeneoConnector\Service\LoggerService;
+use Monolog\Logger;
 use WP_CLI;
 
 class AttributeCommand
 {
-    protected static $dummyProduct = [
-            // Taxonomy and term name values
-            'pa_color' => [
-                'term_names' => ['Red', 'Blue'],
-                'is_visible' => true,
-                'for_variation' => true,
-            ],
-            'pa_size' =>  [
-                'term_names' => ['X Large'],
-                'is_visible' => true,
-                'for_variation' => true,
-            ],
-
-    ];
-
-    /**
-     * Returns 'Hello World'
-     *
-     * @since  0.0.1
-     * @author Scott Anderson
-     */
-    public function import()
+    public function import(): void
     {
-        $launcher_text = sprintf('Import de %s attributs(s)', count(self::$dummyAttributes));
-        WP_CLI::line(WP_CLI::colorize("%B{$launcher_text}%n"));
-        $progress = WP_CLI\Utils\make_progress_bar('Import en court', self::$dummyAttributes);
-        foreach (self::$dummyProduct as $product) {
-            ProductEntity::addProduct($product);
-            $progress->tick();
+        $attributeDataProvider = AkeneoClientBuilder::create()->getAttributeProvider();
+        $attributeAdapter = new AttributeAdapter();
+        $attrPersister = new AttributeDataPersister();
+
+        /** @var Attribute $AknAttr */
+        foreach ($attributeDataProvider->getAll() as $AknAttr) {
+            LoggerService::log(Logger::DEBUG, sprintf('Running AttrCode: %s', $AknAttr->getCode()));
+            $wooCommerceAttribute = $attributeAdapter->getWordpressAttribute($AknAttr);
+
+            $attrPersister->createOrUpdateAttribute($wooCommerceAttribute);
+
+            WP_CLI::line($AknAttr->getCode());
         }
-        $progress->tick();
-        WP_CLI::success('Attributs importés');
     }
 }

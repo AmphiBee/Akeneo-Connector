@@ -6,7 +6,7 @@
 
 namespace AmphiBee\AkeneoConnector\Entity\WooCommerce;
 
-class Category
+class Category implements WooCommerceEntityInterface
 {
     private string $name;
     private string $parent;
