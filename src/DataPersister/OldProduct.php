@@ -5,7 +5,7 @@ namespace AmphiBee\AkeneoConnector\DataPersister;
 /**
  * @TODO delete this class, use ProductDataPersister instead
  */
-class Product
+class OldProduct
 {
 
     /**
