@@ -40,9 +40,7 @@ class ProductModelDataProvider extends AbstractDataProvider
     {
         foreach ($this->productModelApi->all($pageSize, $queryParameters) as $model) {
             try {
-                $model = $this->getSerializer()->denormalize($model, Model::class);
-                
-                yield $model;
+                yield $this->getSerializer()->denormalize($model, Model::class);
             } catch (ExceptionInterface $exception) {
                 LoggerService::log(Logger::ERROR, sprintf(
                     'Cannot Denormalize model (ModelCode %s) %s',

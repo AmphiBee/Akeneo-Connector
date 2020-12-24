@@ -3,6 +3,9 @@ namespace AmphiBee\AkeneoConnector\DataPersister;
 
 use WC_Product_Variation;
 
+/**
+ * @TODO delete this class, use ProductDataPersister instead
+ */
 class VariableProduct
 {
     /**

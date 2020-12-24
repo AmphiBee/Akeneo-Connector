@@ -41,9 +41,7 @@ class AttributeOptionDataProvider extends AbstractDataProvider
     {
         foreach ($this->attributesOptionsApi->all($attrCode, $pageSize, $queryParameters) as $option) {
             try {
-                $option = $this->getSerializer()->denormalize($option, Option::class);
-
-                yield $option;
+                yield $this->getSerializer()->denormalize($option, Option::class);
             } catch (ExceptionInterface $exception) {
                 LoggerService::log(Logger::ERROR, sprintf(
                     'Cannot Denormalize attributeOption (Option Code %s) %s',

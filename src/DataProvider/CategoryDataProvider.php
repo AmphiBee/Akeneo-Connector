@@ -40,9 +40,7 @@ class CategoryDataProvider extends AbstractDataProvider
     {
         foreach ($this->categoryApi->all($pageSize, $queryParameters) as $category) {
             try {
-                $category = $this->getSerializer()->denormalize($category, Category::class);
-
-                yield $category;
+                yield $this->getSerializer()->denormalize($category, Category::class);
             } catch (ExceptionInterface $exception) {
                 LoggerService::log(Logger::ERROR, sprintf(
                     'Cannot Denormalize category (CategoryCode %s) %s',

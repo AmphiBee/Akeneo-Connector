@@ -4,6 +4,9 @@ namespace AmphiBee\AkeneoConnector\DataPersister;
 
 use WP_Error;
 
+/**
+ * @TODO delete this class, use ProductDataPersister instead
+ */
 class Attachment
 {
 

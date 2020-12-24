@@ -6,6 +6,9 @@ use WC_Product_Simple;
 use WC_Product_Variable;
 use WC_Product_External;
 
+/**
+ * @TODO delete this class, use ProductDataPersister instead
+ */
 class ProductType
 {
     /**

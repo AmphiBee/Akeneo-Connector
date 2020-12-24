@@ -6,18 +6,17 @@
 
 namespace AmphiBee\AkeneoConnector\DataProvider;
 
-use Akeneo\Pim\ApiClient\AkeneoPimClientInterface;
-use Akeneo\Pim\ApiClient\Api\AttributeApiInterface;
-use AmphiBee\AkeneoConnector\Entity\Akeneo\Attribute;
-use AmphiBee\AkeneoConnector\Entity\Akeneo\Category;
-use AmphiBee\AkeneoConnector\Service\LoggerService;
+use Akeneo\Pim\ApiClient\Api\ProductApiInterface;
+use AmphiBee\AkeneoConnector\Entity\Akeneo\Product;
 use Generator;
 use Monolog\Logger;
+use AmphiBee\AkeneoConnector\Service\LoggerService;
+use Akeneo\Pim\ApiClient\AkeneoPimClientInterface;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 
-class AttributeDataProvider extends AbstractDataProvider
+class ProductDataProvider extends AbstractDataProvider
 {
-    private AttributeApiInterface $attributeApi;
+    private ProductApiInterface $productApi;
 
     /**
      * Category constructor.
@@ -26,7 +25,7 @@ class AttributeDataProvider extends AbstractDataProvider
      */
     public function __construct(AkeneoPimClientInterface $client)
     {
-        $this->attributeApi = $client->getAttributeApi();
+        $this->productApi = $client->getProductApi();
 
         parent::__construct();
     }
@@ -39,15 +38,16 @@ class AttributeDataProvider extends AbstractDataProvider
      */
     public function getAll(int $pageSize = 10, array $queryParameters = []): Generator
     {
-        foreach ($this->attributeApi->all($pageSize, $queryParameters) as $attribute) {
+        foreach ($this->productApi->all($pageSize, $queryParameters) as $product) {
             try {
-                yield $this->getSerializer()->denormalize($attribute, Attribute::class);
+                yield $this->getSerializer()->denormalize($product, Product::class);
             } catch (ExceptionInterface $exception) {
                 LoggerService::log(Logger::ERROR, sprintf(
-                    'Cannot Denormalize attribute (AttrCode %s) %s',
-                    print_r($attribute, true),
+                    'Cannot Denormalize product (ProductCode %s) %s',
+                    print_r($product, true),
                     $exception->getMessage()
                 ));
+
                 continue;
             }
         }

@@ -12,7 +12,6 @@ use AmphiBee\AkeneoConnector\Entity\WooCommerce\Model as WooCommerceModel;
 
 class ModelAdapter
 {
-
     /**
      * @param AkeneoModel $akeneoModel
      *

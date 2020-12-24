@@ -19,7 +19,7 @@ class ProductModelCommand
     public function import(): void
     {
         WP_CLI::warning('Import Started');
-        LoggerService::log(Logger::DEBUG, 'Starting category import');
+        LoggerService::log(Logger::DEBUG, 'Starting product model import');
 
         $modelProvider = AkeneoClientBuilder::create()->getProductModelProvider();
         $modelAdapter = new ModelAdapter();
@@ -27,13 +27,13 @@ class ProductModelCommand
 
         /** @var AkeneoCategory $category */
         foreach ($modelProvider->getAll() as $AknModel) {
-            LoggerService::log(Logger::DEBUG, sprintf('Running CatCode: %s', $AknModel->getCode()));
+            LoggerService::log(Logger::DEBUG, sprintf('Running ProductModel Code: %s', $AknModel->getCode()));
 
             $wooCommerceModel = $modelAdapter->getWordpressModel($AknModel);
             $modelPersister->createOrUpdateModel($wooCommerceModel);
         }
 
-        LoggerService::log(Logger::DEBUG, 'Ending category import');
+        LoggerService::log(Logger::DEBUG, 'Ending product model import');
         WP_CLI::success('Import OK');
     }
 }

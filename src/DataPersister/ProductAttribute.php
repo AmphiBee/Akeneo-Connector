@@ -4,6 +4,9 @@ namespace AmphiBee\AkeneoConnector\DataPersister;
 
 use WC_Product_Attribute;
 
+/**
+ * @TODO delete this class, use ProductDataPersister instead
+ */
 class ProductAttribute
 {
     /**
