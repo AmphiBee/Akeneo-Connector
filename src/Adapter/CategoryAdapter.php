@@ -25,6 +25,8 @@ class CategoryAdapter
         $category->setName($akeneoCategory->getCode());
         $category->setParent($akeneoCategory->getParent() ?? self::ROOT_CATEGORY);
 
+        //@todo adapt others needed things
+
         return $category;
     }
 }

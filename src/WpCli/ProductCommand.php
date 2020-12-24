@@ -11,7 +11,6 @@ use WP_CLI;
 
 class ProductCommand
 {
-
     protected static $dummyProduct = [
         [
             'type'               => 'variable', // Simple product by default
@@ -68,6 +67,10 @@ class ProductCommand
 
     public function import(): void
     {
+
+
+
+
         $launcher_text = sprintf('Import de %s produit(s)', count(self::$dummyProduct));
         WP_CLI::line(WP_CLI::colorize("%B{$launcher_text}%n"));
         $progress = WP_CLI\Utils\make_progress_bar('Import en court', self::$dummyProduct);

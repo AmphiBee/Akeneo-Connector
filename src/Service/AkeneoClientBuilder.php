@@ -11,6 +11,7 @@ use Akeneo\Pim\ApiClient\AkeneoPimClientInterface;
 use AmphiBee\AkeneoConnector\DataProvider\AttributeDataProvider;
 use AmphiBee\AkeneoConnector\DataProvider\AttributeOptionDataProvider;
 use AmphiBee\AkeneoConnector\DataProvider\CategoryDataProvider;
+use AmphiBee\AkeneoConnector\DataProvider\ProductModelDataProvider;
 use AmphiBee\AkeneoConnector\Entity\Akeneo\Credentials;
 
 class AkeneoClientBuilder
@@ -21,6 +22,7 @@ class AkeneoClientBuilder
     private CategoryDataProvider $category;
     private AttributeDataProvider $attribute;
     private AttributeOptionDataProvider $attributeOption;
+    private ProductModelDataProvider $productModel;
 
     /**
      * AkeneoClientBuilder constructor.
@@ -32,6 +34,7 @@ class AkeneoClientBuilder
         $this->category = new CategoryDataProvider($this->getClient());
         $this->attribute = new AttributeDataProvider($this->getClient());
         $this->attributeOption = new AttributeOptionDataProvider($this->getClient());
+        $this->productModel = new ProductModelDataProvider($this->getClient());
     }
 
     /**
@@ -82,5 +85,13 @@ class AkeneoClientBuilder
     public function getAttributeOptionProvider(): AttributeOptionDataProvider
     {
         return $this->attributeOption;
+    }
+
+    /**
+     * @return ProductModelDataProvider
+     */
+    public function getProductModelProvider(): ProductModelDataProvider
+    {
+        return $this->productModel;
     }
 }

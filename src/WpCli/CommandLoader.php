@@ -17,9 +17,10 @@ class CommandLoader
 
     public function registerCommands(): void
     {
+        WP_CLI::add_command('akeneo categories', CategoryCommand::class);
         WP_CLI::add_command('akeneo attributes', AttributeCommand::class);
         WP_CLI::add_command('akeneo option', AttributeOptionCommand::class);
+        WP_CLI::add_command('akeneo models', ProductModelCommand::class);
         WP_CLI::add_command('akeneo products', ProductCommand::class);
-        WP_CLI::add_command('akeneo categories', CategoryCommand::class);
     }
 }

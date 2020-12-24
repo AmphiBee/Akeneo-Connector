@@ -26,7 +26,6 @@ class AttributeOptionCommand
     public function import(): void
     {
         $attributeDataProvider = AkeneoClientBuilder::create()->getAttributeProvider();
-        //$attributeOptionPersister = new AttributeOptionPersister();
 
         /** @var Attribute $aknAttr */
         foreach ($attributeDataProvider->getAll() as $aknAttr) {
@@ -56,7 +55,7 @@ class AttributeOptionCommand
     /**
      * @return AttributeOptionDataProvider
      */
-    public function getAttributeOptionDataProvider(): AttributeOptionDataProvider
+    private function getAttributeOptionDataProvider(): AttributeOptionDataProvider
     {
         if (!$this->AttributeOptionDataProvider) {
             $this->AttributeOptionDataProvider = AkeneoClientBuilder::create()->getAttributeOptionProvider();
@@ -68,7 +67,7 @@ class AttributeOptionCommand
     /**
      * @return AttributeOptionAdapter
      */
-    public function getAttributeOptionAdapter(): AttributeOptionAdapter
+    private function getAttributeOptionAdapter(): AttributeOptionAdapter
     {
         if (!$this->attributeOptionAdapter) {
             $this->attributeOptionAdapter = new AttributeOptionAdapter();
@@ -80,7 +79,7 @@ class AttributeOptionCommand
     /**
      * @return OptionDataPersister
      */
-    public function getOptionDataPersister(): OptionDataPersister
+    private function getOptionDataPersister(): OptionDataPersister
     {
         if (!$this->optionDataPersister) {
             $this->optionDataPersister = new OptionDataPersister();

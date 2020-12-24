@@ -21,12 +21,12 @@ class CategoryCommand
         WP_CLI::warning('Import OK');
         LoggerService::log(Logger::DEBUG, 'Starting category import');
 
-        $categoryApi = AkeneoClientBuilder::create()->getCategoryProvider();
+        $categoryDataProvider = AkeneoClientBuilder::create()->getCategoryProvider();
         $categoryAdapter = new CategoryAdapter();
         $categoryPersister = new CategoryDataPersister();
 
         /** @var AkeneoCategory $category */
-        foreach ($categoryApi->getAll() as $AknCategory) {
+        foreach ($categoryDataProvider->getAll() as $AknCategory) {
             LoggerService::log(Logger::DEBUG, sprintf('Running CatCode: %s', $AknCategory->getCode()));
 
             $wooCommerceCategory = $categoryAdapter->getWordpressCategory($AknCategory);

@@ -1,17 +1,25 @@
 <?php declare(strict_types=1);
-
 /**
  * This file is part of the Amphibee package.
  * (c) Amphibee <hello@amphibee.fr>
  */
 
-namespace AmphiBee\AkeneoConnector\Entity\Akeneo;
+namespace AmphiBee\AkeneoConnector\Entity\WooCommerce;
 
-class Category implements LocalizableEntityInterface
+class Model implements WooCommerceEntityInterface
 {
     private string $code;
     private ?string $parent;
-    private array $labels;
+
+    /**
+     * Category constructor.
+     *
+     * @param string $code
+     */
+    public function __construct(string $code)
+    {
+        $this->code = $code;
+    }
 
     /**
      * @return string
@@ -42,33 +50,13 @@ class Category implements LocalizableEntityInterface
     }
 
     /**
-     * @param ?string $parent
+     * @param string|null $parent
      *
      * @return $this
      */
     public function setParent(?string $parent): self
     {
         $this->parent = $parent;
-
-        return $this;
-    }
-
-    /**
-     * @return array
-     */
-    public function getLabels(): array
-    {
-        return $this->labels;
-    }
-
-    /**
-     * @param array $labels
-     *
-     * @return $this
-     */
-    public function setLabels(array $labels): self
-    {
-        $this->labels = $labels;
 
         return $this;
     }
