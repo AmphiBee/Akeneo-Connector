@@ -24,6 +24,7 @@ class AttributeDataPersister extends AbstractDataPersister
     {
         try {
             $attrAsArray = $this->getSerializer()->normalize($category);
+
             //@todo save in WC
         } catch (ExceptionInterface $e) {
             LoggerService::log(Logger::ERROR, sprintf(

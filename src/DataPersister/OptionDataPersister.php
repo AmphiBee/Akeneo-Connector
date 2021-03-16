@@ -23,6 +23,7 @@ class OptionDataPersister extends AbstractDataPersister
     {
         try {
             $optionAsArray = $this->getSerializer()->normalize($option);
+
             //@todo save in WC
         } catch (ExceptionInterface $e) {
             LoggerService::log(Logger::ERROR, sprintf(

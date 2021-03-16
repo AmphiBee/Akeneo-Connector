@@ -24,6 +24,7 @@ class CategoryAdapter
         $category = new WooCommerceCategory();
         $category->setName($akeneoCategory->getCode());
         $category->setParent($akeneoCategory->getParent() ?? self::ROOT_CATEGORY);
+        $category->setLabels($akeneoCategory->getLabels());
 
         //@todo adapt others needed things
 

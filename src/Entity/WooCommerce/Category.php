@@ -11,6 +11,7 @@ class Category implements WooCommerceEntityInterface
     private string $name;
     private string $parent;
     private string $description;
+    private array $labels;
 
     /**
      * Category constructor.
@@ -40,6 +41,26 @@ class Category implements WooCommerceEntityInterface
     public function setName(string $name): self
     {
         $this->name = $name;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getLabels(): array
+    {
+        return $this->labels;
+    }
+
+    /**
+     * @param string $labels
+     *
+     * @return $this
+     */
+    public function setLabels(array $labels): self
+    {
+        $this->labels = $labels;
 
         return $this;
     }

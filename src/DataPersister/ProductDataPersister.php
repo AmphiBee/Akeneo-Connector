@@ -7,6 +7,7 @@
 
 namespace AmphiBee\AkeneoConnector\DataPersister;
 
+use AmphiBee\AkeneoConnector\Adapter\ProductAdapter;
 use AmphiBee\AkeneoConnector\Entity\WooCommerce\Product;
 use Monolog\Logger;
 use AmphiBee\AkeneoConnector\Service\LoggerService;
@@ -14,6 +15,7 @@ use Symfony\Component\Serializer\Exception\ExceptionInterface;
 
 class ProductDataPersister extends AbstractDataPersister
 {
+
     /**
      * @param Product $product
      *
@@ -23,6 +25,8 @@ class ProductDataPersister extends AbstractDataPersister
     public function createOrUpdateProduct(Product $product): void
     {
         try {
+            //$productAsArray = $this->getSerializer()->normalize($product);
+            $productCode = $product->getCode();
             $productAsArray = $this->getSerializer()->normalize($product);
         } catch (ExceptionInterface $e) {
             LoggerService::log(Logger::ERROR, sprintf(
