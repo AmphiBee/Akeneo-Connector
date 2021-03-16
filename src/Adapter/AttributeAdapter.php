@@ -21,8 +21,7 @@ class AttributeAdapter extends AbstractAdapter
     {
         $attribute = new WooCommerceAttribute($akeneoAttribute->getCode());
         $attribute->setName($this->getLocalizedLabel($akeneoAttribute));
-
-        //@todo adapt others needed things
+        $attribute->setType($akeneoAttribute->getType());
 
         return $attribute;
     }

@@ -16,20 +16,20 @@ use Symfony\Component\Serializer\Exception\ExceptionInterface;
 class AttributeDataPersister extends AbstractDataPersister
 {
     /**
-     * @param Attribute $category
+     * @param Attribute $attribute
      * @SuppressWarnings(PHPMD.UnusedLocalVariable)
+     *
      * @todo remove suppress warning
      */
-    public function createOrUpdateAttribute(Attribute $category): void
+    public function createOrUpdateAttribute(Attribute $attribute): void
     {
         try {
-            $attrAsArray = $this->getSerializer()->normalize($category);
-
+            $attrAsArray = $this->getSerializer()->normalize($attribute);
             //@todo save in WC
         } catch (ExceptionInterface $e) {
             LoggerService::log(Logger::ERROR, sprintf(
                 'Cannot Normalize Attribute (Attr Code %s) %s',
-                print_r($category, true),
+                print_r($attribute, true),
                 $e->getMessage()
             ));
 
