@@ -11,6 +11,9 @@ class Product implements WooCommerceEntityInterface
     private string $code;
     private bool $enabled;
     private ?string $parent;
+    private array $categories;
+    private array $values;
+    private array $association;
 
     /**
      * Category constructor.
@@ -78,6 +81,66 @@ class Product implements WooCommerceEntityInterface
     public function setParent(?string $parent): self
     {
         $this->parent = $parent;
+
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getAssociation(): array
+    {
+        return $this->association;
+    }
+
+    /**
+     * @param array $association
+     *
+     * @return $this
+     */
+    public function setAssociation(array $association): self
+    {
+        $this->association = $association;
+
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getCategories(): array
+    {
+        return $this->categories;
+    }
+
+    /**
+     * @param array $categories
+     *
+     * @return $this
+     */
+    public function setCategories(array $categories): self
+    {
+        $this->categories = $categories;
+
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getValues(): array
+    {
+        return $this->values;
+    }
+
+    /**
+     * @param array $values
+     *
+     * @return $this
+     */
+    public function setValues(array $values): self
+    {
+        $this->values = $values;
 
         return $this;
     }

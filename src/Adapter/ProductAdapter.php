@@ -22,8 +22,9 @@ class ProductAdapter
         $product = new WooCommerceProduct($akeneoProduct->getIdentifier());
         $product->setEnabled($akeneoProduct->isEnabled());
         $product->setParent($akeneoProduct->getParent());
-
-        //@todo adapt others needed things
+        $product->setValues($akeneoProduct->getValues());
+        $product->setCategories($akeneoProduct->getCategories());
+        $product->setAssociation($akeneoProduct->getAssociations());
 
         return $product;
     }

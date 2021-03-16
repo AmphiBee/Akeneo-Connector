@@ -24,7 +24,6 @@ class ProductDataPersister extends AbstractDataPersister
     {
         try {
             $productAsArray = $this->getSerializer()->normalize($product);
-            //@todo save in WC
         } catch (ExceptionInterface $e) {
             LoggerService::log(Logger::ERROR, sprintf(
                 'Cannot Normalize Product (ModelCode %s) %s',
