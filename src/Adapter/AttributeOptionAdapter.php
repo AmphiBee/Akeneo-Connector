@@ -21,8 +21,7 @@ class AttributeOptionAdapter extends AbstractAdapter
     {
         $option = new WooCommerceOption($akeneoOption->getCode());
         $option->setName($this->getLocalizedLabel($akeneoOption));
-
-        //@todo adapt others needed things
+        $option->setAttribute($akeneoOption->getAttribute());
 
         return $option;
     }

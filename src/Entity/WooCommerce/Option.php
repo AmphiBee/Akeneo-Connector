@@ -9,6 +9,7 @@ namespace AmphiBee\AkeneoConnector\Entity\WooCommerce;
 class Option implements WooCommerceEntityInterface
 {
     private string $code;
+    private string $attribute;
     private string $name;
 
     public function __construct(string $code, string $name = '')
@@ -53,6 +54,26 @@ class Option implements WooCommerceEntityInterface
     public function setName(string $name): self
     {
         $this->name = $name;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAttribute(): string
+    {
+        return $this->attribute;
+    }
+
+    /**
+     * @param string $attribute
+     *
+     * @return $this
+     */
+    public function setAttribute(string $attribute): self
+    {
+        $this->attribute = $attribute;
 
         return $this;
     }

@@ -9,6 +9,7 @@ namespace AmphiBee\AkeneoConnector\Entity\Akeneo;
 class Option implements LocalizableEntityInterface
 {
     private string $code;
+    private string $attribute;
     private array $labels;
 
     /**
@@ -59,6 +60,26 @@ class Option implements LocalizableEntityInterface
     public function setLabels(array $labels): self
     {
         $this->labels = $labels;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAttribute(): string
+    {
+        return $this->attribute;
+    }
+
+    /**
+     * @param string $attribute
+     *
+     * @return $this
+     */
+    public function setAttribute(string $attribute): self
+    {
+        $this->attribute = $attribute;
 
         return $this;
     }
