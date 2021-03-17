@@ -20,8 +20,8 @@ class AttributeOptionAdapter extends AbstractAdapter
     public function getWordpressAttributeOption(AkeneoOption $akeneoOption): WooCommerceOption
     {
         $option = new WooCommerceOption($akeneoOption->getCode());
-        $option->setName($this->getLocalizedLabel($akeneoOption));
         $option->setAttribute($akeneoOption->getAttribute());
+        $option->setLabels($akeneoOption->getLabels());
 
         return $option;
     }

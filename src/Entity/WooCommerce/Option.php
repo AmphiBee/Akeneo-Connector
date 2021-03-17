@@ -10,12 +10,11 @@ class Option implements WooCommerceEntityInterface
 {
     private string $code;
     private string $attribute;
-    private string $name;
+    private array $labels;
 
-    public function __construct(string $code, string $name = '')
+    public function __construct(string $code)
     {
         $this->code = $code;
-        $this->name = $name;
     }
 
     /**
@@ -41,26 +40,6 @@ class Option implements WooCommerceEntityInterface
     /**
      * @return string
      */
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
-    /**
-     * @param string $name
-     *
-     * @return $this
-     */
-    public function setName(string $name): self
-    {
-        $this->name = $name;
-
-        return $this;
-    }
-
-    /**
-     * @return string
-     */
     public function getAttribute(): string
     {
         return $this->attribute;
@@ -74,6 +53,26 @@ class Option implements WooCommerceEntityInterface
     public function setAttribute(string $attribute): self
     {
         $this->attribute = $attribute;
+
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getLabels(): array
+    {
+        return $this->labels;
+    }
+
+    /**
+     * @param array $labels
+     *
+     * @return $this
+     */
+    public function setLabels(array $labels): self
+    {
+        $this->labels = $labels;
 
         return $this;
     }
