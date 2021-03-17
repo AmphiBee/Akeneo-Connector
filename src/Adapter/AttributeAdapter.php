@@ -20,6 +20,7 @@ class AttributeAdapter extends AbstractAdapter
     public function getWordpressAttribute(AkeneoAttribute $akeneoAttribute): WooCommerceAttribute
     {
         $attribute = new WooCommerceAttribute($akeneoAttribute->getCode());
+
         $attribute->setName($this->getLocalizedLabel($akeneoAttribute));
         $attribute->setType($akeneoAttribute->getType());
 

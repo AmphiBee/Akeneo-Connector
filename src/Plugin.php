@@ -6,6 +6,8 @@
 
 namespace AmphiBee\AkeneoConnector;
 
+use AmphiBee\AkeneoConnector\Admin\Settings;
+use AmphiBee\AkeneoConnector\DataPersister\AttributeDataPersister;
 use AmphiBee\AkeneoConnector\WpCli\CommandLoader;
 
 class Plugin
@@ -54,7 +56,13 @@ class Plugin
     {
         add_action('plugins_loaded', array($this, 'loadPluginTextdomain'));
 
+        if ( is_admin() ) {
+            new Settings();
+        }
+
         new CommandLoader();
+
+        new AttributeDataPersister();
     }
 
     /**
