@@ -22,7 +22,6 @@ class AttributeDataPersister extends AbstractDataPersister
     public function __construct()
     {
         add_action('admin_init', [$this, 'attributeRegister']);
-
     }
 
     public function attributeRegister() {
@@ -31,10 +30,7 @@ class AttributeDataPersister extends AbstractDataPersister
 
         /** @var \AmphiBee\AkeneoConnector\Entity\Akeneo\Attribute $AknAttr */
         foreach ($attributeDataProvider->getAll() as $AknAttr) {
-
-
             $wooCommerceAttribute = $attributeAdapter->getWordpressAttribute($AknAttr);
-
             $this->createOrUpdateAttribute($wooCommerceAttribute);
         }
     }
@@ -47,7 +43,6 @@ class AttributeDataPersister extends AbstractDataPersister
      */
     public function createOrUpdateAttribute(Attribute $attribute): void
     {
-
         try {
             $attrCode = $attribute->getCode();
             $attrName = $attribute->getName();
@@ -66,8 +61,18 @@ class AttributeDataPersister extends AbstractDataPersister
                         'orderby' => 'menu_order',
                         'has_archives'  => false,
                     );
-                    $result = \wc_create_attribute( $args );
+                    \wc_create_attribute( $args );
 
+                    if ($attribute->getType() === 'pim_catalog_boolean') {
+                        $choices = ['Oui', 'Non'];
+
+                        foreach ($choices as $choice) {
+                            $taxonomy = strtolower("pa_{$attrCode}");
+                            if (taxonomy_exists($taxonomy) && !term_exists($choice, $taxonomy)) {
+                                wp_insert_term($choice, $taxonomy);
+                            }
+                        }
+                    }
                 }
             }
         } catch (ExceptionInterface $e) {

@@ -86,6 +86,7 @@ class OldProduct
         $product->set_reviews_allowed(isset($args['reviews']) ? $args['reviews'] : false);
         $product->set_purchase_note(isset($args['note']) ? $args['note'] : '');
 
+
         // Sold Individually
         $product->set_sold_individually(isset($args['sold_individually']) ? $args['sold_individually'] : false);
     }

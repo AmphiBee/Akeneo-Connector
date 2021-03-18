@@ -2,7 +2,6 @@
 namespace AmphiBee\AkeneoConnector\Admin;
 
 use AmphiBee\AkeneoConnector\Service\AkeneoClientBuilder;
-use AmphiBee\AkeneoConnector\Service\LoggerService;
 
 class Settings {
     public static $akeneoSettings;
@@ -11,6 +10,11 @@ class Settings {
 		add_action( 'admin_menu', array( $this, 'akeneo_settings_add_plugin_page' ) );
 		add_action( 'admin_init', array( $this, 'akeneo_settings_page_init' ) );
 	}
+
+	public static function getDamUrl() {
+	    // @todo dynamiser
+	    return 'https://dam.meo.fr';
+    }
 
 	public function akeneo_settings_add_plugin_page() {
 		add_options_page(
@@ -73,7 +77,7 @@ class Settings {
                 "map_{$AknAttr->getCode()}", // id
                 $attrName, // title
                 function() use ($AknAttr) {
-                    $this->getSelectField($AknAttr->getCode());
+                    $this->getSelectField($AknAttr);
                 }, // callback
                 'configuration-akeneo-connector-admin', // page
                 'akeneo_settings_setting_section' // section
@@ -81,7 +85,7 @@ class Settings {
         }
 	}
 
-	public function getSelectField($fieldName) {
+	public function getSelectField($attrName) {
 	    $options = [
 	        '' => __( '--- Select an option ---', 'akeneo-connector' ),
             'post_title' => __( 'Product title', 'akeneo-connector' ),
@@ -107,9 +111,9 @@ class Settings {
         ];
         ?>
 
-        <select name="akeneo_settings[attribute_mapping][<?php echo $fieldName; ?>]" id="map_<?php echo $fieldName; ?>">
+        <select name="akeneo_settings[attribute_mapping][<?php echo $attrName->getCode(); ?>]" id="map_<?php echo $attrName->getCode(); ?>">
             <?php foreach ($options as $value=>$option_name): ?>
-                <?php $selected = self::getMappingValue($fieldName) === $value ? 'selected' : '' ; ?>
+                <?php $selected = self::getMappingValue($attrName->getCode()) === $value ? 'selected' : '' ; ?>
                 <option value="<?php echo $value; ?>" <?php echo $selected; ?>><?php echo $option_name; ?></option>
             <?php endforeach; ?>
         </select>
@@ -128,9 +132,24 @@ class Settings {
 	    return $akeneoSettings['attribute_mapping'][$key];
     }
 
+    public static function getTypeValue($key='') {
+        $akeneoSettings = self::getAkeneoSettings();
+
+        if (
+            !isset($akeneoSettings['attribute_type'])
+            || !isset($akeneoSettings['attribute_type'][$key])
+        ) {
+            return '';
+        }
+        return $akeneoSettings['attribute_type'][$key];
+    }
+
 	public function akeneo_settings_sanitize($input) {
 	    foreach ($input['attribute_mapping'] as $key=>$value) {
             $input['attribute_mapping'][$key] = sanitize_text_field($value);
+        }
+        foreach ($input['attribute_type'] as $key=>$value) {
+            $input['attribute_type'][$key] = sanitize_text_field($value);
         }
 		return $input;
 	}

@@ -76,4 +76,24 @@ class Option implements WooCommerceEntityInterface
 
         return $this;
     }
+
+    public function findOptionByAkeneoCode($attributeName) : int
+    {
+        $args = [
+            'hide_empty'    => false,
+            'fields'        => 'ids',
+            'taxonomy'      => $attributeName,
+            'meta_query'    => [
+                'relation'  => 'AND',
+                [
+                    'key'   => '_akeneo_code',
+                    'value' => $this->getCode(),
+                ]
+            ]
+        ];
+
+        $term_query = new \WP_Term_Query( $args );
+
+        return is_array($term_query->terms) && count($term_query->terms) > 0 ? $term_query->terms[0] : 0;
+    }
 }

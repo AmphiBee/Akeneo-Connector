@@ -37,36 +37,50 @@ class ProductAttribute
         $position = 0;
 
         foreach ($attributes as $taxonomy => $values) {
-            $taxonomy = 'pa_' . $taxonomy;
-            if (!taxonomy_exists($taxonomy)) {
-                continue;
-            }
 
-            // Get an instance of the WC_Product_Attribute Object
-            $attribute = new WC_Product_Attribute();
-
-            $term_ids = [];
-
-            // Loop through the term names
-            foreach ($values['term_names'] as $term_name) {
-                // Get and set the term ID in the array from the term name
-                if (\term_exists($term_name, $taxonomy)) {
-                    $term_ids[] = \get_term_by('name', $term_name, $taxonomy)->term_id;
-                } else {
+            if ($values['is_taxonomy']) {
+                $taxonomy = 'pa_' . $taxonomy;
+                if (!taxonomy_exists($taxonomy)) {
                     continue;
                 }
+
+                // Get an instance of the WC_Product_Attribute Object
+                $attribute = new WC_Product_Attribute();
+
+                $term_ids = [];
+
+                // Loop through the term names
+                foreach ($values['term_names'] as $term_name) {
+                    // Get and set the term ID in the array from the term name
+                    if (\term_exists($term_name, $taxonomy)) {
+                        $term_ids[] = \get_term_by('name', $term_name, $taxonomy)->term_id;
+                    } else {
+                        continue;
+                    }
+                }
+
+                $taxonomy_id = \wc_attribute_taxonomy_id_by_name($taxonomy); // Get taxonomy ID
+
+                $attribute->set_id($taxonomy_id);
+                $attribute->set_name($taxonomy);
+                $attribute->set_options($term_ids);
+                $attribute->set_position($position);
+                $attribute->set_visible($values['is_visible']);
+                $attribute->set_variation($values['for_variation']);
+
+                $data[$taxonomy] = $attribute; // Set in an array
+            } else {
+
+                // Get an instance of the WC_Product_Attribute Object
+                $attribute = new WC_Product_Attribute();
+                $attribute->set_name($taxonomy);
+                $attribute->set_options($values['term_names']);
+                $attribute->set_position($position);
+                $attribute->set_visible($values['is_visible']);
+                $attribute->set_variation(false);
+
+                $data[$taxonomy] = $attribute; // Set in an array
             }
-
-            $taxonomy_id = \wc_attribute_taxonomy_id_by_name($taxonomy); // Get taxonomy ID
-
-            $attribute->set_id($taxonomy_id);
-            $attribute->set_name($taxonomy);
-            $attribute->set_options($term_ids);
-            $attribute->set_position($position);
-            $attribute->set_visible($values['is_visible']);
-            $attribute->set_variation($values['for_variation']);
-
-            $data[$taxonomy] = $attribute; // Set in an array
 
             $position++; // Increase position
         }

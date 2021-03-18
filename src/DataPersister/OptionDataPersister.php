@@ -8,6 +8,7 @@
 namespace AmphiBee\AkeneoConnector\DataPersister;
 
 use AmphiBee\AkeneoConnector\Admin\Settings;
+use AmphiBee\AkeneoConnector\DataProvider\AttributeDataProvider;
 use Monolog\Logger;
 use AmphiBee\AkeneoConnector\Entity\WooCommerce\Option;
 use AmphiBee\AkeneoConnector\Service\LoggerService;
@@ -24,40 +25,42 @@ class OptionDataPersister extends AbstractDataPersister
     {
         try {
             $optionCode = $option->getCode();
-            $optionName = $option->getName();
+            $optionLabels = $option->getLabels();
+            // @todo implement polylang
+            $language = 'fr_FR';
+            $optionLabel = $optionLabels[$language];
             $optionAttribute = $option->getAttribute();
             $mapping = Settings::getMappingValue($optionAttribute);
+            $attributeLabel = 'pa_' . strtolower($option->getAttribute());
 
             if ($mapping !== 'global_attribute') {
                 return;
             }
 
-            var_dump($option);
-            die();
+            if (!taxonomy_exists($attributeLabel)) {
+                return;
+            }
 
-            $termId = $this->findOptionByAkeneoCode($optionCode, $optionAttribute);
+            $termId = $option->findOptionByAkeneoCode($attributeLabel);
 
             $optionArgs = [];
-            var_dump($optionAttribute);
-            var_dump($optionName);
+
             if ($termId > 0) {
-                $optionArgs['name'] = $optionName;
+                $optionArgs['name'] = $optionLabel;
                 \wp_update_term(
                     $termId,
-                    'product_cat',
+                    $attributeLabel,
                     $optionArgs
                 );
             } else {
                 $term = \wp_insert_term(
-                    $optionName,
-                    "pa_{$optionAttribute}",
+                    $optionLabel,
+                    $attributeLabel,
                     $optionArgs
                 );
+
                 update_term_meta($term['term_id'], '_akeneo_code', $optionCode);
             }
-
-            die();
-
         } catch (ExceptionInterface $e) {
             LoggerService::log(Logger::ERROR, sprintf(
                 'Cannot Normalize Option (OptCode %s) %s',
@@ -67,24 +70,5 @@ class OptionDataPersister extends AbstractDataPersister
 
             return;
         }
-    }
-
-    public function findOptionByAkeneoCode($akeneoCode, $attributeName) : int
-    {
-        $args = [
-            'hide_empty'    => false,
-            'fields'        => 'ids',
-            'taxonomy'      => "pa_{$attributeName}",
-            'meta_query'    => [
-                'relation'  => 'AND',
-                [
-                    'key'   => '_akeneo_code',
-                    'value' => $akeneoCode,
-                ]
-            ]
-        ];
-        $term_query = new \WP_Term_Query( $args );
-
-        return is_array($term_query->terms) && count($term_query->terms) > 0 ? $term_query->terms[0] : 0;
     }
 }

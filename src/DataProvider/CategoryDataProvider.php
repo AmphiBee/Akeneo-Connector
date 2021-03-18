@@ -52,4 +52,23 @@ class CategoryDataProvider extends AbstractDataProvider
             }
         }
     }
+
+    public static function findCategoryByAkeneoCode($akeneoCode) : int
+    {
+        $args = [
+            'hide_empty'    => false,
+            'fields'        => 'ids',
+            'taxonomy'      => 'product_cat',
+            'meta_query'    => [
+                'relation'  => 'AND',
+                [
+                    'key'   => '_akeneo_code',
+                    'value' => $akeneoCode,
+                ]
+            ]
+        ];
+        $term_query = new \WP_Term_Query( $args );
+
+        return count($term_query->terms) > 0 ? $term_query->terms[0] : 0;
+    }
 }

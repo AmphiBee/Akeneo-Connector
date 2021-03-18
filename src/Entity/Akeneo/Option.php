@@ -21,6 +21,7 @@ class Option implements LocalizableEntityInterface
     public function __construct(string $code, array $labels)
     {
         $this->code = $code;
+        $this->labels = $labels;
     }
 
     /**
