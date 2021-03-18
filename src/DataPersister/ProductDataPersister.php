@@ -276,7 +276,7 @@ class ProductDataPersister extends AbstractDataPersister
             $urls = [];
             $dam_url = Settings::getDamUrl();
             foreach ($args['external_gallery'] as $img) {
-                $urls[] = $dam_url . $img->_links->fqn_placeholder->href;
+                $urls[] = $dam_url . $img->_links->original->href;
             }
             \fifu_dev_set_image_list($product_id, implode('|', $urls));
         }
