@@ -13,6 +13,7 @@ use Symfony\Component\Serializer\Exception\ExceptionInterface;
 
 class CategoryDataPersister extends AbstractDataPersister
 {
+    private static $parent_ignore = [];
     /**
      * @param Category $category
      * @SuppressWarnings(PHPMD.UnusedLocalVariable)
@@ -21,8 +22,25 @@ class CategoryDataPersister extends AbstractDataPersister
     public function createOrUpdateCategory(Category $category): void
     {
         try {
+
+            // @todo dynamiser
+            $base_category = '2_default_category';
+
             $catAsArray = $this->getSerializer()->normalize($category);
             $termId = $this->findCategoryByAkeneoCode($category->getName());
+
+            if (
+                ($catAsArray['parent'] === 'root_category' && $catAsArray['name'] !== $base_category) ||
+                in_array($catAsArray['parent'], self::$parent_ignore)
+            ) {
+                self::$parent_ignore[] = $catAsArray['name'];
+                return;
+            }
+
+            // don't import base cat
+            if ($catAsArray['parent'] === 'root_category') {
+                return;
+            }
 
             // @todo implement polylang
             $language = 'fr_FR';
@@ -30,10 +48,11 @@ class CategoryDataPersister extends AbstractDataPersister
             $akeneoCode = $catAsArray['name'];
 
             $catAsArray['parent'] = $catAsArray['parent'] === 'root_category' ? 0 : $this->findCategoryByAkeneoCode($catAsArray['parent']);
+
             unset($catAsArray['labels']);
             unset($catAsArray['name']);
 
-            if ($termId > 0) {
+            if ($termId > 0 || term_exists($termName, 'product_cat')) {
                 $catAsArray['name'] = $termName;
                 \wp_update_term(
                     $termId,
@@ -46,8 +65,9 @@ class CategoryDataPersister extends AbstractDataPersister
                     'product_cat',
                     $catAsArray
                 );
-                update_term_meta($term['term_id'], '_akeneo_code', $akeneoCode);
+                $termId = $term['term_id'];
             }
+            update_term_meta($termId, '_akeneo_code', $akeneoCode);
         } catch (ExceptionInterface $e) {
             LoggerService::log(Logger::ERROR, sprintf(
                 'Cannot Normalize category (Category Code %s) %s',
@@ -74,7 +94,6 @@ class CategoryDataPersister extends AbstractDataPersister
             ]
         ];
         $term_query = new \WP_Term_Query( $args );
-
-        return count($term_query->terms) > 0 ? $term_query->terms[0] : 0;
+        return is_null($term_query->terms) || count($term_query->terms) > 0 ? $term_query->terms[0] : 0;
     }
 }

@@ -272,14 +272,7 @@ class ProductDataPersister extends AbstractDataPersister
             update_post_meta($product_id, $meta_key, $meta_value);
         }
 
-        if ($args['external_gallery'] && count($args['external_gallery']) > 0) {
-            $urls = [];
-            $dam_url = Settings::getDamUrl();
-            foreach ($args['external_gallery'] as $img) {
-                $urls[] = $dam_url . $img->_links->original->href;
-            }
-            \fifu_dev_set_image_list($product_id, implode('|', $urls));
-        }
+        do_action('ak/product/external_gallery', $product_id, $args['external_gallery']);
     }
 
     /**
@@ -329,7 +322,7 @@ class ProductDataPersister extends AbstractDataPersister
                 $attribute = new \WC_Product_Attribute();
                 $attribute->set_id(0);
                 $attribute->set_name($taxonomy);
-                $attribute->set_options((array)$values['value']);
+                $attribute->set_options($values['value']);
                 $attribute->set_position($position);
                 $attribute->set_visible($values['is_visible']);
                 $attribute->set_variation($values['is_variation']);
