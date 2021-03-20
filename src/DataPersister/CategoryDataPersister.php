@@ -27,6 +27,7 @@ class CategoryDataPersister extends AbstractDataPersister
             $base_category = '2_default_category';
 
             $catAsArray = $this->getSerializer()->normalize($category);
+
             $termId = $this->findCategoryByAkeneoCode($category->getName());
 
             if (
@@ -94,6 +95,11 @@ class CategoryDataPersister extends AbstractDataPersister
             ]
         ];
         $term_query = new \WP_Term_Query( $args );
-        return is_null($term_query->terms) || count($term_query->terms) > 0 ? $term_query->terms[0] : 0;
+
+        if ($term_query->terms === null) {
+            return 0;
+        }
+
+        return count($term_query->terms) > 0 ? $term_query->terms[0] : 0;
     }
 }
