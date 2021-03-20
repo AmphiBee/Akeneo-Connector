@@ -45,7 +45,7 @@ class OptionDataPersister extends AbstractDataPersister
 
             $optionArgs = [];
 
-            if ($termId > 0) {
+            if (term_exists($optionLabel, $attributeLabel) || $termId > 0) {
                 $optionArgs['name'] = $optionLabel;
                 \wp_update_term(
                     $termId,
@@ -58,9 +58,10 @@ class OptionDataPersister extends AbstractDataPersister
                     $attributeLabel,
                     $optionArgs
                 );
-
-                update_term_meta($term['term_id'], '_akeneo_code', $optionCode);
+                $termId = $term['term_id'];
             }
+
+            update_term_meta($termId, '_akeneo_code', $optionCode);
         } catch (ExceptionInterface $e) {
             LoggerService::log(Logger::ERROR, sprintf(
                 'Cannot Normalize Option (OptCode %s) %s',
