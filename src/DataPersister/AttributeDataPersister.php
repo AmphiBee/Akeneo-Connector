@@ -25,13 +25,16 @@ class AttributeDataPersister extends AbstractDataPersister
     }
 
     public function attributeRegister() {
-        $attributeDataProvider = AkeneoClientBuilder::create()->getAttributeProvider();
-        $attributeAdapter = new AttributeAdapter();
-
-        /** @var \AmphiBee\AkeneoConnector\Entity\Akeneo\Attribute $AknAttr */
-        foreach ($attributeDataProvider->getAll() as $AknAttr) {
-            $wooCommerceAttribute = $attributeAdapter->getWordpressAttribute($AknAttr);
-            $this->createOrUpdateAttribute($wooCommerceAttribute);
+        // Get any existing copy of our transient data
+        if ( false === ( $timeRegister = get_transient( 'akeneo_attributes' ) ) ) {
+            $attributeDataProvider = AkeneoClientBuilder::create()->getAttributeProvider();
+            $attributeAdapter = new AttributeAdapter();
+            /** @var \AmphiBee\AkeneoConnector\Entity\Akeneo\Attribute $AknAttr */
+            foreach ($attributeDataProvider->getAll() as $AknAttr) {
+                $wooCommerceAttribute = $attributeAdapter->getWordpressAttribute($AknAttr);
+                $this->createOrUpdateAttribute($wooCommerceAttribute);
+            }
+            set_transient( 'akeneo_attributes', time(), 12 * HOUR_IN_SECONDS );
         }
     }
 

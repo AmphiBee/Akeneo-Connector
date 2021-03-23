@@ -58,8 +58,6 @@ class Settings {
 			array( $this, 'akeneo_settings_sanitize' ) // sanitize_callback
 		);
 
-        $attributeDataProvider = AkeneoClientBuilder::create()->getAttributeProvider();
-
 		add_settings_section(
 			'akeneo_settings_setting_section', // id
 			'Settings', // title
@@ -67,17 +65,29 @@ class Settings {
 			'configuration-akeneo-connector-admin' // page
 		);
 
-        foreach ($attributeDataProvider->getAll() as $AknAttr) {
+        if ( false === ( $settingsFlds = get_transient( '_akeneo_attr_settings' ) ) ) {
+            $attributeDataProvider = AkeneoClientBuilder::create()->getAttributeProvider();
+            $settingsFlds = [];
+            foreach ($attributeDataProvider->getAll() as $AknAttr) {
+                $settingsFlds[$AknAttr->getCode()] = [
+                    'labels' => $AknAttr->getLabels(),
+                    'code' => $AknAttr->getCode()
+                ];
+            }
+            set_transient( '_akeneo_attr_settings', $settingsFlds, 12 * HOUR_IN_SECONDS );
+        }
 
-            $labels = $AknAttr->getLabels();
+        foreach ($settingsFlds as $settingsFld) {
+
+            $labels = $settingsFld['labels'];
             $language = 'fr_FR';
             $attrName = $labels[$language];
 
             add_settings_field(
-                "map_{$AknAttr->getCode()}", // id
+                "map_{$settingsFld['code']}}", // id
                 $attrName, // title
-                function() use ($AknAttr) {
-                    $this->getSelectField($AknAttr);
+                function() use ($settingsFld) {
+                    $this->getSelectField($settingsFld);
                 }, // callback
                 'configuration-akeneo-connector-admin', // page
                 'akeneo_settings_setting_section' // section
@@ -111,9 +121,9 @@ class Settings {
         ];
         ?>
 
-        <select name="akeneo_settings[attribute_mapping][<?php echo $attrName->getCode(); ?>]" id="map_<?php echo $attrName->getCode(); ?>">
+        <select name="akeneo_settings[attribute_mapping][<?php echo $attrName['code']; ?>]" id="map_<?php echo $attrName['code']; ?>">
             <?php foreach ($options as $value=>$option_name): ?>
-                <?php $selected = self::getMappingValue($attrName->getCode()) === $value ? 'selected' : '' ; ?>
+                <?php $selected = self::getMappingValue($attrName['code']) === $value ? 'selected' : '' ; ?>
                 <option value="<?php echo $value; ?>" <?php echo $selected; ?>><?php echo $option_name; ?></option>
             <?php endforeach; ?>
         </select>
