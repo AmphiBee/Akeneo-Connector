@@ -51,6 +51,7 @@ class ProductDataPersister extends AbstractDataPersister
                 'attributes' => [],
                 'metas' => [],
                 'product_cat' => [],
+                'external_media' => [],
             ];
 
             foreach ($productAsArray as $attrName=>$value) {
@@ -181,7 +182,12 @@ class ProductDataPersister extends AbstractDataPersister
         // Taxes
         if (\get_option('woocommerce_calc_taxes') === 'yes') {
             $product->set_tax_status(isset($args['tax_status']) ? $args['tax_status'] : 'taxable');
-            $product->set_tax_class(isset($args['tax_class']) ? $args['tax_class'] : '');
+            $tax_class = $args['tax_class'][0];
+            if ($tax_class === 'tva_55') {
+                $tax_class = sanitize_title('Taux réduit');
+            }
+
+            $product->set_tax_class(isset($args['tax_class']) ? $tax_class : '');
         }
 
         // Featured (boolean)
@@ -273,6 +279,8 @@ class ProductDataPersister extends AbstractDataPersister
         }
 
         do_action('ak/product/external_gallery', $product_id, $args['external_gallery']);
+
+        do_action('ak/product/after_save', $product_id, $args);
     }
 
     /**
@@ -396,6 +404,8 @@ class ProductDataPersister extends AbstractDataPersister
                 $product['name'] = $attrValue;
             } elseif ($mapping === 'post_meta') {
                 $product['metas'][$attrKey] = $attrValue;
+            } elseif ($mapping === 'external_media') {
+                $product['external_media'][$attrKey] = $attrValue;
             } else {
                 $product[$mapping] = $attrValue;
             }

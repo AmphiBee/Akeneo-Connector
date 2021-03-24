@@ -26,15 +26,23 @@ class AttributeDataPersister extends AbstractDataPersister
 
     public function attributeRegister() {
         // Get any existing copy of our transient data
-        if ( false === ( $timeRegister = get_transient( 'akeneo_attributes' ) ) ) {
+
+        if ( false === ( $taxonomies = get_transient( '_ak_attributes' ) ) ) {
             $attributeDataProvider = AkeneoClientBuilder::create()->getAttributeProvider();
             $attributeAdapter = new AttributeAdapter();
             /** @var \AmphiBee\AkeneoConnector\Entity\Akeneo\Attribute $AknAttr */
             foreach ($attributeDataProvider->getAll() as $AknAttr) {
                 $wooCommerceAttribute = $attributeAdapter->getWordpressAttribute($AknAttr);
-                $this->createOrUpdateAttribute($wooCommerceAttribute);
+                $taxonomies[] = [
+                    'code' => $wooCommerceAttribute->getCode(),
+                    'name' => $wooCommerceAttribute->getName(),
+                    'type' => $wooCommerceAttribute->getType(),
+                ];
             }
-            set_transient( 'akeneo_attributes', time(), 12 * HOUR_IN_SECONDS );
+            set_transient( '_ak_attributes',$taxonomies, 12 * HOUR_IN_SECONDS );
+        }
+        foreach ($taxonomies as $taxonomy) {
+            $this->createOrUpdateAttribute($taxonomy['code'], $taxonomy['name'], $taxonomy['type']);
         }
     }
 
@@ -44,11 +52,9 @@ class AttributeDataPersister extends AbstractDataPersister
      *
      * @todo remove suppress warning
      */
-    public function createOrUpdateAttribute(Attribute $attribute): void
+    public function createOrUpdateAttribute($attrCode, $attrName, $attrType): void
     {
         try {
-            $attrCode = $attribute->getCode();
-            $attrName = $attribute->getName();
             $mapping = Settings::getMappingValue($attrCode);
 
             if ($mapping === 'global_attribute') {
@@ -66,7 +72,7 @@ class AttributeDataPersister extends AbstractDataPersister
                     );
                     \wc_create_attribute( $args );
 
-                    if ($attribute->getType() === 'pim_catalog_boolean') {
+                    if ($attrType === 'pim_catalog_boolean') {
                         $choices = ['Oui', 'Non'];
 
                         foreach ($choices as $choice) {
