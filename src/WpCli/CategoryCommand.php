@@ -30,6 +30,8 @@ class CategoryCommand
             LoggerService::log(Logger::DEBUG, sprintf('Running CatCode: %s', $AknCategory->getCode()));
 
             $wooCommerceCategory = $categoryAdapter->getWordpressCategory($AknCategory);
+            var_dump($AknCategory);
+            var_dump('ok');die;
             $categoryPersister->createOrUpdateCategory($wooCommerceCategory);
         }
 

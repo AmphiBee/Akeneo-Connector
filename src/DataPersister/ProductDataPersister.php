@@ -297,7 +297,7 @@ class ProductDataPersister extends AbstractDataPersister
         foreach ($attributes as $taxonomy => $values) {
 
             if ($values['is_taxonomy']) {
-                $taxonomy = 'pa_' . $taxonomy;
+                $taxonomy = strtolower('pa_' . $taxonomy);
                 if (!taxonomy_exists($taxonomy)) {
                     continue;
                 }
@@ -306,6 +306,7 @@ class ProductDataPersister extends AbstractDataPersister
                 $attribute = new \WC_Product_Attribute();
 
                 // Loop through the term names
+
                 foreach ($values['term_ids'] as $key=>$term_id) {
                     // Get and set the term ID in the array from the term name
                     if (!\term_exists($term_id, $taxonomy)) {
@@ -353,9 +354,9 @@ class ProductDataPersister extends AbstractDataPersister
             if (($mapping === 'global_attribute' || $mapping === 'text_attribute') && $attrValue) {
                 if ($mapping === 'global_attribute') {
 
+                    $taxonomy = 'pa_' . strtolower($attrKey);
                     if ($attrType === 'pim_catalog_boolean') {
                         $boolLabel = $attrValue === true ? 'Oui' : 'Non';
-                        $taxonomy = 'pa_' . strtolower($attrKey);
                         $term = get_term_by('name', $boolLabel, $taxonomy);
                         $attrValue = (array) $term->term_id;
                     }
@@ -366,7 +367,8 @@ class ProductDataPersister extends AbstractDataPersister
                     }
 
                     foreach ($attrValue as $val) {
-                        $option = (new Option($val))->findOptionByAkeneoCode("pa_{$attrKey}");
+                        $option = (new Option($val))->findOptionByAkeneoCode($taxonomy);
+
                         if ($option > 0) {
                             $assocValues[] = $option;
                         }

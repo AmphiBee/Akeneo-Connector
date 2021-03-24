@@ -33,9 +33,11 @@ class OptionDataPersister extends AbstractDataPersister
             $mapping = Settings::getMappingValue($optionAttribute);
             $attributeLabel = 'pa_' . strtolower($option->getAttribute());
 
+
             if ($mapping !== 'global_attribute') {
                 return;
             }
+
 
             if (!taxonomy_exists($attributeLabel)) {
                 return;
@@ -45,23 +47,31 @@ class OptionDataPersister extends AbstractDataPersister
 
             $optionArgs = [];
 
-            if (term_exists($optionLabel, $attributeLabel) || $termId > 0) {
+            if (term_exists($optionLabel, $attributeLabel) && $termId > 0) {
                 $optionArgs['name'] = $optionLabel;
                 \wp_update_term(
                     $termId,
                     $attributeLabel,
                     $optionArgs
                 );
+                update_term_meta($termId, '_akeneo_code', $optionCode);
             } else {
-                $term = \wp_insert_term(
-                    $optionLabel,
-                    $attributeLabel,
-                    $optionArgs
-                );
-                $termId = $term['term_id'];
+                if ($term = term_exists($optionLabel, $attributeLabel)) {
+                    $optionArgs['slug'] = $attributeLabel;
+                    \update_term_meta($term['term_id'], '_akeneo_code', $optionCode);
+                } else {
+                    $term = \wp_insert_term(
+                        $optionLabel,
+                        $attributeLabel
+                    );
+                    update_term_meta($term['term_id'], '_akeneo_code', $optionCode);
+                }
             }
 
+
             update_term_meta($termId, '_akeneo_code', $optionCode);
+
+
         } catch (ExceptionInterface $e) {
             LoggerService::log(Logger::ERROR, sprintf(
                 'Cannot Normalize Option (OptCode %s) %s',

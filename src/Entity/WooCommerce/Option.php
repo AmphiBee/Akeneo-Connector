@@ -82,7 +82,7 @@ class Option implements WooCommerceEntityInterface
         $args = [
             'hide_empty'    => false,
             'fields'        => 'ids',
-            'taxonomy'      => $attributeName,
+            'taxonomy'      => strtolower($attributeName),
             'meta_query'    => [
                 'relation'  => 'AND',
                 [

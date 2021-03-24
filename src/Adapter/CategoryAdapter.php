@@ -21,8 +21,10 @@ class CategoryAdapter
      */
     public function getWordpressCategory(AkeneoCategory $akeneoCategory): WooCommerceCategory
     {
+
         $category = new WooCommerceCategory();
         $category->setName($akeneoCategory->getCode());
+        $category->setDescription($akeneoCategory->getDescription());
         $category->setParent($akeneoCategory->getParent() ?? self::ROOT_CATEGORY);
         $category->setLabels($akeneoCategory->getLabels());
 

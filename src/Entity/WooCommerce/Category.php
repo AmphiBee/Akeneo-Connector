@@ -10,19 +10,16 @@ class Category implements WooCommerceEntityInterface
 {
     private string $name;
     private string $parent;
-    private string $description;
+    private ?string $description;
     private array $labels;
 
     /**
      * Category constructor.
-     *
      * @param string $name
-     * @param string $description
      */
-    public function __construct(string $name = '', string $description = '')
+    public function __construct(string $name = '')
     {
         $this->name = $name;
-        $this->description = $description;
     }
 
     /**
@@ -46,7 +43,7 @@ class Category implements WooCommerceEntityInterface
     }
 
     /**
-     * @return string
+     * @return array
      */
     public function getLabels(): array
     {
@@ -54,8 +51,7 @@ class Category implements WooCommerceEntityInterface
     }
 
     /**
-     * @param string $labels
-     *
+     * @param array $labels
      * @return $this
      */
     public function setLabels(array $labels): self
@@ -66,19 +62,18 @@ class Category implements WooCommerceEntityInterface
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getDescription(): string
+    public function getDescription(): ?string
     {
         return $this->description;
     }
 
     /**
-     * @param string $description
-     *
+     * @param string|null $description
      * @return $this
      */
-    public function setDescription(string $description): self
+    public function setDescription(?string $description): self
     {
         $this->description = $description;
 
