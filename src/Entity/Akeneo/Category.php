@@ -107,7 +107,8 @@ class Category implements LocalizableEntityInterface
     }
 
     /**
-     * @param ?string $descriptionEN
+     * @param string|null $descriptionEN
+     *
      * @return $this
      */
     public function setDescriptionEN(?string $descriptionEN): self
@@ -127,6 +128,7 @@ class Category implements LocalizableEntityInterface
 
     /**
      * @param string|null $categoryContentText
+     *
      * @return $this
      */
     public function setCategoryContentText(?string $categoryContentText): self
@@ -146,6 +148,7 @@ class Category implements LocalizableEntityInterface
 
     /**
      * @param string|null $categoryContentTextEN
+     *
      * @return $this
      */
     public function setCategoryContentTextEN(?string $categoryContentTextEN): self
@@ -165,6 +168,7 @@ class Category implements LocalizableEntityInterface
 
     /**
      * @param string|null $miniature
+     *
      * @return $this
      */
     public function setMiniature(?string $miniature): self
@@ -184,6 +188,7 @@ class Category implements LocalizableEntityInterface
 
     /**
      * @param string|null $categoryContentImage
+     *
      * @return $this
      */
     public function setCategoryContentImage(?string $categoryContentImage): self
