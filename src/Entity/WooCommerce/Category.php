@@ -10,8 +10,13 @@ class Category implements WooCommerceEntityInterface
 {
     private string $name;
     private string $parent;
-    private ?string $description;
     private array $labels;
+    private ?string $description;
+    private ?string $descriptionEN;
+    private ?string $categoryContentText;
+    private ?string $categoryContentTextEN;
+    private ?string $miniature;
+    private ?string $categoryContentImage;
 
     /**
      * Category constructor.
@@ -96,6 +101,106 @@ class Category implements WooCommerceEntityInterface
     public function setParent(string $parent): self
     {
         $this->parent = $parent;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getDescriptionEN(): ?string
+    {
+        return $this->descriptionEN;
+    }
+
+    /**
+     * @param string|null $descriptionEN
+     *
+     * @return $this
+     */
+    public function setDescriptionEN(?string $descriptionEN): self
+    {
+        $this->descriptionEN = $descriptionEN;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getCategoryContentText(): ?string
+    {
+        return $this->categoryContentText;
+    }
+
+    /**
+     * @param string|null $categoryContentText
+     *
+     * @return $this
+     */
+    public function setCategoryContentText(?string $categoryContentText): self
+    {
+        $this->categoryContentText = $categoryContentText;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getCategoryContentTextEN(): ?string
+    {
+        return $this->categoryContentTextEN;
+    }
+
+    /**
+     * @param string|null $categoryContentTextEN
+     *
+     * @return $this
+     */
+    public function setCategoryContentTextEN(?string $categoryContentTextEN): self
+    {
+        $this->categoryContentTextEN = $categoryContentTextEN;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getMiniature(): ?string
+    {
+        return $this->miniature;
+    }
+
+    /**
+     * @param string|null $miniature
+     *
+     * @return $this
+     */
+    public function setMiniature(?string $miniature): self
+    {
+        $this->miniature = $miniature;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getCategoryContentImage(): ?string
+    {
+        return $this->categoryContentImage;
+    }
+
+    /**
+     * @param string|null $categoryContentImage
+     *
+     * @return $this
+     */
+    public function setCategoryContentImage(?string $categoryContentImage): self
+    {
+        $this->categoryContentImage = $categoryContentImage;
 
         return $this;
     }

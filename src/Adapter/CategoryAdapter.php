@@ -24,11 +24,15 @@ class CategoryAdapter
 
         $category = new WooCommerceCategory();
         $category->setName($akeneoCategory->getCode());
-        $category->setDescription($akeneoCategory->getDescription());
         $category->setParent($akeneoCategory->getParent() ?? self::ROOT_CATEGORY);
         $category->setLabels($akeneoCategory->getLabels());
 
-        //@todo adapt others needed things
+        $category->setDescription($akeneoCategory->getDescription());
+        $category->setDescriptionEN($akeneoCategory->getDescriptionEN());
+        $category->setCategoryContentText($akeneoCategory->getCategoryContentText());
+        $category->setCategoryContentTextEN($akeneoCategory->getCategoryContentTextEN());
+        $category->setCategoryContentImage($akeneoCategory->getCategoryContentImage());
+        $category->setMiniature($akeneoCategory->getMiniature());
 
         return $category;
     }
