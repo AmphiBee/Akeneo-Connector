@@ -144,4 +144,20 @@ class Product implements WooCommerceEntityInterface
 
         return $this;
     }
+
+    /**
+     * Get product ID from SKU
+     *
+     * Check in the DB if a product has already a given SKU code
+     *
+     * @access public
+     * @param string $sku SKU code
+     * @return mixed    $product_id     Return product ID if exist, false if not
+     */
+    public static function getProductIdFromSku(string $sku) : int
+    {
+        global $wpdb;
+        $product_id = $wpdb->get_var($wpdb->prepare("SELECT post_id FROM $wpdb->postmeta WHERE meta_key='_sku' AND meta_value='%s' LIMIT 1", $sku));
+        return is_null($product_id) ? 0 : (int) $product_id;
+    }
 }

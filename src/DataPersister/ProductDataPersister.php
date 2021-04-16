@@ -52,12 +52,29 @@ class ProductDataPersister extends AbstractDataPersister
                 'metas' => [],
                 'product_cat' => [],
                 'external_media' => [],
+                'upsells' => [],
+                'cross_sells' => [],
             ];
 
             foreach ($productAsArray as $attrName=>$value) {
                 $finalProduct = $baseProduct;
+
                 if ($attrName == 'values') {
                     $this->formatAttributes($finalProduct, $value);
+                }
+            }
+
+            $associations = $product->getAssociation();
+
+            if (count($associations) > 0) {
+                // upsell
+                if (isset($associations['UPSELL'])) {
+                    $finalProduct['upsells'] = $associations['UPSELL']['products'];
+                }
+
+                // cross sell
+                if (isset($associations['CROSSSELL'])) {
+                    $finalProduct['cross_sells'] = $associations['CROSSSELL']['products'];
                 }
             }
 
@@ -79,21 +96,6 @@ class ProductDataPersister extends AbstractDataPersister
 
             $this->makeProduct($finalProduct);
 
-            /*
-            foreach ($productAsArray as $attrName=>$value) {
-
-
-                $finalProduct = $baseProduct;
-                if ($attrName == 'values') {
-                    $this->formatAttributes($finalProduct, $value);
-                } elseif ($attrName === 'code') {
-                    $finalProduct['metas']['_akeneo_code'] = $value;
-                } elseif ($attrName === 'association') {
-                    if (count($value['UPSELL']['products']) > 0) {
-                    }
-                }
-            }
-            */
 
         } catch (ExceptionInterface $e) {
             LoggerService::log(Logger::ERROR, sprintf(
@@ -193,10 +195,6 @@ class ProductDataPersister extends AbstractDataPersister
         // Featured (boolean)
         $product->set_featured(isset($args['featured']) ? $args['featured'] : false);
 
-        // Upsell and Cross sell (IDs)
-        $product->set_upsell_ids(isset($args['upsells']) ? $args['upsells'] : '');
-        $product->set_cross_sell_ids(isset($args['cross_sells']) ? $args['upsells'] : '');
-
         // Reviews, purchase note
         $product->set_reviews_allowed(isset($args['reviews']) ? $args['reviews'] : false);
         $product->set_purchase_note(isset($args['note']) ? $args['note'] : '');
@@ -277,6 +275,29 @@ class ProductDataPersister extends AbstractDataPersister
             $meta_value = apply_filters('ak/product/meta_value', $meta_value, $product_id, $meta_key);
             update_post_meta($product_id, $meta_key, $meta_value);
         }
+
+        // Upsell and Cross sell (IDs) after all product saved
+
+        add_action('ak/product/after_import', function($products) use ($product, $args) {
+
+            $upsells = [];
+            $cross_sells = [];
+            foreach (['upsells', 'cross_sells'] as $association) {
+                if (count($args[$association]) == 0) {
+                    continue;
+                }
+
+                foreach ($args[$association] as $associationSku) {
+                    $associationId = Product::getProductIdFromSku($associationSku);
+                    if ($associationId > 0) {
+                        array_push($$association, $associationId);
+                    }
+                }
+            }
+            $product->set_upsell_ids($upsells);
+            $product->set_cross_sell_ids($cross_sells);
+            $product->save();
+        });
 
         do_action('ak/product/external_gallery', $product_id, $args['external_gallery']);
         do_action('ak/product/external_media', $product_id, $args['external_media']);

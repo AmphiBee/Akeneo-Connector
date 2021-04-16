@@ -81,6 +81,8 @@ class ProductCommand
         $productAdapter = new ProductAdapter();
         $productPersister = new ProductDataPersister();
 
+        do_action('ak/product/after_import', $productProvider->getAll());
+
         /** @var Product $aknProduct */
         foreach ($productProvider->getAll() as $aknProduct) {
             LoggerService::log(Logger::DEBUG, sprintf('Running ProductCode: %s', $aknProduct->getIdentifier()));
@@ -88,6 +90,8 @@ class ProductCommand
 
             $wooCommerceProduct = $productAdapter->getWordpressProduct($aknProduct);
             $productPersister->createOrUpdateProduct($wooCommerceProduct);
+
+            do_action('ak/product/after_import', $productProvider->getAll());
         }
 
         LoggerService::log(Logger::DEBUG, 'Ending product import');
