@@ -69,6 +69,9 @@ class CategoryDataPersister extends AbstractDataPersister
                 $termId = $term['term_id'];
             }
             update_term_meta($termId, '_akeneo_code', $akeneoCode);
+
+            do_action('ak/category/after_save', $termId, $catAsArray);
+
         } catch (ExceptionInterface $e) {
             LoggerService::log(Logger::ERROR, sprintf(
                 'Cannot Normalize category (Category Code %s) %s',

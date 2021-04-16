@@ -4,7 +4,7 @@ Plugin Name: Akeneo Connector
 Plugin URI: https://amphibee.fr
 Description: Connect Akeneo with WooCommerce
 Author: AmphiBee (hello@amphibee.fr)
-Version: 0.0.6
+Version: 0.0.9
 Author URI: https://amphibee.fr
 Text Domain: akeneo_connector
 Domain Path: /languages

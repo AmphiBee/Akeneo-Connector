@@ -49,36 +49,36 @@ class AttributeFormatter
     }
 
     public static function pimCatalogMetric($values) {
-        return (float)$values[0]['data']['amount'];
+        return apply_filters('ak/attribute/metric', (float)$values[0]['data']['amount'], $values[0]['data']);
     }
 
     public static function pimCatalogPriceCollection($values) {
-        return (float)$values[0]['data'][0]['amount'];
+        return apply_filters('ak/attribute/price', (float)$values[0]['data'][0]['amount'], $values[0]['data'][0]);
     }
 
     public static function pimCatalogMultiselect($values) {
-        return self::pimCatalogSimpleselect($values);
+        return apply_filters('ak/attribute/multiselect', self::pimCatalogSimpleselect($values), $values);
     }
 
     public static function pimCatalogBoolean($values) {
-        return $values[0]['data'];
+        return apply_filters('ak/attribute/boolean', $values[0]['data'], $values);
     }
 
     public static function pimCatalogDate($values) {
-        return $values[0]['data'];
+        return apply_filters('ak/attribute/date', $values[0]['data'], $values[0]);
     }
 
     public static function pimCatalogDam($values) {
         $datas = json_decode($values[0]['data']);
-        return $datas;
+        return apply_filters('ak/attribute/dam', $datas, $values[0]);
     }
 
     public static function pimCatalogTextarea($values) {
-        return self::pimCatalogText($values);
+        return apply_filters('ak/attribute/textarea', self::pimCatalogText($values), $values[0]);
     }
 
     public static function pimCatalogText($values) {
-        return $values[0]['data'];
+        return apply_filters('ak/attribute/text', $values[0]['data'], $values[0]);
     }
 
     public static function pimCatalogSimpleselect($values) {
@@ -89,7 +89,7 @@ class AttributeFormatter
             $datas[] = $value['data'];
         }
 
-        return $datas;
+        return apply_filters('ak/attribute/select', $datas, $values);
     }
 
     public static function getLocaleValue($values) {

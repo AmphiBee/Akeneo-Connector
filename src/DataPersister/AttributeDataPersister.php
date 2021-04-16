@@ -61,7 +61,6 @@ class AttributeDataPersister extends AbstractDataPersister
 
                 $attributes = \wc_get_attribute_taxonomies();
                 $slugs = \wp_list_pluck( $attributes, 'attribute_name' );
-
                 if ( ! in_array( $attrCode, $slugs ) ) {
                     $args = array(
                         'slug'    => $attrCode,

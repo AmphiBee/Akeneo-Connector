@@ -279,6 +279,7 @@ class ProductDataPersister extends AbstractDataPersister
         }
 
         do_action('ak/product/external_gallery', $product_id, $args['external_gallery']);
+        do_action('ak/product/external_media', $product_id, $args['external_media']);
 
         do_action('ak/product/after_save', $product_id, $args);
     }
@@ -407,6 +408,7 @@ class ProductDataPersister extends AbstractDataPersister
             } elseif ($mapping === 'post_meta') {
                 $product['metas'][$attrKey] = $attrValue;
             } elseif ($mapping === 'external_media') {
+                $attrKey = AttributeDataProvider::getAttributeLabel($attrKey);
                 $product['external_media'][$attrKey] = $attrValue;
             } else {
                 $product[$mapping] = $attrValue;
