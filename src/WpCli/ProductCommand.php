@@ -81,7 +81,7 @@ class ProductCommand
         $productAdapter = new ProductAdapter();
         $productPersister = new ProductDataPersister();
 
-        do_action('ak/product/after_import', $productProvider->getAll());
+        do_action('ak/product/before_import', $productProvider->getAll());
 
         /** @var Product $aknProduct */
         foreach ($productProvider->getAll() as $aknProduct) {
@@ -90,9 +90,9 @@ class ProductCommand
 
             $wooCommerceProduct = $productAdapter->getWordpressProduct($aknProduct);
             $productPersister->createOrUpdateProduct($wooCommerceProduct);
-
-            do_action('ak/product/after_import', $productProvider->getAll());
         }
+
+        do_action('ak/product/after_import', $productProvider->getAll());
 
         LoggerService::log(Logger::DEBUG, 'Ending product import');
         WP_CLI::success('Import OK');

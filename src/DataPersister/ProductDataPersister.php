@@ -32,11 +32,11 @@ class ProductDataPersister extends AbstractDataPersister
     {
         try {
 
+            $productAsArray = $this->getSerializer()->normalize($product);
+
             if (!$product->isEnabled()) {
                 return;
             }
-
-            $productAsArray = $this->getSerializer()->normalize($product);
 
             $baseProduct = [
                 'type' => 'simple',
@@ -94,6 +94,7 @@ class ProductDataPersister extends AbstractDataPersister
                 }
             }
 
+
             $this->makeProduct($finalProduct);
 
 
@@ -131,10 +132,6 @@ class ProductDataPersister extends AbstractDataPersister
 
         $type = $args['type'];
         $product_id = $args['product_id'];
-
-        if (count($args['attributes']) === 0) {
-            return;
-        }
 
         // Get an instance of the WC_Product object (depending on his type)
         if ('variable' === $type) {
@@ -294,6 +291,7 @@ class ProductDataPersister extends AbstractDataPersister
                     }
                 }
             }
+
             $product->set_upsell_ids($upsells);
             $product->set_cross_sell_ids($cross_sells);
             $product->save();
