@@ -68,7 +68,6 @@ class OptionDataPersister extends AbstractDataPersister
                 }
             }
 
-
             update_term_meta($termId, '_akeneo_code', $optionCode);
 
 

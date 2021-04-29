@@ -261,6 +261,7 @@ class ProductDataPersister extends AbstractDataPersister
         if (isset($args['attributes'])) {
             $product->set_attributes($this->prepareProductAttributes($args['attributes']));
         }
+
         if (isset($args['default_attributes'])) {
             $product->set_default_attributes($args['default_attributes']);
         }
@@ -379,21 +380,23 @@ class ProductDataPersister extends AbstractDataPersister
                         $boolLabel = $attrValue === true ? 'Oui' : 'Non';
                         $term = get_term_by('name', $boolLabel, $taxonomy);
                         $attrValue = (array) $term->term_id;
-                    }
-                    $assocValues = [];
-                    // Flatten array, needed for WooCommerce
-                    if (isset($attrValue[0][0])) {
-                        $attrValue = AttributeFormatter::arrayFlatten($attrValue);
-                    }
-
-                    foreach ($attrValue as $val) {
-                        $option = (new Option($val))->findOptionByAkeneoCode($taxonomy);
-
-                        if ($option > 0) {
-                            $assocValues[] = $option;
+                    } else {
+                        $assocValues = [];
+                        // Flatten array, needed for WooCommerce
+                        if (isset($attrValue[0][0])) {
+                            $attrValue = AttributeFormatter::arrayFlatten($attrValue);
                         }
+
+                        foreach ($attrValue as $val) {
+                            $option = (new Option($val))->findOptionByAkeneoCode($taxonomy);
+
+                            if ($option > 0) {
+                                $assocValues[] = $option;
+                            }
+                        }
+                        $attrValue = $assocValues;
                     }
-                    $attrValue = $assocValues;
+
                 } else {
                     $attrKey = AttributeDataProvider::getAttributeLabel($attrKey);
                 }

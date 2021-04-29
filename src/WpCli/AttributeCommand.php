@@ -26,8 +26,7 @@ class AttributeCommand
         foreach ($attributeDataProvider->getAll() as $AknAttr) {
             LoggerService::log(Logger::DEBUG, sprintf('Running AttrCode: %s', $AknAttr->getCode()));
             $wooCommerceAttribute = $attributeAdapter->getWordpressAttribute($AknAttr);
-
-            $attrPersister->createOrUpdateAttribute($wooCommerceAttribute);
+            $attrPersister->importBooleanAttributeOption($wooCommerceAttribute);
 
             WP_CLI::line($AknAttr->getCode());
         }

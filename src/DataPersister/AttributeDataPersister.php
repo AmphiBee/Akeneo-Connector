@@ -21,7 +21,9 @@ class AttributeDataPersister extends AbstractDataPersister
 
     public function __construct()
     {
-        add_action('admin_init', [$this, 'attributeRegister']);
+        if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
+            add_action('admin_init', [$this, 'attributeRegister']);
+        }
     }
 
     public function attributeRegister() {
@@ -43,6 +45,36 @@ class AttributeDataPersister extends AbstractDataPersister
         }
         foreach ($taxonomies as $taxonomy) {
             $this->createOrUpdateAttribute($taxonomy['code'], $taxonomy['name'], $taxonomy['type']);
+        }
+    }
+
+    /**
+     * @param Attribute $attribute
+     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
+     *
+     * @todo remove suppress warning
+     */
+    public function importBooleanAttributeOption($attr): void
+    {
+        try {
+            $attrCode = $attr->getCode();
+            $mapping = Settings::getMappingValue($attrCode);
+            if ($mapping === 'global_attribute' && $attr->getType() === 'pim_catalog_boolean') {
+                $choices = ['Oui', 'Non'];
+                foreach ($choices as $choice) {
+                    $taxonomy = strtolower("pa_{$attrCode}");
+                    if (taxonomy_exists($taxonomy) && !term_exists($choice, $taxonomy)) {
+                        wp_insert_term($choice, $taxonomy);
+                    }
+                }
+            }
+        } catch (ExceptionInterface $e) {
+            LoggerService::log(Logger::ERROR, sprintf(
+                'Cannot Normalize Attribute (Attr Code %s) %s',
+                print_r($attr, true),
+                $e->getMessage()
+            ));
+            return;
         }
     }
 
