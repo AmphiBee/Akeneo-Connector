@@ -11,6 +11,7 @@ use AmphiBee\AkeneoConnector\Adapter\ProductAdapter;
 use AmphiBee\AkeneoConnector\Admin\Settings;
 use AmphiBee\AkeneoConnector\DataProvider\AttributeDataProvider;
 use AmphiBee\AkeneoConnector\DataProvider\CategoryDataProvider;
+use AmphiBee\AkeneoConnector\Entity\WooCommerce\i18n;
 use AmphiBee\AkeneoConnector\Entity\WooCommerce\Option;
 use AmphiBee\AkeneoConnector\Entity\WooCommerce\Product;
 use AmphiBee\AkeneoConnector\Helpers\AttributeFormatter;
@@ -31,8 +32,9 @@ class ProductDataPersister extends AbstractDataPersister
     public function createOrUpdateProduct(Product $product): void
     {
         try {
-
             $productAsArray = $this->getSerializer()->normalize($product);
+
+            $languages = i18n::getLanguages();
 
             if (!$product->isEnabled()) {
                 return;
@@ -95,6 +97,7 @@ class ProductDataPersister extends AbstractDataPersister
             }
 
 
+            var_dump($finalProduct['sku']);
             $this->makeProduct($finalProduct);
 
 
@@ -114,10 +117,15 @@ class ProductDataPersister extends AbstractDataPersister
         $args = [
             'fields'        => 'ids',
             'post_type'      => 'product',
+            'post_status' => ['publish', 'pending', 'draft', 'auto-draft', 'future', 'private', 'inherit'],
             'meta_query'    => [
-                'relation'  => 'AND',
+                'relation'  => 'OR',
                 [
                     'key'   => '_akeneo_code',
+                    'value' => $akeneoCode,
+                ],
+                [
+                    'key'   => '_sku',
                     'value' => $akeneoCode,
                 ]
             ]
@@ -372,7 +380,7 @@ class ProductDataPersister extends AbstractDataPersister
             $attrValue = AttributeFormatter::process($attrValue, $attrType);
             $mapping = Settings::getMappingValue($attrKey);
 
-            if (($mapping === 'global_attribute' || $mapping === 'text_attribute') && $attrValue) {
+            if (($mapping === 'global_attribute' || $mapping === 'text_attribute') && ( $attrValue || $attrType === 'pim_catalog_boolean')) {
                 if ($mapping === 'global_attribute') {
 
                     $taxonomy = 'pa_' . strtolower($attrKey);
