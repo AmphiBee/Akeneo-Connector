@@ -96,8 +96,6 @@ class ProductDataPersister extends AbstractDataPersister
                 }
             }
 
-
-            var_dump($finalProduct['sku']);
             $this->makeProduct($finalProduct);
 
 
