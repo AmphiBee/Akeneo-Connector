@@ -8,15 +8,26 @@ namespace AmphiBee\AkeneoConnector\DataProvider;
 
 use Generator;
 use Monolog\Logger;
-use AmphiBee\AkeneoConnector\Entity\Akeneo\Category;
 use AmphiBee\AkeneoConnector\Service\LoggerService;
-use Akeneo\Pim\ApiClient\AkeneoPimClientInterface;
+use AmphiBee\AkeneoConnector\Service\Akeneo\AkeneoPimClientInterface;
 use Akeneo\Pim\ApiClient\Api\CategoryApiInterface;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
+use AmphiBee\AkeneoConnector\Entity\Akeneo\Category as AK_Category;
+use AmphiBee\AkeneoConnector\Entity\WooCommerce\Category as WP_Category;
 
 class CategoryDataProvider extends AbstractDataProvider
 {
-    private CategoryApiInterface $categoryApi;
+    /**
+     * The API instance
+     */
+    private CategoryApiInterface $api;
+
+
+    /**
+     * The default conversion behaviour for this entity
+     */
+    protected static string $default_target = WP_Category::class;
+
 
     /**
      * Category constructor.
@@ -25,10 +36,11 @@ class CategoryDataProvider extends AbstractDataProvider
      */
     public function __construct(AkeneoPimClientInterface $client)
     {
-        $this->categoryApi = $client->getCategoryApi();
+        $this->api = $client->getCategoryApi();
 
         parent::__construct();
     }
+
 
     /**
      * @param int   $pageSize
@@ -38,9 +50,26 @@ class CategoryDataProvider extends AbstractDataProvider
      */
     public function getAll(int $pageSize = 10, array $queryParameters = []): Generator
     {
-        foreach ($this->categoryApi->all($pageSize, $queryParameters) as $category) {
+        foreach ($this->api->all($pageSize, $queryParameters) as $category) {
             try {
-                yield $this->getSerializer()->denormalize($category, Category::class);
+                $prepare = [
+                    'code'                  => $category['code'],
+                    'parent'                => $category['parent'],
+                    'labels'                => $category['labels'],
+                    'description'           => $category['description'],
+                    'descriptionEN'         => $category['descriptionEN'],
+                    'categoryContentText'   => $category['categoryContentText'],
+                    'categoryContentTextEN' => $category['categoryContentTextEN'],
+                    'miniature'             => $category['miniature'],
+                    'categoryContentImage'  => $category['categoryContentImage'],
+                    'target'                => $this->getConversionTarget($category['code']),
+                ];
+
+                $metas_datas = array_diff_key($category, $prepare);
+
+                $prepare['meta_datas'] = $metas_datas;
+
+                yield $this->getSerializer()->denormalize($prepare, AK_Category::class);
             } catch (ExceptionInterface $exception) {
                 LoggerService::log(Logger::ERROR, sprintf(
                     'Cannot Denormalize category (CategoryCode %s) %s',
@@ -53,22 +82,23 @@ class CategoryDataProvider extends AbstractDataProvider
         }
     }
 
-    public static function findCategoryByAkeneoCode($akeneoCode) : int
-    {
-        $args = [
-            'hide_empty'    => false,
-            'fields'        => 'ids',
-            'taxonomy'      => 'product_cat',
-            'meta_query'    => [
-                'relation'  => 'AND',
-                [
-                    'key'   => '_akeneo_code',
-                    'value' => $akeneoCode,
-                ]
-            ]
-        ];
-        $term_query = new \WP_Term_Query( $args );
 
-        return count($term_query->terms) > 0 ? $term_query->terms[0] : 0;
+    /**
+     * Determine wich target to use for entity conversion from Akaneo to Wordpress
+     *
+     * @param string $type The Reference data name
+     * @param string $code The Reference data item code
+     *
+     * @return string The target entity class
+     */
+    public function getConversionTarget($code): string
+    {
+        $target = static::$default_target;
+
+        // TODO: Create & Read target settings /!\
+
+        $target = apply_filters("ak/f/import/single/target/category/code={$code}", $target);
+
+        return $target;
     }
 }

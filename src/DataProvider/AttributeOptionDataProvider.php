@@ -6,7 +6,7 @@
 
 namespace AmphiBee\AkeneoConnector\DataProvider;
 
-use Akeneo\Pim\ApiClient\AkeneoPimClientInterface;
+use AmphiBee\AkeneoConnector\Service\Akeneo\AkeneoPimClientInterface;
 use Akeneo\Pim\ApiClient\Api\AttributeOptionApiInterface;
 use AmphiBee\AkeneoConnector\Entity\Akeneo\Option;
 use AmphiBee\AkeneoConnector\Service\LoggerService;

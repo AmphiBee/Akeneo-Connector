@@ -2,14 +2,20 @@
     "name": "amphibee/akeneo-connector",
     "description": "Connect Akeneo with WooCommerce",
     "keywords": ["wordpress", "plugin"],
-    "version": "0.0.1",
+    "version": "1.12.2",
     "homepage": "https://amphibee.fr",
     "license": "GPL-3.0+",
-    "authors": [{
-        "name": "AmphiBee",
-        "email": "hello@amphibee.fr",
-        "homepage": "https://amphibee.fr"
-    }],
+    "authors": [
+        {
+            "name": "AmphiBee",
+            "email": "hello@amphibee.fr",
+            "homepage": "https://amphibee.fr"
+        },
+        {
+            "name": "Thomas Georgel",
+            "email": "thomas@hydrat.agency"
+        }
+    ],
     "type": "wordpress-plugin",
     "require": {
         "php": ">=7.2.0",
@@ -20,7 +26,10 @@
         "symfony/serializer": "^5.2",
         "symfony/property-access": "^5.2",
         "wp-cli/wp-cli": "^2.4",
-        "monolog/monolog": "^2.2"
+        "monolog/monolog": "^2.2",
+        "akeneo/api-php-client-ee": "^6.0",
+        "tgeorgel/objectpress": " dev-dev-2.0",
+        "amphibee/hookable": " dev-main"
     },
     "require-dev": {
         "phpro/grumphp": "^0.20.0",

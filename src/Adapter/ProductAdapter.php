@@ -7,25 +7,34 @@
 
 namespace AmphiBee\AkeneoConnector\Adapter;
 
-use AmphiBee\AkeneoConnector\Entity\Akeneo\Product as AkeneoProduct;
-use AmphiBee\AkeneoConnector\Entity\WooCommerce\Product as WooCommerceProduct;
+use AmphiBee\AkeneoConnector\Entity\Akeneo\Product as AK_Product;
+use AmphiBee\AkeneoConnector\Entity\WooCommerce\Product as WP_Product;
 
 class ProductAdapter
 {
     /**
-     * @param AkeneoProduct $akeneoProduct
-     *
-     * @return WooCommerceProduct
+     * Creates a WP Product from an Akeneo Product.
      */
-    public function getWordpressProduct(AkeneoProduct $akeneoProduct): WooCommerceProduct
+    public function fromProduct(AK_Product $ak_product): WP_Product
     {
-        $product = new WooCommerceProduct($akeneoProduct->getIdentifier());
-        $product->setEnabled($akeneoProduct->isEnabled());
-        $product->setParent($akeneoProduct->getParent());
-        $product->setValues($akeneoProduct->getValues());
-        $product->setCategories($akeneoProduct->getCategories());
-        $product->setAssociation($akeneoProduct->getAssociations());
+        $product = new WP_Product($ak_product->getIdentifier());
+
+        $product->setEnabled($ak_product->isEnabled());
+        $product->setParent($ak_product->getParent());
+        $product->setValues($ak_product->getValues());
+        $product->setCategories($ak_product->getCategories());
+        $product->setAssociation($ak_product->getAssociations());
 
         return $product;
+    }
+
+    /**
+     * @param AK_Product $ak_product
+     *
+     * @return WP_Product
+     */
+    public function getWordpressProduct(AK_Product $ak_product): WP_Product
+    {
+        return $this->fromProduct($ak_product);
     }
 }

@@ -10,7 +10,6 @@
     <rule ref="rulesets/codesize.xml/ExcessiveClassComplexity"/>
     <rule ref="rulesets/codesize.xml/ExcessiveClassLength"/>
     <rule ref="rulesets/codesize.xml/ExcessiveMethodLength"/>
-    <rule ref="rulesets/codesize.xml/ExcessiveParameterList"/>
     <rule ref="rulesets/design.xml/EvalExpression"/>
     <rule ref="rulesets/design.xml/ExitExpression"/>
     <rule ref="rulesets/design.xml/GotoStatement"/>

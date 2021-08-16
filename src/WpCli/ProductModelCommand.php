@@ -1,39 +1,53 @@
 <?php
-/**
- * This file is part of the Amphibee package.
- * (c) Amphibee <hello@amphibee.fr>
- */
 
 namespace AmphiBee\AkeneoConnector\WpCli;
 
 use AmphiBee\AkeneoConnector\Adapter\ModelAdapter;
 use AmphiBee\AkeneoConnector\DataPersister\ModelDataPersister;
-use AmphiBee\AkeneoConnector\Entity\Akeneo\Category as AkeneoCategory;
 use AmphiBee\AkeneoConnector\Service\AkeneoClientBuilder;
-use AmphiBee\AkeneoConnector\Service\LoggerService;
-use Monolog\Logger;
-use WP_CLI;
 
-class ProductModelCommand
+/**
+ * This file is part of the Amphibee package.
+ *
+ * @package    AmphiBee/AkeneoConnector
+ * @author     Amphibee & tgeorgel
+ * @license    MIT
+ * @copyright  (c) Amphibee <hello@amphibee.fr>
+ * @since      1.1
+ * @access     public
+ */
+class ProductModelCommand extends AbstractCommand
 {
+    public static string $name = 'models';
+
+    public static string $desc = 'Supports Akaneo Product Models import';
+
+    public static string $long_desc = '';
+
+
+    /**
+     * Run the import command.
+     */
     public function import(): void
     {
-        WP_CLI::warning('Import Started');
-        LoggerService::log(Logger::DEBUG, 'Starting product model import');
+        # Debug
+        $this->print('Starting product model import');
 
-        $modelProvider = AkeneoClientBuilder::create()->getProductModelProvider();
-        $modelAdapter = new ModelAdapter();
-        $modelPersister = new ModelDataPersister();
+        $provider  = AkeneoClientBuilder::create()->getProductModelProvider();
+        $adapter   = new ModelAdapter();
+        $persister = new ModelDataPersister();
 
-        /** @var AkeneoCategory $category */
-        foreach ($modelProvider->getAll() as $AknModel) {
-            LoggerService::log(Logger::DEBUG, sprintf('Running ProductModel Code: %s', $AknModel->getCode()));
+        do_action('ak/a/product_models/before_import', $provider->getAll());
 
-            $wooCommerceModel = $modelAdapter->getWordpressModel($AknModel);
-            $modelPersister->createOrUpdateModel($wooCommerceModel);
+        $models = apply_filters('ak/f/product_models/import_data', iterator_to_array($provider->getAll()));
+
+        foreach ($models as $ak_model) {
+            $this->print(sprintf('Running Product Model with code: %s', $ak_model->getCode()));
+
+            $wp_model = $adapter->fromModel($ak_model);
+            $persister->createOrUpdate($wp_model);
         }
 
-        LoggerService::log(Logger::DEBUG, 'Ending product model import');
-        WP_CLI::success('Import OK');
+        do_action('ak/a/product_models/after_import', $provider->getAll());
     }
 }

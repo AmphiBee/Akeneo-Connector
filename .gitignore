@@ -15,3 +15,6 @@
 
 # Composer
 /vendor
+
+cache/*
+!cache/.gitkeep

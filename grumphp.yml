@@ -25,11 +25,13 @@ grumphp:
       ignore_patterns:
         - config/bootstrap.php
         - public/index.php
+        - src
     phpmd:
       ruleset: [phpmd.xml]
       exclude:
         - config/bootstrap.php
         - public/index.php
+        - src
   testsuites:
     quality:
       tasks:

@@ -1,90 +1,130 @@
 <?php
-/**
- * This file is part of the Amphibee package.
- * (c) Amphibee <hello@amphibee.fr>
- */
 
 namespace AmphiBee\AkeneoConnector\WpCli;
 
 use AmphiBee\AkeneoConnector\Adapter\AttributeOptionAdapter;
 use AmphiBee\AkeneoConnector\DataPersister\OptionDataPersister;
-use AmphiBee\AkeneoConnector\DataProvider\AttributeOptionDataProvider;
-use AmphiBee\AkeneoConnector\Entity\Akeneo\Attribute;
+use AmphiBee\AkeneoConnector\Entity\Akeneo\Attribute as AK_Attribute;
 use AmphiBee\AkeneoConnector\Service\AkeneoClientBuilder;
-use AmphiBee\AkeneoConnector\Service\LoggerService;
-use Monolog\Logger;
-use WP_CLI;
 
-class AttributeOptionCommand
+/**
+ * This file is part of the Amphibee package.
+ *
+ * @package    AmphiBee/AkeneoConnector
+ * @author     Amphibee & tgeorgel
+ * @license    MIT
+ * @copyright  (c) Amphibee <hello@amphibee.fr>
+ * @since      1.1
+ * @access     public
+ */
+class AttributeOptionCommand extends AbstractCommand
 {
-    private ?AttributeOptionDataProvider $AttributeOptionDataProvider = null;
-    private ?AttributeOptionAdapter $attributeOptionAdapter = null;
-    private ?OptionDataPersister $optionDataPersister = null;
+    public static string $name = 'options';
 
-    private const ALLOWED_TYPES = ['pim_catalog_simpleselect', 'pim_catalog_multiselect'];
+    public static string $desc = 'Supports Akaneo Attribute Options import';
 
+    public static string $long_desc = '';
+
+    private const ALLOWED_TYPES = [
+        'pim_catalog_simpleselect',
+        'pim_catalog_multiselect',
+        'pim_reference_data_simpleselect',
+        'pim_reference_data_multiselect',
+    ];
+
+    /**
+     * Run the import command.
+     */
     public function import(): void
     {
-        $attributeDataProvider = AkeneoClientBuilder::create()->getAttributeProvider();
+        # Debug
+        $this->print('Starting options import');
 
-        /** @var Attribute $aknAttr */
-        foreach ($attributeDataProvider->getAll() as $aknAttr) {
-            if (!in_array($aknAttr->getType(), self::ALLOWED_TYPES)) {
+        $provider = AkeneoClientBuilder::create()->getAttributeProvider();
+
+        do_action('ak/a/options/before_import', $provider->getAll());
+
+        $attribute_data = apply_filters('ak/f/options/import_data', iterator_to_array($provider->getAll()));
+
+        foreach ($attribute_data as $ak_attribute) {
+            if (!in_array($ak_attribute->getType(), static::ALLOWED_TYPES)) {
                 continue;
             }
 
-            LoggerService::log(Logger::DEBUG, sprintf('Running Options for AttrCode: %s', $aknAttr->getCode()));
-            WP_CLI::warning(sprintf('Running Options for AttrCode: %s', $aknAttr->getCode()));
+            $this->print(sprintf('Running Options for Attribute with code: %s', $ak_attribute->getCode()));
 
-            $this->getAttrsOptions($aknAttr);
+            if (preg_match('/^pim_reference_data_/', $ak_attribute->getType())) {
+                $this->importReferenceDataOptions($ak_attribute);
+            } else {
+                $this->importAttributeOptions($ak_attribute);
+            }
         }
+
+        do_action('ak/a/options/after_import', $provider->getAll());
     }
 
-    public function getAttrsOptions(Attribute $attribute): void
-    {
-        /** @var Attribute $AknAttr */
-        foreach ($this->getAttributeOptionDataProvider()->getAll($attribute->getCode()) as $AknAttrOption) {
-            LoggerService::log(Logger::DEBUG, sprintf('Running AttrOptionCode: %s', $AknAttrOption->getCode()));
-            WP_CLI::warning(sprintf('Running Option Code: %s', $AknAttrOption->getCode()));
-
-            $wooCommerceAttrOption = $this->getAttributeOptionAdapter()->getWordpressAttributeOption($AknAttrOption);
-            $this->getOptionDataPersister()->createOrUpdateOption($wooCommerceAttrOption);
-        }
-    }
 
     /**
-     * @return AttributeOptionDataProvider
+     * Get single attribute options and sync it into database
+     *
+     * @return void
      */
-    private function getAttributeOptionDataProvider(): AttributeOptionDataProvider
+    public function importAttributeOptions(AK_Attribute $ak_attribute): void
     {
-        if (!$this->AttributeOptionDataProvider) {
-            $this->AttributeOptionDataProvider = AkeneoClientBuilder::create()->getAttributeOptionProvider();
+        $code      = $ak_attribute->getCode();
+        $prodiver  = AkeneoClientBuilder::create()->getAttributeOptionProvider();
+        $adapter   = new AttributeOptionAdapter();
+        $persister = new OptionDataPersister();
+
+        $attribute_options_data = $prodiver->getAll($code);
+
+        do_action("ak/a/options/before_import/attr={$code}", $attribute_options_data);
+
+        $attribute_options_data = apply_filters("ak/f/options/import_data/attr={$code}", iterator_to_array($attribute_options_data));
+
+        # import attribute options
+        foreach ($attribute_options_data as $ak_option) {
+            $this->log(sprintf('Running AttrOptionCode: %s', $ak_option->getCode()));
+
+            $wp_option = $adapter->fromOption($ak_option);
+            $persister->createOrUpdate($wp_option);
         }
 
-        return $this->AttributeOptionDataProvider;
+        do_action("ak/a/options/after_import/attr={$code}", $prodiver);
     }
 
-    /**
-     * @return AttributeOptionAdapter
-     */
-    private function getAttributeOptionAdapter(): AttributeOptionAdapter
-    {
-        if (!$this->attributeOptionAdapter) {
-            $this->attributeOptionAdapter = new AttributeOptionAdapter();
-        }
-
-        return $this->attributeOptionAdapter;
-    }
 
     /**
-     * @return OptionDataPersister
+     * Get single attribute reference datas and sync it into database
+     *
+     * @return void
      */
-    private function getOptionDataPersister(): OptionDataPersister
+    public function importReferenceDataOptions(AK_Attribute $ak_attribute): void
     {
-        if (!$this->optionDataPersister) {
-            $this->optionDataPersister = new OptionDataPersister();
+        $name      = $ak_attribute->getMetaDatas()['reference_data_name'] ?? '';
+        $prodiver  = AkeneoClientBuilder::create()->getCustomReferenceDataProvider();
+        $adapter   = new AttributeOptionAdapter();
+        $persister = new OptionDataPersister();
+
+        if (!$name) {
+            $this->error(sprintf('Could not find `%s` meta_data for attribute `%s`.', 'reference_data_name', $ak_attribute->getCode()));
+            return;
         }
 
-        return $this->optionDataPersister;
+        $attribute_options_data = $prodiver->getAll($name);
+
+        do_action("ak/a/options/before_import/refdata={$name}", $attribute_options_data);
+
+        $attribute_options_data = apply_filters("ak/f/options/import_data/refdata={$name}", iterator_to_array($attribute_options_data));
+
+        # import attribute options
+        foreach ($attribute_options_data as $ak_option) {
+            $this->log(sprintf('Running AttrOptionCode: %s', $ak_option->getCode()));
+
+            $wp_option = $adapter->fromCustomReferenceData($ak_option, $ak_attribute->getCode());
+            $persister->createOrUpdate($wp_option);
+        }
+
+        do_action("ak/a/options/after_import/refdata={$name}", $prodiver);
     }
 }

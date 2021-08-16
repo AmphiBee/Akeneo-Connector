@@ -1,34 +1,57 @@
 <?php
-/**
- * This file is part of the Amphibee package.
- * (c) Amphibee <hello@amphibee.fr>
- */
 
 namespace AmphiBee\AkeneoConnector\WpCli;
 
-use AmphiBee\AkeneoConnector\Adapter\AttributeAdapter;
-use AmphiBee\AkeneoConnector\DataPersister\AttributeDataPersister;
 use AmphiBee\AkeneoConnector\Entity\Akeneo\Attribute;
+use AmphiBee\AkeneoConnector\Adapter\AttributeAdapter;
 use AmphiBee\AkeneoConnector\Service\AkeneoClientBuilder;
-use AmphiBee\AkeneoConnector\Service\LoggerService;
-use Monolog\Logger;
-use WP_CLI;
+use AmphiBee\AkeneoConnector\DataPersister\AttributeDataPersister;
 
-class AttributeCommand
+/**
+ * This file is part of the Amphibee package.
+ *
+ * @package    AmphiBee/AkeneoConnector
+ * @author     Amphibee & tgeorgel
+ * @license    MIT
+ * @copyright  (c) Amphibee <hello@amphibee.fr>
+ * @since      1.1
+ * @access     public
+ */
+class AttributeCommand extends AbstractCommand
 {
+    public static string $name = 'attributes';
+
+    public static string $desc = 'Supports Akaneo Attributes import';
+
+    public static string $long_desc = '';
+
+
+    /**
+     * Run the import command.
+     */
     public function import(): void
     {
+        # Debug
+        $this->print('Starting attributes import');
+
         $attributeDataProvider = AkeneoClientBuilder::create()->getAttributeProvider();
-        $attributeAdapter = new AttributeAdapter();
-        $attrPersister = new AttributeDataPersister();
+        $attributeAdapter      = new AttributeAdapter();
+        $attrPersister         = new AttributeDataPersister();
 
-        /** @var Attribute $AknAttr */
-        foreach ($attributeDataProvider->getAll() as $AknAttr) {
-            LoggerService::log(Logger::DEBUG, sprintf('Running AttrCode: %s', $AknAttr->getCode()));
-            $wooCommerceAttribute = $attributeAdapter->getWordpressAttribute($AknAttr);
-            $attrPersister->importBooleanAttributeOption($wooCommerceAttribute);
+        do_action('ak/attributes/before_import', $attributeDataProvider->getAll());
 
-            WP_CLI::line($AknAttr->getCode());
+        $attribute_data = apply_filters('ak/attributes/import_data', iterator_to_array($attributeDataProvider->getAll()));
+
+        /**
+         * @var Attribute $AknAttr
+         */
+        foreach ($attribute_data as $AknAttr) {
+            $this->print(sprintf('Running AttrCode: %s', $AknAttr->getCode()));
+
+            $wc_attribute = $attributeAdapter->fromAttribute($AknAttr, $this->translator->default);
+            $attrPersister->importBooleanAttributeOption($wc_attribute);
         }
+
+        do_action('ak/attributes/after_import', $attributeDataProvider->getAll());
     }
 }

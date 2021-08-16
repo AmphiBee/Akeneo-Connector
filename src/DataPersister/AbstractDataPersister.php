@@ -6,14 +6,16 @@
 
 namespace AmphiBee\AkeneoConnector\DataPersister;
 
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
+use AmphiBee\AkeneoConnector\Helpers\Translator;
+use Symfony\Component\Serializer\Encoder\XmlEncoder;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 
 abstract class AbstractDataPersister
 {
     protected Serializer $serializer;
+    protected Translator $translator;
 
     /**
      * AbstractEndpoint constructor.
@@ -21,6 +23,7 @@ abstract class AbstractDataPersister
     public function __construct()
     {
         $this->serializer = $this->createSerializer();
+        $this->translator = new Translator;
     }
 
     /**

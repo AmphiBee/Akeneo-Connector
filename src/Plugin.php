@@ -1,15 +1,21 @@
 <?php
-/**
- * This file is part of the Amphibee package.
- * (c) Amphibee <hello@amphibee.fr>
- */
 
 namespace AmphiBee\AkeneoConnector;
 
+use OP\Support\Facades\ObjectPress;
 use AmphiBee\AkeneoConnector\Admin\Settings;
-use AmphiBee\AkeneoConnector\DataPersister\AttributeDataPersister;
 use AmphiBee\AkeneoConnector\WpCli\CommandLoader;
 
+/**
+ * This file is part of the Amphibee package.
+ *
+ * @package    AmphiBee/AkeneoConnector
+ * @author     Amphibee & tgeorgel
+ * @license    MIT
+ * @copyright  (c) Amphibee <hello@amphibee.fr>
+ * @since      1.1
+ * @access     public
+ */
 class Plugin
 {
     private static ?Plugin $instance = null;
@@ -17,6 +23,8 @@ class Plugin
     public string $prefix;
     public string $version;
     public string $file;
+
+    protected static array $errors = [];
 
     /**
      * Creates an instance if one isn't already available,
@@ -29,44 +37,53 @@ class Plugin
     public static function getInstance(string $file): Plugin
     {
         if (!isset(self::$instance) && !(self::$instance instanceof self)) {
-            self::$instance = new self;
-
-            if (!function_exists('get_plugin_data')) {
-                include_once(ABSPATH . 'wp-admin/includes/plugin.php');
-            }
-
-            $data = get_plugin_data($file);
-
-            self::$instance->name = $data['Name'];
-            self::$instance->prefix = 'akeneo_connector';
-            self::$instance->version = $data['Version'];
-            self::$instance->file = $file;
-
-            self::$instance->run();
+            self::$instance = new self($file);
         }
 
         return self::$instance;
     }
 
+
+    private function __construct(string $file)
+    {
+        if (!function_exists('get_plugin_data')) {
+            include_once(ABSPATH . 'wp-admin/includes/plugin.php');
+        }
+
+        $data = get_plugin_data($file);
+
+        $this->name = $data['Name'];
+        $this->prefix = 'akeneo_connector';
+        $this->version = $data['Version'];
+        $this->file = $file;
+
+        $this->run();
+    }
+
+
     /**
      * Execution function which is called after the class has been initialized.
      * This contains hook and filter assignments, etc.
+     *
+     * @return void
      */
     private function run()
     {
+        add_action('plugins_loaded', array($this, 'bootObjectPress'));
         add_action('plugins_loaded', array($this, 'loadPluginTextdomain'));
 
-        if ( is_admin() ) {
+        if (is_admin()) {
             new Settings();
         }
 
         new CommandLoader();
-
-        new AttributeDataPersister();
     }
+
 
     /**
      * Load translation files from the indicated directory.
+     *
+     * @return void
      */
     public function loadPluginTextdomain(): void
     {
@@ -75,5 +92,37 @@ class Plugin
             false,
             sprintf('%s/languages', dirname(plugin_basename($this->file)))
         );
+    }
+
+
+    /**
+     * Boot ObjectPress library
+     *
+     * @return void
+     */
+    public function bootObjectPress(): void
+    {
+        ObjectPress::boot(__DIR__ . '/../config');
+    }
+
+
+    /**
+     * Append an error message to display on plugin admin page
+     *
+     * @return void
+     */
+    public static function addErrorMessage($message)
+    {
+        static::$errors[] = sprintf('Akeneo Connector : %s', $message);
+    }
+
+    /**
+     * Get error message to display on plugin admin page
+     *
+     * @return array
+     */
+    public static function getErrorMessages(): array
+    {
+        return static::$errors;
     }
 }

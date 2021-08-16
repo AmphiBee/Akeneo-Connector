@@ -6,72 +6,44 @@
 
 namespace AmphiBee\AkeneoConnector\DataPersister;
 
-use AmphiBee\AkeneoConnector\Entity\WooCommerce\Category;
-use AmphiBee\AkeneoConnector\Service\LoggerService;
 use Monolog\Logger;
+use OP\Lib\WpEloquent\Model\Term;
+use OP\Lib\WpEloquent\Model\Meta\TermMeta;
+use AmphiBee\AkeneoConnector\Helpers\InsertTerm;
+use AmphiBee\AkeneoConnector\Service\LoggerService;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
+use AmphiBee\AkeneoConnector\Entity\WooCommerce\Category as WP_Category;
 
 class CategoryDataPersister extends AbstractDataPersister
 {
-    private static $parent_ignore = [];
     /**
-     * @param Category $category
-     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
-     * @todo remove suppress warning
+     * Create or Update an existing product category in the database.
+     *
+     * @support translations
      */
-    public function createOrUpdateCategory(Category $category): void
+    public function createOrUpdate(WP_Category $category): void
     {
         try {
+            $ids = [];
 
-            // @todo dynamiser
-            $base_category = '2_default_category';
+            # Make sure to only loop on locales active on both WordPress & current category
+            $category_locales  = array_keys($category->getLabels());
+            $available_locales = $this->translator->mergeAvailables($category_locales);
 
-            $catAsArray = $this->getSerializer()->normalize($category);
-
-            $termId = $this->findCategoryByAkeneoCode($category->getName());
-
-            if (
-                ($catAsArray['parent'] === 'root_category' && $catAsArray['name'] !== $base_category) ||
-                in_array($catAsArray['parent'], self::$parent_ignore)
-            ) {
-                self::$parent_ignore[] = $catAsArray['name'];
-                return;
+            foreach ($available_locales as $locale) {
+                # Save ids in array to sync them as translation of each others
+                $slug       = $this->translator->localeToSlug($locale);
+                $ids[$slug] = $this->updateSingleTerm($category, $locale);
             }
 
-            // don't import base cat
-            if ($catAsArray['parent'] === 'root_category') {
-                return;
+            $ids = array_filter($ids);
+
+            # Set terms as translation of each others
+            if (count($ids) > 1) {
+                $this->translator->syncTerms($ids);
             }
 
-            // @todo implement polylang
-            $language = 'fr_FR';
-            $termName = $catAsArray['labels'][$language];
-            $akeneoCode = $catAsArray['name'];
-
-            $catAsArray['parent'] = $catAsArray['parent'] === 'root_category' ? 0 : $this->findCategoryByAkeneoCode($catAsArray['parent']);
-
-            unset($catAsArray['labels']);
-            unset($catAsArray['name']);
-
-            if ($termId > 0 || term_exists($termName, 'product_cat')) {
-                $catAsArray['name'] = $termName;
-                \wp_update_term(
-                    $termId,
-                    'product_cat',
-                    $catAsArray
-                );
-            } else {
-                $term = \wp_insert_term(
-                    $termName,
-                    'product_cat',
-                    $catAsArray
-                );
-                $termId = $term['term_id'];
-            }
-            update_term_meta($termId, '_akeneo_code', $akeneoCode);
-
-            do_action('ak/category/after_save', $termId, $catAsArray);
-
+            # catch error
         } catch (ExceptionInterface $e) {
             LoggerService::log(Logger::ERROR, sprintf(
                 'Cannot Normalize category (Category Code %s) %s',
@@ -83,26 +55,92 @@ class CategoryDataPersister extends AbstractDataPersister
         }
     }
 
-    public function findCategoryByAkeneoCode($akeneoCode) : int
-    {
-        $args = [
-            'hide_empty'    => false,
-            'fields'        => 'ids',
-            'taxonomy'      => 'product_cat',
-            'meta_query'    => [
-                'relation'  => 'AND',
-                [
-                    'key'   => '_akeneo_code',
-                    'value' => $akeneoCode,
-                ]
-            ]
-        ];
-        $term_query = new \WP_Term_Query( $args );
 
-        if ($term_query->terms === null) {
+    /**
+     * Save a single category by locale.
+     *
+     * @param WP_Category  $category
+     * @param string       $locale
+     *
+     * @return int
+     */
+    private function updateSingleTerm(WP_Category $category, string $locale): int
+    {
+        $name   = $category->getName();
+        $labels = $category->getLabels();
+        $parent = $category->getParent();
+        $label  = $labels[$locale];
+
+        if (!$label) {
+            LoggerService::log(Logger::ERROR, sprintf('Missing term label for option code `%s` and locale `%s`', $name, $locale));
             return 0;
         }
 
-        return count($term_query->terms) > 0 ? $term_query->terms[0] : 0;
+        # Check if the term exists for the given locale
+        $term = $category->getTermByAkeneoCode($locale);
+
+        # Create term if doesn't exists
+        if (!$term) {
+            # Use InsertTerm class to force create term even if translated name is the same as another
+            $term = (new InsertTerm($label, 'product_cat'))->addTerm();
+
+            if (!is_array($term) || !isset($term['term_id'])) {
+                LoggerService::log(Logger::ERROR, sprintf('Could not create term `%s` for locale `%s`.', $label, $locale));
+                return 0;
+            }
+
+            $term = Term::findOrFail($term['term_id']);
+        }
+
+        # Update label
+        $term->name = $label;
+        $term->save();
+
+        # Assign parent
+        if ($parent) {
+            $parent = (new WP_Category($parent))->getTermByAkeneoCode($locale);
+
+            # Update termtax
+            $term->taxonomy->parent = $parent ? $parent->id : 0;
+            $term->taxonomy->save();
+        }
+
+        # Save meta datas
+        $term->meta()->saveMany([
+            TermMeta::updateSingle('_akeneo_code', $name, $term->id),
+            TermMeta::updateSingle('_akeneo_lang', $locale, $term->id),
+        ]);
+
+        # Define the current term lang
+        if ($this->translator->active()) {
+            $this->translator->setTermLang($term->id, $locale);
+        }
+
+        # Additonal metas using wp filters
+        $this->addAdditionalMetas($category, $locale, $term->id);
+
+        # Actions
+        do_action('ak/a/category/single/after_save', $term->id, $category, $locale);
+        do_action("ak/a/category/single/after_save/category={$name}", $term->id, $category, $locale);
+
+        return $term->id;
+    }
+
+
+    /**
+     * Add additionnal metas to the term before going to the next one.
+     *
+     * @return void
+     */
+    private function addAdditionalMetas(WP_Category $catgory, string $locale, $term_id)
+    {
+        # Add custom metas using filters
+        $additionnal_metas = (array) apply_filters("ak/f/categories/import/additionnal_metas/catgory={$catgory->getName()}", [], $catgory, $locale);
+
+        foreach ($additionnal_metas as $meta_key => $meta_value) {
+            if (is_string($meta_key) && $meta_value) {
+                update_term_meta($term_id, $meta_key, $meta_value);
+            }
+        }
     }
 }

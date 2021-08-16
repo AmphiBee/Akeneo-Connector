@@ -20,10 +20,10 @@ class ModelDataPersister extends AbstractDataPersister
      * @SuppressWarnings(PHPMD.UnusedLocalVariable)
      * @todo remove suppress warning
      */
-    public function createOrUpdateModel(Model $model): void
+    public function createOrUpdate(Model $model): void
     {
         try {
-            $modelAsArray = $this->getSerializer()->normalize($model);
+            // $modelAsArray = $this->getSerializer()->normalize($model);
             //@todo save in WC
         } catch (ExceptionInterface $e) {
             LoggerService::log(Logger::ERROR, sprintf(

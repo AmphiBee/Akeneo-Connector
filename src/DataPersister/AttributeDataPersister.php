@@ -7,64 +7,81 @@
 
 namespace AmphiBee\AkeneoConnector\DataPersister;
 
-use AmphiBee\AkeneoConnector\Adapter\AttributeAdapter;
-use AmphiBee\AkeneoConnector\Admin\Settings;
-use AmphiBee\AkeneoConnector\Entity\WooCommerce\Attribute;
-use AmphiBee\AkeneoConnector\Entity\WooCommerce\Category;
-use AmphiBee\AkeneoConnector\Service\AkeneoClientBuilder;
-use AmphiBee\AkeneoConnector\Service\LoggerService;
 use Monolog\Logger;
+use OP\Lib\WpEloquent\Model\Term;
+use OP\Lib\WpEloquent\Model\Meta\TermMeta;
+use AmphiBee\AkeneoConnector\Admin\Settings;
+use AmphiBee\AkeneoConnector\Helpers\Fetcher;
+use AmphiBee\AkeneoConnector\Facade\LocaleStrings;
+use AmphiBee\AkeneoConnector\Service\LoggerService;
+use AmphiBee\AkeneoConnector\Entity\WooCommerce\Attribute;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 
 class AttributeDataPersister extends AbstractDataPersister
 {
-
-    public function __construct()
-    {
-        if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
-            add_action('admin_init', [$this, 'attributeRegister']);
-        }
-    }
-
-    public function attributeRegister() {
-        // Get any existing copy of our transient data
-
-        if ( false === ( $taxonomies = get_transient( '_ak_attributes' ) ) ) {
-            $attributeDataProvider = AkeneoClientBuilder::create()->getAttributeProvider();
-            $attributeAdapter = new AttributeAdapter();
-            /** @var \AmphiBee\AkeneoConnector\Entity\Akeneo\Attribute $AknAttr */
-            foreach ($attributeDataProvider->getAll() as $AknAttr) {
-                $wooCommerceAttribute = $attributeAdapter->getWordpressAttribute($AknAttr);
-                $taxonomies[] = [
-                    'code' => $wooCommerceAttribute->getCode(),
-                    'name' => $wooCommerceAttribute->getName(),
-                    'type' => $wooCommerceAttribute->getType(),
-                ];
-            }
-            set_transient( '_ak_attributes',$taxonomies, 12 * HOUR_IN_SECONDS );
-        }
-        foreach ($taxonomies as $taxonomy) {
-            $this->createOrUpdateAttribute($taxonomy['code'], $taxonomy['name'], $taxonomy['type']);
-        }
-    }
-
     /**
      * @param Attribute $attribute
-     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
-     *
-     * @todo remove suppress warning
      */
     public function importBooleanAttributeOption($attr): void
     {
         try {
-            $attrCode = $attr->getCode();
-            $mapping = Settings::getMappingValue($attrCode);
-            if ($mapping === 'global_attribute' && $attr->getType() === 'pim_catalog_boolean') {
-                $choices = ['Oui', 'Non'];
-                foreach ($choices as $choice) {
-                    $taxonomy = strtolower("pa_{$attrCode}");
-                    if (taxonomy_exists($taxonomy) && !term_exists($choice, $taxonomy)) {
-                        wp_insert_term($choice, $taxonomy);
+            $code     = $attr->getCode();
+            $mapping  = Settings::getMappingValue($code);
+            $lang     = $this->translator;
+            $original = null;
+
+            if ($mapping !== 'global_attribute' || $attr->getType() !== 'pim_catalog_boolean') {
+                return;
+            }
+
+            $taxonomy = strtolower("pa_{$code}");
+
+            // TODO: read mo/php lang file to get current language booleans translations
+            $choices = [
+                'true'  => 'Yes',
+                'false' => 'No',
+            ];
+
+            # Make sure to start with default language first
+            $locales = [$lang->default] + array_diff($lang->available, [$lang->default]);
+
+            foreach ($choices as $val => $choice) {
+                LocaleStrings::register($val, $choice);
+
+                foreach ($locales as $i => $locale) {
+                    $term_name = $i === 0 ? $choice : $lang->getStringIn($choice, 'Akeneo Options', $locale);
+
+                    # Get term for current language
+                    $term = Fetcher::getTermBooleanByAkeneoCode($val, $taxonomy, $locale);
+
+                    # Not exists, create
+                    if (!$term) {
+                        $inserted = wp_insert_term($term_name, $taxonomy);
+                        $inserted = (is_array($inserted) && isset($inserted['term_id'])) ? $inserted['term_id'] : null;
+
+                        if (!$inserted) {
+                            LoggerService::log(Logger::ERROR, sprintf('Cannot create term %s for %s taxonomy (locale: %s)', $term_name, $taxonomy, $locale));
+                            continue;
+                        }
+
+                        $term = Term::findOrFail($inserted);
+
+                        $term->meta()->saveMany([
+                            TermMeta::updateSingle('_akeneo_opt_boolean', $val, $term->id),
+                            TermMeta::updateSingle('_akeneo_lang', $locale, $term->id),
+                        ]);
+                    }
+
+                    if ($i === 0) {
+                        $original = $term;
+                    }
+
+                    # Sync post as translations of each other
+                    if ($original->id !== $term->id) {
+                        $sync = $lang->getTermTranslations($original->id);
+                        $sync[$lang->localeToSlug($locale)] = $term->id;
+
+                        $lang->syncTerms($sync);
                     }
                 }
             }
@@ -78,42 +95,32 @@ class AttributeDataPersister extends AbstractDataPersister
         }
     }
 
+
     /**
-     * @param Attribute $attribute
-     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
-     *
-     * @todo remove suppress warning
+     * @param array $attribute [code, name, type, locale]
      */
-    public function createOrUpdateAttribute($attrCode, $attrName, $attrType): void
+    public function createOrUpdateFromArray(array $attribute)
     {
         try {
-            $mapping = Settings::getMappingValue($attrCode);
+            $mapping = Settings::getMappingValue($attribute['code']);
 
-            if ($mapping === 'global_attribute') {
+            if ($mapping !== 'global_attribute') {
+                return;
+            }
 
-                $attributes = \wc_get_attribute_taxonomies();
-                $slugs = \wp_list_pluck( $attributes, 'attribute_name' );
-                if ( ! in_array( $attrCode, $slugs ) ) {
-                    $args = array(
-                        'slug'    => $attrCode,
-                        'name'   => $attrName,
-                        'type'    => 'select',
-                        'orderby' => 'menu_order',
-                        'has_archives'  => false,
-                    );
-                    \wc_create_attribute( $args );
+            $attributes = \wc_get_attribute_taxonomies();
+            $slugs      = \wp_list_pluck($attributes, 'attribute_name');
 
-                    if ($attrType === 'pim_catalog_boolean') {
-                        $choices = ['Oui', 'Non'];
+            if (! in_array($attribute['code'], $slugs)) {
+                $args = array(
+                    'slug'         => $attribute['code'],
+                    'name'         => $attribute['name'],
+                    'type'         => 'select',
+                    'orderby'      => 'menu_order',
+                    'has_archives' => false,
+                );
 
-                        foreach ($choices as $choice) {
-                            $taxonomy = strtolower("pa_{$attrCode}");
-                            if (taxonomy_exists($taxonomy) && !term_exists($choice, $taxonomy)) {
-                                wp_insert_term($choice, $taxonomy);
-                            }
-                        }
-                    }
-                }
+                \wc_create_attribute($args);
             }
         } catch (ExceptionInterface $e) {
             LoggerService::log(Logger::ERROR, sprintf(
@@ -123,5 +130,19 @@ class AttributeDataPersister extends AbstractDataPersister
             ));
             return;
         }
+    }
+
+
+    /**
+     * @param Attribute $attribute
+     */
+    public function createOrUpdateAttribute($attrCode, $attrName, $attrType)
+    {
+        return $this->createOrUpdateFromArray([
+            'code'   => $attrCode,
+            'name'   => $attrName,
+            'type'   => $attrType,
+            'locale' => 'fr_FR',
+        ]);
     }
 }

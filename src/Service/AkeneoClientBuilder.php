@@ -6,25 +6,36 @@
 
 namespace AmphiBee\AkeneoConnector\Service;
 
-use Akeneo\Pim\ApiClient\AkeneoPimClientBuilder;
-use Akeneo\Pim\ApiClient\AkeneoPimClientInterface;
-use AmphiBee\AkeneoConnector\DataProvider\AttributeDataProvider;
-use AmphiBee\AkeneoConnector\DataProvider\AttributeOptionDataProvider;
-use AmphiBee\AkeneoConnector\DataProvider\CategoryDataProvider;
-use AmphiBee\AkeneoConnector\DataProvider\ProductDataProvider;
-use AmphiBee\AkeneoConnector\DataProvider\ProductModelDataProvider;
+use AmphiBee\AkeneoConnector\Service\Akeneo\AkeneoPimClientBuilder;
+use AmphiBee\AkeneoConnector\Service\Akeneo\AkeneoPimClientInterface;
+use Akeneo\PimEnterprise\ApiClient\AkeneoPimEnterpriseClientBuilder;
+use Akeneo\PimEnterprise\ApiClient\AkeneoPimEnterpriseClientInterface;
+
 use AmphiBee\AkeneoConnector\Entity\Akeneo\Credentials;
+use AmphiBee\AkeneoConnector\DataProvider\ProductDataProvider;
+use AmphiBee\AkeneoConnector\DataProvider\CategoryDataProvider;
+use AmphiBee\AkeneoConnector\DataProvider\AttributeDataProvider;
+use AmphiBee\AkeneoConnector\DataProvider\ProductModelDataProvider;
+use AmphiBee\AkeneoConnector\DataProvider\AttributeOptionDataProvider;
+use AmphiBee\AkeneoConnector\DataProvider\Enterprise\ReferenceEntityDataProvider;
+use AmphiBee\AkeneoConnector\DataProvider\CustomReferenceDataProvider;
 
 class AkeneoClientBuilder
 {
     private ?AkeneoPimClientInterface $client = null;
+    private ?AkeneoPimEnterpriseClientInterface $enterprise_client = null;
 
     private Credentials $credentials;
+
+    # Akaneo endpoints
     private CategoryDataProvider $category;
     private AttributeDataProvider $attribute;
     private AttributeOptionDataProvider $attributeOption;
     private ProductModelDataProvider $productModel;
     private ProductDataProvider $product;
+
+    # Custom endpoints
+    private CustomReferenceDataProvider $customReferenceData;
 
     /**
      * AkeneoClientBuilder constructor.
@@ -33,11 +44,18 @@ class AkeneoClientBuilder
     {
         $this->credentials = AkeneoCredentialsBuilder::getCredentials();
 
-        $this->category = new CategoryDataProvider($this->getClient());
-        $this->attribute = new AttributeDataProvider($this->getClient());
+        # General
+        $this->category        = new CategoryDataProvider($this->getClient());
+        $this->attribute       = new AttributeDataProvider($this->getClient());
         $this->attributeOption = new AttributeOptionDataProvider($this->getClient());
-        $this->productModel = new ProductModelDataProvider($this->getClient());
-        $this->product = new ProductDataProvider($this->getClient());
+        $this->productModel    = new ProductModelDataProvider($this->getClient());
+        $this->product         = new ProductDataProvider($this->getClient());
+
+        # Enterprise
+        // $this->referenceEntity = new ReferenceEntityDataProvider($this->getEnterpriseClient());
+
+        # Custom endpoints
+        $this->customReferenceData = new CustomReferenceDataProvider($this->getClient());
     }
 
     /**
@@ -64,6 +82,24 @@ class AkeneoClientBuilder
         }
 
         return $this->client;
+    }
+
+    /**
+     * @return AkeneoPimEnterpriseClientInterface
+     */
+    public function getEnterpriseClient(): AkeneoPimEnterpriseClientInterface
+    {
+        if (!$this->enterprise_client) {
+            $akeneoClientBuilder = new AkeneoPimEnterpriseClientBuilder($this->credentials->getHost());
+            $this->enterprise_client = $akeneoClientBuilder->buildAuthenticatedByPassword(
+                $this->credentials->getClientID(),
+                $this->credentials->getClientSecret(),
+                $this->credentials->getUser(),
+                $this->credentials->getPassword(),
+            );
+        }
+
+        return $this->enterprise_client;
     }
 
     /**
@@ -104,5 +140,21 @@ class AkeneoClientBuilder
     public function getProductProvider(): ProductDataProvider
     {
         return $this->product;
+    }
+
+    /**
+     * @return ReferenceEntityDataProvider
+     */
+    public function getReferenceEntityProvider(): ReferenceEntityDataProvider
+    {
+        return $this->referenceEntity;
+    }
+
+    /**
+     * @return CustomReferenceDataProvider
+     */
+    public function getCustomReferenceDataProvider(): CustomReferenceDataProvider
+    {
+        return $this->customReferenceData;
     }
 }

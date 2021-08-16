@@ -11,7 +11,7 @@ use AmphiBee\AkeneoConnector\Entity\Akeneo\Model;
 use Generator;
 use Monolog\Logger;
 use AmphiBee\AkeneoConnector\Service\LoggerService;
-use Akeneo\Pim\ApiClient\AkeneoPimClientInterface;
+use AmphiBee\AkeneoConnector\Service\Akeneo\AkeneoPimClientInterface;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 
 class ProductModelDataProvider extends AbstractDataProvider

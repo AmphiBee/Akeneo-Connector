@@ -7,21 +7,66 @@
 
 namespace AmphiBee\AkeneoConnector\DataPersister;
 
-use AmphiBee\AkeneoConnector\Adapter\ProductAdapter;
-use AmphiBee\AkeneoConnector\Admin\Settings;
-use AmphiBee\AkeneoConnector\DataProvider\AttributeDataProvider;
-use AmphiBee\AkeneoConnector\DataProvider\CategoryDataProvider;
-use AmphiBee\AkeneoConnector\Entity\WooCommerce\i18n;
-use AmphiBee\AkeneoConnector\Entity\WooCommerce\Option;
-use AmphiBee\AkeneoConnector\Entity\WooCommerce\Product;
-use AmphiBee\AkeneoConnector\Helpers\AttributeFormatter;
-use AmphiBee\AkeneoConnector\Service\AkeneoClientBuilder;
 use Monolog\Logger;
+use OP\Lib\WpEloquent\Model\Post;
+use AmphiBee\AkeneoConnector\Admin\Settings;
+use AmphiBee\AkeneoConnector\Helpers\Fetcher;
 use AmphiBee\AkeneoConnector\Service\LoggerService;
+use AmphiBee\AkeneoConnector\Helpers\AttributeFormatter;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
+use AmphiBee\AkeneoConnector\DataProvider\AttributeDataProvider;
+use AmphiBee\AkeneoConnector\Entity\WooCommerce\Product as WP_Product;
 
 class ProductDataPersister extends AbstractDataPersister
 {
+    /**
+     * The default product structure.
+     *
+     * @var array
+     */
+    protected static $base_product = [
+        'type'              => 'simple',
+        'name'              => '',
+        'description'       => '',
+        'short_description' => '',
+        'images'            => [],
+        'sku'               => '',
+        'regular_price'     => '',
+        'sale_price'        => '',
+        'reviews_allowed'   => '',
+        'attributes'        => [],
+        'metas'             => [],
+        'product_cat'       => [],
+        'external_media'    => [],
+        'external_gallery'  => [],
+        'upsells'           => [],
+        'cross_sells'       => [],
+    ];
+
+    /**
+     * The product attributes mapping aliases.
+     *
+     * @var array
+     */
+    protected static $aliases = [
+        'post_title'     => 'name',
+        'post_excerpt'   => 'short_description',
+        'post_content'   => 'description',
+        'post_thumbnail' => 'thumbnail',
+        'ugs'            => 'sku',
+        'gallery'        => 'images',
+    ];
+
+    /**
+     * The attributes mapping that should be decoded using json_decode().
+     *
+     * @var array
+     */
+    protected static $cast_json = [
+        'external_media',
+        'external_gallery',
+    ];
+
 
     /**
      * @param Product $product
@@ -29,76 +74,35 @@ class ProductDataPersister extends AbstractDataPersister
      * @SuppressWarnings(PHPMD.UnusedLocalVariable)
      * @todo remove suppress warning
      */
-    public function createOrUpdateProduct(Product $product): void
+    public function createOrUpdate(WP_Product $product): void
     {
         try {
-            $productAsArray = $this->getSerializer()->normalize($product);
-
-            $languages = i18n::getLanguages();
-
             if (!$product->isEnabled()) {
                 return;
             }
 
-            $baseProduct = [
-                'type' => 'simple',
-                'name' => '',
-                'description' => '',
-                'short_description' => '',
-                'images' =>  [],
-                'sku' => '',
-                'regular_price' => '',
-                'sale_price' => '',
-                'reviews_allowed' => '',
-                'attributes' => [],
-                'metas' => [],
-                'product_cat' => [],
-                'external_media' => [],
-                'upsells' => [],
-                'cross_sells' => [],
-            ];
+            $ids = [];
 
-            foreach ($productAsArray as $attrName=>$value) {
-                $finalProduct = $baseProduct;
+            $available_locales = $this->translator->available;
 
-                if ($attrName == 'values') {
-                    $this->formatAttributes($finalProduct, $value);
-                }
+            foreach ($available_locales as $locale) {
+                $slug = $this->translator->localeToSlug($locale);
+
+                # Set current lang context, to avoid unwanted translations by Polylang/WPML
+                $this->translator->setCurrentLang($slug);
+
+                # Save ids in array to sync them as translation of each others
+                $ids[$slug] = $this->updateSingleProduct($product, $locale);
             }
 
-            $associations = $product->getAssociation();
+            $ids = array_filter($ids);
 
-            if (count($associations) > 0) {
-                // upsell
-                if (isset($associations['UPSELL'])) {
-                    $finalProduct['upsells'] = $associations['UPSELL']['products'];
-                }
-
-                // cross sell
-                if (isset($associations['CROSSSELL'])) {
-                    $finalProduct['cross_sells'] = $associations['CROSSSELL']['products'];
-                }
+            # Set terms as translation of each others
+            if (count($ids) > 1) {
+                $this->translator->syncPosts($ids);
             }
 
-            $finalProduct['product_id'] = $this->findProductByAkeneoCode($product->getCode());
-            $finalProduct['metas']['_akeneo_code'] = $product->getCode();
-
-            if ($finalProduct['sku'] === '') {
-                $finalProduct['sku'] = $product->getCode();
-            }
-
-            if ($cats = $product->getCategories()) {
-                foreach ($cats as $cat) {
-                    $idCat = CategoryDataProvider::findCategoryByAkeneoCode($cat);
-                    if ($idCat > 0) {
-                        $finalProduct['product_cat'][] = $idCat;
-                    }
-                }
-            }
-
-            $this->makeProduct($finalProduct);
-
-
+            # catch error
         } catch (ExceptionInterface $e) {
             LoggerService::log(Logger::ERROR, sprintf(
                 'Cannot Normalize Product (ModelCode %s) %s',
@@ -110,33 +114,179 @@ class ProductDataPersister extends AbstractDataPersister
         }
     }
 
-    public function findProductByAkeneoCode($akeneoCode) : int
+
+    /**
+     * Save a single product by locale.
+     *
+     * @param WP_Category  $category
+     * @param string       $locale
+     *
+     * @return int
+     */
+    public function updateSingleProduct(WP_Product $product, string $locale)
     {
-        $args = [
-            'fields'        => 'ids',
-            'post_type'      => 'product',
-            'post_status' => ['publish', 'pending', 'draft', 'auto-draft', 'future', 'private', 'inherit'],
-            'meta_query'    => [
-                'relation'  => 'OR',
-                [
-                    'key'   => '_akeneo_code',
-                    'value' => $akeneoCode,
-                ],
-                [
-                    'key'   => '_sku',
-                    'value' => $akeneoCode,
-                ]
-            ]
-        ];
+        $product_parsed = static::$base_product;
 
-        $query = new \WP_Query( $args );
+        $this->formatAttributes($product_parsed, $product->getValues(), $locale);
+        $this->formatAssociations($product_parsed, $product->getAssociation());
 
-        return count($query->posts) > 0 ? $query->posts[0] : 0;
+        # A girl has no name.
+        if (!$product_parsed['name']) {
+            return 0;
+        }
+
+        $product_parsed['product_id']            = Fetcher::getProductIdBySku($product->getCode(), $locale);
+        $product_parsed['metas']['_akeneo_lang'] = $locale;
+
+        if ($product_parsed['sku'] === '') {
+            $product_parsed['sku'] = $product->getCode();
+        }
+
+        if ($cats = $product->getCategories()) {
+            foreach ($cats as $cat) {
+                $idCat = Fetcher::getTermIdByAkeneoCode($cat, 'product_cat', $locale);
+
+                if ($idCat > 0) {
+                    $product_parsed['product_cat'][] = $idCat;
+                }
+            }
+        }
+
+        $product_id = $this->makeProduct($product_parsed, $locale);
+
+        if ($product_id) {
+            $this->translator->setPostLang($product_id, $locale);
+        }
+
+        return $product_id;
     }
 
-    public function makeProduct($args) {
 
-        $type = $args['type'];
+    /**
+     * Format the Akeneo attributes for Wordpress, reading the mapping values.
+     *
+     * @param array &$product  The product as array containing WooCommerce data
+     * @param array $attrs     The Attributes
+     * @param array $locale    The current locale
+     *
+     * @return void
+     */
+    public function formatAttributes(array &$product, array $attrs, string $locale)
+    {
+        $aliases  = static::$aliases;
+
+        foreach ($attrs as $attr_key => $attr_value) {
+            $attr_type  = AttributeDataProvider::getAttributeType($attr_key);
+            $attr_value = AttributeFormatter::process($attr_value, $attr_type, $locale);
+            $mapping    = Settings::getMappingValue($attr_key);
+
+            if (!$attr_value) {
+                continue;
+            }
+
+            if (in_array($mapping, ['global_attribute', 'text_attribute'])) {
+                if ($mapping === 'global_attribute') {
+                    $taxonomy = sprintf('pa_%s', strtolower($attr_key));
+
+                    if ($attr_type === 'pim_catalog_boolean') {
+                        $label      = $attr_value === true ? 'true' : 'false';
+                        $term       = Fetcher::getTermBooleanByAkeneoCode($label, $taxonomy, $locale);
+                        $attr_value = (array) ($term ? $term->term_id : null);
+                    } else {
+                        # If we got an array
+                        if (is_array($attr_value)) {
+                            # Flatten array, needed for WooCommerce
+                            if (isset($attr_value[0][0])) {
+                                $attr_value = AttributeFormatter::arrayFlatten($attr_value);
+                            }
+
+                            $terms = [];
+
+                            foreach ($attr_value as $val) {
+                                $terms[] = Fetcher::getTermIdByAkeneoCode($val, $taxonomy, $locale);
+                            }
+
+                            $attr_value = array_filter($terms);
+
+                        # If we got a string
+                        } elseif (is_string($attr_value)) {
+                            $option     = Fetcher::getTermIdByAkeneoCode($attr_value, $taxonomy, $locale);
+                            $attr_value = $option ? [$option] : [];
+                        }
+                    }
+                } else {
+                    $attr_key = AttributeDataProvider::getAttributeLabel($attr_key);
+                }
+
+                $product['attributes'][$attr_key] = [
+                    'is_taxonomy'  => ($mapping === 'global_attribute'),
+                    'is_visible'   => true,
+                    'is_variation' => false,
+                ];
+
+                if ($mapping === 'global_attribute') {
+                    $product['attributes'][$attr_key]['term_ids'] = $attr_value;
+                } else {
+                    $product['attributes'][$attr_key]['value'] = (array) $attr_value;
+                }
+            } elseif ($mapping === 'post_meta') {
+                $product['metas'][$attr_key] = $attr_value;
+            } elseif ($mapping === 'external_media') {
+                $attr_key = AttributeDataProvider::getAttributeLabel($attr_key, $locale);
+                $product['external_media'][$attr_key] = $attr_value;
+            } elseif ($mapping === 'product_tag') {
+                $ids    = [];
+
+                foreach ($attr_value as $value) {
+                    $ids[] = Fetcher::getTermIdByAkeneoCode($value, 'product_tag', $locale);
+                }
+
+                $product['product_tag'] = array_merge(($product['product_tag'] ?? []), array_filter($ids));
+            } else {
+                if (array_key_exists($mapping, $aliases)) {
+                    $mapping = $aliases[$mapping];
+                }
+                if (in_array($mapping, static::$cast_json) && is_string($attr_value)) {
+                    $attr_value = json_decode($attr_value);
+                }
+                $product[$mapping] = $attr_value;
+            }
+        }
+    }
+
+
+    /**
+     * Format the Akeneo attributes for Wordpress, reading the mapping values.
+     *
+     * @param array &$product      The product as array containing WooCommerce data
+     * @param array $associations  The associations
+     *
+     * @return void
+     */
+    public function formatAssociations(array &$product, array $associations)
+    {
+        if (count($associations) > 0) {
+            // upsell
+            if (isset($associations['UPSELL'])) {
+                $product['upsells'] = $associations['UPSELL']['products'];
+            }
+
+            // cross sell
+            if (isset($associations['CROSSSELL'])) {
+                $product['cross_sells'] = $associations['CROSSSELL']['products'];
+            }
+        }
+    }
+
+
+    /**
+     * Make or update a product from parsed array.
+     *
+     * @return int The product id
+     */
+    public function makeProduct($args, $locale): ?int
+    {
+        $type       = $args['type'];
         $product_id = $args['product_id'];
 
         // Get an instance of the WC_Product object (depending on his type)
@@ -152,7 +302,9 @@ class ProductDataPersister extends AbstractDataPersister
 
         // Product name (Title) and slug
         $product->set_name($args['name']); // Name (title).
-        if (isset($args['slug'])) $product->set_name($args['slug']);
+        if (isset($args['slug'])) {
+            $product->set_slug($args['slug']);
+        }
 
         // Description and short description:
         $product->set_description($args['description']);
@@ -168,16 +320,16 @@ class ProductDataPersister extends AbstractDataPersister
         $product->set_virtual(isset($args['virtual']) ? $args['virtual'] : false);
 
         // Menu order
-        if (isset($args['menu_order'])) $product->set_menu_order($args['menu_order']);
-
-        // Product categories and Tags
-        if (isset($args['category_ids'])) $product->set_category_ids('category_ids');
-        if (isset($args['tag_ids'])) $product->set_tag_ids($args['tag_ids']);
+        if (isset($args['menu_order'])) {
+            $product->set_menu_order($args['menu_order']);
+        }
 
         // Prices
-        $product->set_regular_price($args['regular_price']);
-        $product->set_sale_price(isset($args['sale_price']) ? $args['sale_price'] : '');
-        $product->set_price(isset($args['sale_price']) ? $args['sale_price'] : $args['regular_price']);
+        $regular = isset($args['regular_price'][0]) ? collect($args['regular_price'][0])->get('amount', '') : ($args['regular_price'] ?? '');
+        $sale    = isset($args['sale_price'][0]) ? collect($args['sale_price'][0])->get('amount', '') : ($args['sale_price'] ?? '');
+        $product->set_regular_price($regular);
+        $product->set_sale_price($sale ?: '');
+        $product->set_price($sale ?: $regular);
 
         if (isset($args['sale_price'])) {
             $product->set_date_on_sale_from(isset($args['sale_from']) ? $args['sale_from'] : '');
@@ -202,14 +354,13 @@ class ProductDataPersister extends AbstractDataPersister
         $product->set_reviews_allowed(isset($args['reviews']) ? $args['reviews'] : false);
         $product->set_purchase_note(isset($args['note']) ? $args['note'] : '');
 
-
         // Sold Individually
         $product->set_sold_individually(isset($args['sold_individually']) ? $args['sold_individually'] : false);
 
         // SKU and Stock (Not a virtual product)
-        $virtual = isset($args['virtual']) && !$args['virtual'];
+        $virtual      = isset($args['virtual']) && !$args['virtual'];
         $manage_stock = isset($args['manage_stock']) ? $args['manage_stock'] : false;
-        $backorders = isset($args['backorders']) ? $args['backorders'] : 'no';
+        $backorders   = isset($args['backorders']) ? $args['backorders'] : 'no';
         $stock_status = isset($args['stock_status']) ? $args['stock_status'] : 'instock';
 
         if (!$virtual) {
@@ -224,19 +375,20 @@ class ProductDataPersister extends AbstractDataPersister
         }
 
         // Weight, dimensions and shipping class
-        $product->set_weight(isset($args['weight']) ? $args['weight'] : '');
-        $product->set_length(isset($args['length']) ? $args['length'] : '');
-        $product->set_width(isset($args['width']) ? $args['width'] : '');
-        $product->set_height(isset($args['height']) ? $args['height'] : '');
+        if (isset($args['weight'])) {
+            $weight = $args['weight']['amount'] ?? $args['weight'];
+        }
+        $product->set_weight($weight ?? '');
+        $product->set_length($args['length'] ?? '');
+        $product->set_width($args['width'] ?? '');
+        $product->set_height($args['height'] ?? '');
 
-        if (isset($args['shipping_class_id'])) $product->set_shipping_class_id($args['shipping_class_id']);
+        if (isset($args['shipping_class_id'])) {
+            $product->set_shipping_class_id($args['shipping_class_id']);
+        }
 
         // Downloadable (boolean)
         $product->set_downloadable(isset($args['downloadable']) ? $args['downloadable'] : false);
-
-        if (count($args['product_cat']) > 0) {
-            $product->set_category_ids($args['product_cat']);
-        }
 
         if (isset($args['downloadable']) && $args['downloadable']) {
             $product->set_downloads(isset($args['downloads']) ? $args['downloads'] : []);
@@ -272,27 +424,65 @@ class ProductDataPersister extends AbstractDataPersister
             $product->set_default_attributes($args['default_attributes']);
         }
 
-        $product_id = $product->save();
 
-        foreach ($args['metas'] as $meta_key=>$meta_value) {
-            $meta_key = apply_filters('ak/product/meta_key', $meta_key, $meta_value, $product_id);
-            $meta_value = apply_filters('ak/product/meta_value', $meta_value, $product_id, $meta_key);
+        /**
+         * SAVE
+         */
+        $product_id = $product->save();
+        /**
+         * SAVE
+         */
+
+
+        /**
+         * Sync the taxonomies. We don't use something like `$product->set_category_ids()`
+         * on purpose to avoid getting terms translated by Polylang/WPML.
+         */
+        $taxonomies = [
+            'product_cat' => $args['product_cat'] ?? [],
+            'product_tag' => $args['product_tag'] ?? [],
+        ];
+
+        $model = Post::with('taxonomies')->findOrFail($product_id);
+
+        # Get the post terms ids grouped by taxonomy
+        $model_terms = $model->taxonomies->groupBy('taxonomy')->map(function ($group) {
+            return $group->map(function ($item) {
+                return $item->term->id;
+            });
+        })->toArray();
+
+
+        # Replace the product taxonomy terms by new ones
+        foreach ($taxonomies as $taxonomy => $terms) {
+            if (!empty($terms)) {
+                $model_terms[$taxonomy] = $terms;
+            }
+        }
+
+        # Sync all taxonomies pivots for this model
+        $model->taxonomies()->sync(array_flatten($model_terms));
+
+
+        foreach ($args['metas'] as $meta_key => $meta_value) {
+            $meta_key   = apply_filters('ak/f/product/single/meta_key', $meta_key, $meta_value, $product_id);
+            $meta_value = apply_filters('ak/f/product/single/meta_value', $meta_value, $product_id, $meta_key);
             update_post_meta($product_id, $meta_key, $meta_value);
         }
 
         // Upsell and Cross sell (IDs) after all product saved
 
-        add_action('ak/product/after_import', function($products) use ($product, $args) {
-
-            $upsells = [];
+        add_action('ak/a/products/after_import', function ($products) use ($product, $args, $locale) {
+            $upsells     = [];
             $cross_sells = [];
+
             foreach (['upsells', 'cross_sells'] as $association) {
                 if (count($args[$association]) == 0) {
                     continue;
                 }
 
                 foreach ($args[$association] as $associationSku) {
-                    $associationId = Product::getProductIdFromSku($associationSku);
+                    $associationId = Fetcher::getProductIdBySku($associationSku, $locale);
                     if ($associationId > 0) {
                         array_push($$association, $associationId);
                     }
@@ -304,11 +494,22 @@ class ProductDataPersister extends AbstractDataPersister
             $product->save();
         });
 
-        do_action('ak/product/external_gallery', $product_id, $args['external_gallery']);
-        do_action('ak/product/external_media', $product_id, $args['external_media']);
+        // ak/a/product/single/external_gallery
 
-        do_action('ak/product/after_save', $product_id, $args);
+        # Actions
+        do_action('ak/a/product/single/external_gallery', $product_id, $args['external_gallery'] ?? [], $locale);
+        do_action('ak/a/product/single/external_media', $product_id, $args['external_media'] ?? [], $locale);
+        do_action('ak/a/product/single/after_save', $product_id, $args, $locale);
+
+        # Keep this for backwards compatibility
+        do_action('ak/product/external_gallery', $product_id, $args['external_gallery'] ?? [], $locale);
+        do_action('ak/product/external_media', $product_id, $args['external_media'] ?? [], $locale);
+        do_action('ak/product/after_save', $product_id, $args, $locale);
+
+
+        return $product_id;
     }
+
 
     /**
      * Create product attributes if needed
@@ -322,24 +523,27 @@ class ProductDataPersister extends AbstractDataPersister
         $position = 0;
 
         foreach ($attributes as $taxonomy => $values) {
-
             if ($values['is_taxonomy']) {
                 $taxonomy = strtolower('pa_' . $taxonomy);
-                if (!taxonomy_exists($taxonomy)) {
+
+                if (!taxonomy_exists($taxonomy) || !isset($values['term_ids']) || !is_array($values['term_ids'])) {
                     continue;
                 }
 
                 // Get an instance of the WC_Product_Attribute Object
                 $attribute = new \WC_Product_Attribute();
 
+                /**
+                 * What is this section for ?
+                 * We are getting ids from database, they should already exists.
+                 */
                 // Loop through the term names
-
-                foreach ($values['term_ids'] as $key=>$term_id) {
-                    // Get and set the term ID in the array from the term name
-                    if (!\term_exists($term_id, $taxonomy)) {
-                        unset($values['term_ids'][$key]);
-                    }
-                }
+                // foreach ($values['term_ids'] as $key => $term_id) {
+                //     // Get and set the term ID in the array from the term name
+                //     if (!\term_exists($term_id, $taxonomy)) {
+                //         unset($values['term_ids'][$key]);
+                //     }
+                // }
 
 
                 $taxonomy_id = \wc_attribute_taxonomy_id_by_name($taxonomy); // Get taxonomy ID
@@ -370,78 +574,5 @@ class ProductDataPersister extends AbstractDataPersister
         }
 
         return $data;
-    }
-
-    public function formatAttributes(array &$product, array $attrs) {
-        foreach ($attrs as $attrKey=>$attrValue) {
-            $attrType = AttributeDataProvider::getAttributeType($attrKey);
-            $attrValue = AttributeFormatter::process($attrValue, $attrType);
-            $mapping = Settings::getMappingValue($attrKey);
-
-            if (($mapping === 'global_attribute' || $mapping === 'text_attribute') && ( $attrValue || $attrType === 'pim_catalog_boolean')) {
-                if ($mapping === 'global_attribute') {
-
-                    $taxonomy = 'pa_' . strtolower($attrKey);
-                    if ($attrType === 'pim_catalog_boolean') {
-                        $boolLabel = $attrValue === true ? 'Oui' : 'Non';
-                        $term = get_term_by('name', $boolLabel, $taxonomy);
-                        $attrValue = (array) $term->term_id;
-                    } else {
-                        $assocValues = [];
-                        // Flatten array, needed for WooCommerce
-                        if (isset($attrValue[0][0])) {
-                            $attrValue = AttributeFormatter::arrayFlatten($attrValue);
-                        }
-
-                        foreach ($attrValue as $val) {
-                            $option = (new Option($val))->findOptionByAkeneoCode($taxonomy);
-
-                            if ($option > 0) {
-                                $assocValues[] = $option;
-                            }
-                        }
-                        $attrValue = $assocValues;
-                    }
-
-                } else {
-                    $attrKey = AttributeDataProvider::getAttributeLabel($attrKey);
-                }
-
-                $product['attributes'][$attrKey] = [
-                    'is_taxonomy' => ($mapping === 'global_attribute'),
-                    'is_visible' => true,
-                    'is_variation' => false,
-                ];
-
-                if ($mapping === 'global_attribute') {
-                    $product['attributes'][$attrKey]['term_ids'] = $attrValue;
-                } else {
-                    $product['attributes'][$attrKey]['value'] = (array)$attrValue;
-                }
-
-            } elseif ($mapping === 'post_title') {
-                $product['name'] = $attrValue;
-            } elseif ($mapping === 'post_excerpt') {
-                $product['short_description'] = $attrValue;
-            } elseif ($mapping === 'post_content') {
-                $product['description'] = $attrValue;
-            } elseif ($mapping === 'post_thumbnail') {
-                $product['thumbnail'] = $attrValue;
-            } elseif ($mapping === 'ugs') {
-                $product['sku'] = $attrValue;
-            } elseif ($mapping === 'gallery') {
-                $product['images'] = $attrValue;
-            } elseif ($mapping === 'post_title') {
-                $product['name'] = $attrValue;
-            } elseif ($mapping === 'post_meta') {
-                $product['metas'][$attrKey] = $attrValue;
-            } elseif ($mapping === 'external_media') {
-                $attrKey = AttributeDataProvider::getAttributeLabel($attrKey);
-                $product['external_media'][$attrKey] = $attrValue;
-            } else {
-                $product[$mapping] = $attrValue;
-            }
-        }
-
     }
 }

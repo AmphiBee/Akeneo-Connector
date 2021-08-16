@@ -18,6 +18,36 @@ class Category implements LocalizableEntityInterface
     private ?string $categoryContentTextEN;
     private ?string $miniature;
     private ?string $categoryContentImage;
+    private string $target;
+    private array $metaDatas;
+
+
+    public function __construct(
+        string $code,
+        ?string $parent,
+        array $labels,
+        string $target,
+        array $metaDatas,
+        ?string $description,
+        ?string $descriptionEN,
+        ?string $categoryContentText,
+        ?string $categoryContentTextEN,
+        ?string $miniature,
+        ?string $categoryContentImage
+    ) {
+        $this->code = $code;
+        $this->parent = $parent;
+        $this->labels = $labels;
+        $this->target = $target;
+        $this->metaDatas = $metaDatas;
+        $this->description = $description;
+        $this->descriptionEN = $descriptionEN;
+        $this->categoryContentText = $categoryContentText;
+        $this->categoryContentTextEN = $categoryContentTextEN;
+        $this->miniature = $miniature;
+        $this->categoryContentImage = $categoryContentImage;
+    }
+
 
     /**
      * @return string
@@ -194,6 +224,46 @@ class Category implements LocalizableEntityInterface
     public function setCategoryContentImage(?string $categoryContentImage): self
     {
         $this->categoryContentImage = $categoryContentImage;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTarget(): string
+    {
+        return $this->target;
+    }
+
+    /**
+     * @param string $entity
+     *
+     * @return $this
+     */
+    public function setTarget(string $entity): self
+    {
+        $this->target = $entity;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getMetaDatas(): array
+    {
+        return $this->metaDatas;
+    }
+
+    /**
+     * @param string $code
+     *
+     * @return $this
+     */
+    public function setMetaDatas(array $metaDatas): self
+    {
+        $this->metaDatas = $metaDatas;
 
         return $this;
     }

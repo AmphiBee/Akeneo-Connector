@@ -6,50 +6,75 @@
 
 namespace AmphiBee\AkeneoConnector\DataProvider;
 
-use Akeneo\Pim\ApiClient\AkeneoPimClientInterface;
-use Akeneo\Pim\ApiClient\Api\AttributeApiInterface;
-use AmphiBee\AkeneoConnector\Entity\Akeneo\Attribute;
-use AmphiBee\AkeneoConnector\Service\AkeneoClientBuilder;
-use AmphiBee\AkeneoConnector\Service\LoggerService;
 use Generator;
 use Monolog\Logger;
+use AmphiBee\AkeneoConnector\Helpers\Translator;
+use Akeneo\Pim\ApiClient\Api\AttributeApiInterface;
+use AmphiBee\AkeneoConnector\Service\LoggerService;
+use AmphiBee\AkeneoConnector\Service\AkeneoClientBuilder;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
+use AmphiBee\AkeneoConnector\Entity\Akeneo\Attribute as AK_Attribute;
+use AmphiBee\AkeneoConnector\Service\Akeneo\AkeneoPimClientInterface;
+use AmphiBee\AkeneoConnector\Entity\WooCommerce\Attribute as WP_Attribute;
 
 class AttributeDataProvider extends AbstractDataProvider
 {
-    private AttributeApiInterface $attributeApi;
-    private static $attributes = null;
+    /**
+     * The API instance
+     */
+    private AttributeApiInterface $api;
 
     /**
-     * Category constructor.
+     * Store values in here to avoid useless API queries.
+     */
+    private static $attributes = [];
+
+    /**
+     * The default conversion behaviour for this entity
+     */
+    protected static string $default_target = WP_Attribute::class;
+
+
+    /**
+     * Class constructor.
      *
      * @param AkeneoPimClientInterface $client
      */
     public function __construct(AkeneoPimClientInterface $client)
     {
-        $this->attributeApi = $client->getAttributeApi();
+        $this->api = $client->getAttributeApi();
 
         parent::__construct();
     }
 
+
+    /**
+     * Query API first time to store attributes type & labels
+     *
+     * @return array
+     */
     public static function getAttributes()
     {
-        if (is_null(self::$attributes)) {
+        if (!isset(self::$attributes)) {
             self::$attributes = [];
-            $attributeDataProvider = AkeneoClientBuilder::create()->getAttributeProvider();
-            foreach ($attributeDataProvider->getAll() as $attribute) {
-                $labels = $attribute->getLabels();
 
-                // @todo polylang
-                $language = 'fr_FR';
-                $attributeName = $labels[$language];
+            $provider = AkeneoClientBuilder::create()->getAttributeProvider();
+
+            foreach ($provider->getAll() as $attribute) {
+                $labels       = $attribute->getLabels();
+                $group_labels = $attribute->getGroupLabels();
+
+                if (empty($labels)) {
+                    $labels = $group_labels;
+                }
 
                 self::$attributes[$attribute->getCode()] = [
-                    'type' => $attribute->getType(),
-                    'label' => $attributeName,
+                    'type'  => $attribute->getType(),
+                    'label' => $labels,
                 ];
             }
         }
+
         return self::$attributes;
     }
 
@@ -60,11 +85,16 @@ class AttributeDataProvider extends AbstractDataProvider
         return isset($attributes[$attrCode]) ? $attributes[$attrCode]['type'] : 'pim_catalog_text';
     }
 
-    public static function getAttributeLabel($attrCode)
+    public static function getAttributeLabel($attrCode, $locale = '')
     {
+        if (!$locale) {
+            $locale = (new Translator())->default;
+        }
+
         $attributes = self::getAttributes();
-        return isset($attributes[$attrCode]) ? $attributes[$attrCode]['label'] : $attrCode;
+        return $attributes[$attrCode]['label'][$locale] ?? $attrCode;
     }
+
 
     /**
      * @param int   $pageSize
@@ -74,9 +104,23 @@ class AttributeDataProvider extends AbstractDataProvider
      */
     public function getAll(int $pageSize = 10, array $queryParameters = []): Generator
     {
-        foreach ($this->attributeApi->all($pageSize, $queryParameters) as $attribute) {
+        foreach ($this->api->all($pageSize, $queryParameters) as $attribute) {
             try {
-                yield $this->getSerializer()->denormalize($attribute, Attribute::class);
+                $prepare = [
+                    'code'         => $attribute['code'],
+                    'type'         => $attribute['type'],
+                    'localizable'  => $attribute['localizable'],
+                    'group'        => $attribute['group'],
+                    'labels'       => $attribute['labels'],
+                    'group_labels' => $attribute['group_labels'],
+                    'target'       => $this->getConversionTarget($attribute['type'], $attribute['code']),
+                ];
+
+                $metas_datas = array_diff_key($attribute, $prepare);
+
+                $prepare['meta_datas'] = $metas_datas;
+
+                yield $this->getSerializer()->denormalize($prepare, AK_Attribute::class);
             } catch (ExceptionInterface $exception) {
                 LoggerService::log(Logger::ERROR, sprintf(
                     'Cannot Denormalize attribute (AttrCode %s) %s',
@@ -86,5 +130,27 @@ class AttributeDataProvider extends AbstractDataProvider
                 continue;
             }
         }
+    }
+
+
+    /**
+     * Determine wich target to use for entity conversion from Akaneo to Wordpress
+     *
+     * @param string $type The Reference data name
+     * @param string $code The Reference data item code
+     *
+     * @return string The target entity class
+     */
+    public function getConversionTarget($type, $code): string
+    {
+        $target = static::$default_target;
+
+        $target = apply_filters("ak/import/single/target/attribute/type={$type}", $target);
+
+        // TODO: Create & Read target settings /!\
+
+        $target = apply_filters("ak/import/single/target/attribute/type={$type}/code={$code}", $target);
+
+        return $target;
     }
 }

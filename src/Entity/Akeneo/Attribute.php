@@ -15,6 +15,8 @@ class Attribute implements LocalizableEntityInterface
     private bool $localizable;
     private array $labels;
     private array $groupLabels;
+    private string $target;
+    private array $metaDatas;
 
     /**
      * Attribute constructor.
@@ -32,7 +34,9 @@ class Attribute implements LocalizableEntityInterface
         bool $localizable,
         string $group,
         array $labels,
-        array $groupLabels
+        array $groupLabels,
+        string $target,
+        array $metaDatas
     ) {
         $this->code = $code;
         $this->type = $type;
@@ -40,6 +44,8 @@ class Attribute implements LocalizableEntityInterface
         $this->localizable = $localizable;
         $this->labels = $labels;
         $this->groupLabels = $groupLabels;
+        $this->target = $target;
+        $this->metaDatas = $metaDatas;
     }
 
     /**
@@ -158,6 +164,46 @@ class Attribute implements LocalizableEntityInterface
     public function setGroupLabels(array $groupLabels): self
     {
         $this->groupLabels = $groupLabels;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTarget(): string
+    {
+        return $this->target;
+    }
+
+    /**
+     * @param string $entity
+     *
+     * @return $this
+     */
+    public function setTarget(string $entity): self
+    {
+        $this->target = $entity;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getMetaDatas(): array
+    {
+        return $this->metaDatas;
+    }
+
+    /**
+     * @param string $code
+     *
+     * @return $this
+     */
+    public function setMetaDatas(array $metaDatas): self
+    {
+        $this->metaDatas = $metaDatas;
 
         return $this;
     }

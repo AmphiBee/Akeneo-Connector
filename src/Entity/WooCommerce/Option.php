@@ -6,15 +6,21 @@
 
 namespace AmphiBee\AkeneoConnector\Entity\WooCommerce;
 
+use OP\Lib\WpEloquent\Model\Term;
+use AmphiBee\AkeneoConnector\Helpers\Fetcher;
+
 class Option implements WooCommerceEntityInterface
 {
     private string $code;
     private string $attribute;
     private array $labels;
+    private array $meta_datas;
+    private string $reference_data;
 
     public function __construct(string $code)
     {
         $this->code = $code;
+        $this->reference_data = '';
     }
 
     /**
@@ -77,23 +83,69 @@ class Option implements WooCommerceEntityInterface
         return $this;
     }
 
-    public function findOptionByAkeneoCode($attributeName) : int
+    /**
+     * @return array
+     */
+    public function getReferenceData(): string
     {
-        $args = [
-            'hide_empty'    => false,
-            'fields'        => 'ids',
-            'taxonomy'      => strtolower($attributeName),
-            'meta_query'    => [
-                'relation'  => 'AND',
-                [
-                    'key'   => '_akeneo_code',
-                    'value' => $this->getCode(),
-                ]
-            ]
-        ];
+        return $this->reference_data;
+    }
 
-        $term_query = new \WP_Term_Query( $args );
+    /**
+     * @param array $reference_data
+     *
+     * @return $this
+     */
+    public function setReferenceData(string $reference_data): self
+    {
+        $this->reference_data = $reference_data;
 
-        return is_array($term_query->terms) && count($term_query->terms) > 0 ? $term_query->terms[0] : 0;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getMetaDatas(): array
+    {
+        return $this->meta_datas;
+    }
+
+    /**
+     * @param array $meta_datas
+     *
+     * @return $this
+     */
+    public function setMetaDatas(array $meta_datas): self
+    {
+        $this->meta_datas = $meta_datas;
+
+        return $this;
+    }
+
+
+    /**
+     * Try to guess the linked taxonomy to look in, based on Attribute
+     *
+     * @return string
+     */
+    public function guessTaxonomyName(): string
+    {
+        return sprintf('pa_%s', strtolower($this->getAttribute()));
+    }
+
+
+    /**
+     * Search the corresponding term id based on akeneo code.
+     *
+     * @param string $locale    The locale to use
+     * @param string $taxonomy  The taxonomy to look in. If null, we're guessing based on Attribute name
+     *
+     */
+    public function getTermByAkeneoCode(string $locale, ?string $taxonomy = null): ?Term
+    {
+        $taxonomy = $taxonomy ?: $this->guessTaxonomyName();
+
+        return Fetcher::getTermByAkeneoCode($this->getCode(), $taxonomy, $locale);
     }
 }

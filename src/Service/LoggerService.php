@@ -12,6 +12,16 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 
+/**
+ * This file is part of the Amphibee package.
+ *
+ * @package    AmphiBee/AkeneoConnector
+ * @author     Amphibee & tgeorgel
+ * @license    MIT
+ * @copyright  (c) Amphibee <hello@amphibee.fr>
+ * @since      1.1
+ * @access     public
+ */
 class LoggerService
 {
     private const LOG_PATH_DEBUG = ABSPATH . '../../logs/akeneo_connector-debug.log';

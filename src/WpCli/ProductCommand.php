@@ -1,100 +1,56 @@
 <?php
-/**
- * This file is part of the Amphibee package.
- * (c) Amphibee <hello@amphibee.fr>
- */
 
 namespace AmphiBee\AkeneoConnector\WpCli;
 
 use AmphiBee\AkeneoConnector\Adapter\ProductAdapter;
 use AmphiBee\AkeneoConnector\DataPersister\ProductDataPersister;
-use AmphiBee\AkeneoConnector\Entity\Akeneo\Category as AkeneoCategory;
-use AmphiBee\AkeneoConnector\Entity\Akeneo\Product;
 use AmphiBee\AkeneoConnector\Service\AkeneoClientBuilder;
-use AmphiBee\AkeneoConnector\Service\LoggerService;
-use Monolog\Logger;
-use WP_CLI;
 
-class ProductCommand
+/**
+ * This file is part of the Amphibee package.
+ *
+ * @package    AmphiBee/AkeneoConnector
+ * @author     Amphibee & tgeorgel
+ * @license    MIT
+ * @copyright  (c) Amphibee <hello@amphibee.fr>
+ * @since      1.1
+ * @access     public
+ */
+class ProductCommand extends AbstractCommand
 {
-// @todo remove it
-//    protected static $dummyProduct = [
-//        [
-//            'type'               => 'variable', // Simple product by default
-//            'name'               => "The product title",
-//            'description'        => "The product description…",
-//            'short_description'  => "The product short description…",
-//            'sku'                => 'baddd124234',
-//            'regular_price'      => '5.00', // product price
-//            // 'sale_price'         => '',
-//            'reviews_allowed'    => true,
-//            'images'            => [
-//                'https://media3.taklope.com/29439-thickbox_default/chargeur-imate-r4.jpg',
-//                'https://www.recto-versoi.com/sites/default/files/inline-images/test-d-orientation-scolaire_0.jpg',
-//            ],
-//            'attributes'         => [
-//                // Taxonomy and term name values
-//                'color' => [
-//                    'term_names' => ['Red', 'Blue'],
-//                    'is_visible' => true,
-//                    'for_variation' => true,
-//                ],
-//                'size' =>  [
-//                    'term_names' => ['X Large'],
-//                    'is_visible' => true,
-//                    'for_variation' => true,
-//                ],
-//            ],
-//            'variations' => [
-//                [
-//                    'image' => 'https://media3.taklope.com/29439-thickbox_default/chargeur-imate-r4.jpg',
-//                    'attributes' => [
-//                        'size'  => 'M',
-//                        'color' => 'Green',
-//                    ],
-//                    'sku'           => 'ba1234',
-//                    'regular_price' => '122.00',
-//                    'sale_price'    => '',
-//                    'stock_qty'     => 10,
-//                ],
-//                [
-//                    'image' => 'https://www.recto-versoi.com/sites/default/files/inline-images/test-d-orientation-scolaire_0.jpg',
-//                    'attributes' => [
-//                        'size'  => 'X Large',
-//                        'color' => 'Blue',
-//                    ],
-//                    'sku'           => 'ba13426',
-//                    'regular_price' => '126.00',
-//                    'sale_price'    => '',
-//                    'stock_qty'     => 10,
-//                ]
-//            ]
-//        ]
-//    ];
+    public static string $name = 'products';
 
+    public static string $desc = 'Supports Akaneo Products import (including product variations)';
+
+    public static string $long_desc = '';
+
+    /**
+     * Run the import command.
+     */
     public function import(): void
     {
-        WP_CLI::warning('Import Started');
-        LoggerService::log(Logger::DEBUG, 'Starting product import');
+        # Debug
+        $this->print('Starting product import');
 
-        $productProvider = AkeneoClientBuilder::create()->getProductProvider();
-        $productAdapter = new ProductAdapter();
-        $productPersister = new ProductDataPersister();
+        $provider  = AkeneoClientBuilder::create()->getProductProvider();
+        $adapter   = new ProductAdapter();
+        $persister = new ProductDataPersister();
 
-        do_action('ak/product/before_import', $productProvider->getAll());
+        do_action('ak/a/products/before_import', $provider->getAll());
 
-        /** @var Product $aknProduct */
-        foreach ($productProvider->getAll() as $aknProduct) {
-            LoggerService::log(Logger::DEBUG, sprintf('Running ProductCode: %s', $aknProduct->getIdentifier()));
-            WP_CLI::line($aknProduct->getIdentifier());
+        # Allow duplicate SKUs, for translations to work properly
+        add_filter('wc_product_has_unique_sku', '__return_false');
 
-            $wooCommerceProduct = $productAdapter->getWordpressProduct($aknProduct);
-            $productPersister->createOrUpdateProduct($wooCommerceProduct);
+        foreach ($provider->getAll() as $ak_product) {
+            $enabled = $ak_product->isEnabled();
+
+            $this->print(sprintf('Running Product with code: %s, [ Enabled: %s ]', $ak_product->getIdentifier(), $enabled ? 'Yes' : 'No, skipping'));
+
+            $wp_product = $adapter->fromProduct($ak_product);
+            $persister->createOrUpdate($wp_product);
         }
 
-        do_action('ak/product/after_import', $productProvider->getAll());
-
-        LoggerService::log(Logger::DEBUG, 'Ending product import');
-        WP_CLI::success('Import OK');
+        do_action('ak/a/products/after_import', $provider->getAll());
+        do_action('ak/product/after_import', $provider->getAll()); # backwards compatibility
     }
 }
