@@ -52,7 +52,7 @@ abstract class AbstractCommand
     public function __construct()
     {
         # Enable error displaying for debugging on local env or if WP_DEBUG is true
-        if ((defined(WP_DEBUG) && WP_DEBUG) || (defined(WP_ENV) && WP_ENV === 'development')) {
+        if ((defined('WP_DEBUG') && WP_DEBUG) || (defined('WP_ENV') && WP_ENV === 'development')) {
             ini_set('display_errors', '1');
             ini_set('display_startup_errors', '1');
             error_reporting(E_ALL);

@@ -18,9 +18,14 @@ class ModelAdapter
     public function fromModel(AK_Model $ak_model): WP_Model
     {
         $model = new WP_Model($ak_model->getCode());
-        $model->setParent($ak_model->getParent());
 
-        // @todo adapt others needed things
+        $model->setParent($ak_model->getParent());
+        $model->setFamily($ak_model->getFamily());
+        $model->setFamilyVariant($ak_model->getFamilyVariant());
+
+        $model->setValues($ak_model->getValues());
+        $model->setCategories($ak_model->getCategories());
+        $model->setAssociation($ak_model->getAssociations());
 
         return $model;
     }

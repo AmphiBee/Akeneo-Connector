@@ -9,12 +9,13 @@ use AmphiBee\AkeneoConnector\WpCli\CommandLoader;
 /**
  * This file is part of the Amphibee package.
  *
- * @package    AmphiBee/AkeneoConnector
- * @author     Amphibee & tgeorgel
+ * @package    amphibee/akeneo-connector
  * @license    MIT
- * @copyright  (c) Amphibee <hello@amphibee.fr>
- * @since      1.1
- * @access     public
+ * @author     AmphiBee <hello@amphibee.fr>
+ * @author     tgeorgel <thomas@hydrat.agency>
+ * @copyright  (c) AmphiBee <hello@amphibee.fr>
+ * @since      1.1.0
+ * @version    1.13.0
  */
 class Plugin
 {
@@ -25,6 +26,8 @@ class Plugin
     public string $file;
 
     protected static array $errors = [];
+
+    protected const DB_VERSION = '1.13.0';
 
     /**
      * Creates an instance if one isn't already available,
@@ -52,10 +55,10 @@ class Plugin
 
         $data = get_plugin_data($file);
 
-        $this->name = $data['Name'];
-        $this->prefix = 'akeneo_connector';
+        $this->name    = $data['Name'];
+        $this->prefix  = 'akeneo_connector';
         $this->version = $data['Version'];
-        $this->file = $file;
+        $this->file    = $file;
 
         $this->run();
     }
@@ -69,8 +72,11 @@ class Plugin
      */
     private function run()
     {
-        add_action('plugins_loaded', array($this, 'bootObjectPress'));
         add_action('plugins_loaded', array($this, 'loadPluginTextdomain'));
+        add_filter('plugin_action_links_akeneo-connector/akeneo-connector.php', array($this, 'settingsLinks'));
+
+        $this->bootObjectPress();
+        $this->migrateDatabase();
 
         if (is_admin()) {
             new Settings();
@@ -78,7 +84,6 @@ class Plugin
 
         new CommandLoader();
     }
-
 
     /**
      * Load translation files from the indicated directory.
@@ -100,9 +105,75 @@ class Plugin
      *
      * @return void
      */
-    public function bootObjectPress(): void
+    private function bootObjectPress(): void
     {
         ObjectPress::boot(__DIR__ . '/../config');
+    }
+
+
+    /**
+     * Add the "settings" link into the plugin list view.
+     *
+     * @param array $links The plugin links
+     * @return array
+     */
+    private function settingsLinks($links)
+    {
+        // Build and escape the URL.
+        $url = esc_url(add_query_arg(
+            'page',
+            'configuration-akeneo-connector',
+            get_admin_url() . 'options-general.php'
+        ));
+
+        // Create the link.
+        $settings_link = "<a href='$url'>" . __('Settings') . '</a>';
+
+        // Adds the link to the end of the array.
+        array_push(
+            $links,
+            $settings_link
+        );
+
+        return $links;
+    }
+
+    /**
+     * Bootstrap the database migrations.
+     *
+     * @return void
+     */
+    private function migrateDatabase()
+    {
+        global $wpdb;
+
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+
+        $charset_collate = $wpdb->get_charset_collate();
+
+        # We're not up to date on database migrations
+        if (get_option('akeneo_connector_db_version') !== static::DB_VERSION) {
+            /**
+             * Creates the `products_models` table
+             */
+            $table = $wpdb->prefix . 'akconnector_products_models';
+
+            $sql = "CREATE TABLE IF NOT EXISTS $table (
+                id mediumint(9) NOT NULL AUTO_INCREMENT,
+                product_id mediumint(9) DEFAULT NULL,
+                parent_id mediumint(9) DEFAULT NULL,
+                model_code varchar(45) DEFAULT NULL,
+                variant_code varchar(45) DEFAULT NULL,
+                created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                updated_at datetime DEFAULT NULL,
+                PRIMARY KEY (id)
+            ) $charset_collate;";
+
+            dbDelta($sql);
+
+            # Inform wp we're on the last database version
+            update_option('akeneo_connector_db_version', static::DB_VERSION);
+        }
     }
 
 
