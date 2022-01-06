@@ -41,13 +41,16 @@ class ProductModelCommand extends AbstractCommand
 
         do_action('ak/a/product_models/before_import', $provider->getAll());
 
-        $models = (array) apply_filters('ak/f/product_models/import_data', iterator_to_array($provider->getAll()));
+        # Make sure to import models without parent first
+        $models = $this->orderModelsBeforeImport(
+            iterator_to_array($provider->getAll())
+        );
 
-        /**
-         * TODO :
-         *  - Without parents first
-         *  - Clear ProductModel table before import ?
-         */
+        $models = (array) apply_filters('ak/f/product_models/import_data', $models);
+
+        # Clear product models from database first.
+        ProductModel::truncate();
+
         foreach ($models as $ak_model) {
             $this->print(sprintf('Running Product Model with code: %s', $ak_model->getCode()));
 
@@ -59,5 +62,24 @@ class ProductModelCommand extends AbstractCommand
         $persister->setupVariationAttributes();
 
         do_action('ak/a/product_models/after_import', $provider->getAll());
+    }
+
+
+    /**
+     * Sort the models so we import parents first, to avoid missing product_ids
+     *
+     * @return array
+     */
+    protected function orderModelsBeforeImport($models)
+    {
+        return collect($models)->sort(function ($a, $b) {
+            $a = $a->getParent();
+            $b = $b->getParent();
+
+            if ($a == $b) {
+                return 0;
+            }
+            return ($a < $b) ? -1 : 1;
+        })->toArray();
     }
 }

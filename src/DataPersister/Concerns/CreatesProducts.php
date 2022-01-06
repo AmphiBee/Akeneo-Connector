@@ -254,7 +254,7 @@ trait CreatesProducts
      *
      * @return int The product id
      */
-    public function makeProduct($args, $locale): ?int
+    public function makeProduct(array $args, string $locale): ?int
     {
         $type       = $args['type'];
         $product_id = $args['product_id'];
@@ -464,8 +464,6 @@ trait CreatesProducts
             $product->save();
         });
 
-        // ak/a/product/single/external_gallery
-
         # Actions
         do_action('ak/a/product/single/external_gallery', $product_id, $args['external_gallery'] ?? [], $locale);
         do_action('ak/a/product/single/external_media', $product_id, $args['external_media'] ?? [], $locale);
@@ -482,10 +480,111 @@ trait CreatesProducts
 
 
     /**
-     * Create product attributes if needed
+     * Build a variation for the given product, based on the model and the variation WP_Product.
+     *
+     * @param  int           $model      The WC variable product id.
+     * @param  WP_Product    $product    The variant product comming from Akeneo API.
+     * @param  array         $atributes  The variation variable attributes, as Akeneo codes.
+     * @param  string        $locale     The current locale to save the variation in.
+     *
+     * @return void
+     */
+    public function makeVariation(int $product_id, WP_Product $product, array $attributes, string $locale)
+    {
+        $data       = static::$base_product;
+        $wc_product = wc_get_product($product_id);
+        $variation  = Fetcher::getProductVariationByAkeneoCode($product->getCode(), $locale);
+
+        if ($variation) {
+            $variation_id = $variation->id;
+        } else {
+            $variation_id = \wp_insert_post([
+                'post_title'  => $wc_product->get_name(),
+                'post_name'   => 'product-'.$product_id.'-variation',
+                'post_status' => 'publish',
+                'post_parent' => $product_id,
+                'post_type'   => 'product_variation',
+                'guid'        => $wc_product->get_permalink(),
+                'meta_input'  => [
+                    '_akeneo_code' => $product->getCode(),
+                    '_akeneo_lang' => $locale,
+                ],
+            ]);
+        }
+
+        # Get an instance of the WC_Product_Variation object
+        $variation = new \WC_Product_Variation($variation_id);
+
+        $values = $product->getValues();
+
+        $this->formatAttributes($data, $values, $locale);
+
+        foreach ($attributes as $attribute) {
+            $val      = $values[$attribute][0]['data'] ?? '';
+            $taxonomy = strtolower('pa_' . $attribute);
+            $term_id  = Fetcher::getTermIdByAkeneoCode($val, $taxonomy, $locale);
+
+            if (!$term_id) {
+                return; # Missing attribute term, skip this variation.
+            }
+
+            $term = get_term($term_id);
+
+            $post_attr_terms = wp_get_post_terms($product_id, $taxonomy);
+
+            # Make sure the term is present in the variable product variant attribute term list
+            if (!in_array($term, $post_attr_terms)) {
+                wp_set_post_terms($product_id, [$term->term_id], $taxonomy, true);
+            }
+
+            # Save variation meta
+            update_post_meta($variation_id, 'attribute_'.$taxonomy, $term->slug);
+        }
+
+        # Sku
+        $variation->set_sku($product->getCode());
+
+        # Prices
+        $regular = isset($data['regular_price'][0]) ? collect($data['regular_price'][0])->get('amount', '') : ($data['regular_price'] ?? '');
+        $sale    = isset($data['sale_price'][0]) ? collect($data['sale_price'][0])->get('amount', '') : ($data['sale_price'] ?? '');
+        $variation->set_regular_price($regular);
+        $variation->set_sale_price($sale ?: '');
+        $variation->set_price($sale ?: $regular);
+
+        # Stock (Not a virtual product)
+        $virtual      = isset($data['virtual']) && !$data['virtual'];
+        $manage_stock = isset($data['manage_stock']) ? $data['manage_stock'] : false;
+        $backorders   = isset($data['backorders']) ? $data['backorders'] : 'no';
+        $stock_status = isset($data['stock_status']) ? $data['stock_status'] : 'instock';
+
+        if (!$virtual) {
+            $variation->set_manage_stock($manage_stock);
+            $variation->set_stock_status($stock_status);
+        }
+
+        if (!$virtual && $manage_stock) {
+            $variation->set_stock_status($data['stock_qty']);
+            $variation->set_backorders($backorders); // 'yes', 'no' or 'notify'
+        }
+
+        # Save the variation
+        $variation->save();
+
+        # Publish the product which was in draft waiting for a variation
+        $wc_product->set_status('publish');
+        $wc_product->save();
+    }
+
+
+    /**
+     * Create product attributes if needed.
+     *
+     * @param   array  $attributes  Product attributes
+     * @return  array  Final attributes array
+     *
+     * @since 1.0
+     * @version 1.13.0
      * @access public
-     * @param $attributes | Product attributes
-     * @return array | Final attributes array
      */
     public function prepareProductAttributes(array $attributes): array
     {
@@ -493,6 +592,9 @@ trait CreatesProducts
         $position = 0;
 
         foreach ($attributes as $taxonomy => $values) {
+            # Get an instance of the WC_Product_Attribute Object
+            $attribute = new \WC_Product_Attribute();
+
             if ($values['is_taxonomy']) {
                 $taxonomy = strtolower('pa_' . $taxonomy);
 
@@ -500,45 +602,22 @@ trait CreatesProducts
                     continue;
                 }
 
-                // Get an instance of the WC_Product_Attribute Object
-                $attribute = new \WC_Product_Attribute();
-
-                /**
-                 * What is this section for ?
-                 * We are getting ids from database, they should already exists.
-                 */
-                // Loop through the term names
-                // foreach ($values['term_ids'] as $key => $term_id) {
-                //     // Get and set the term ID in the array from the term name
-                //     if (!\term_exists($term_id, $taxonomy)) {
-                //         unset($values['term_ids'][$key]);
-                //     }
-                // }
-
-
                 $taxonomy_id = \wc_attribute_taxonomy_id_by_name($taxonomy); // Get taxonomy ID
-
-                $attribute->set_id($taxonomy_id);
-                $attribute->set_name($taxonomy);
-                $attribute->set_options($values['term_ids']);
-                $attribute->set_position($position);
-                $attribute->set_visible($values['is_visible']);
-                $attribute->set_variation($values['is_variation']);
-
-                $data[$taxonomy] = $attribute; // Set in an array
+                $options = $values['term_ids'];
             } else {
 
-                // Get an instance of the WC_Product_Attribute Object
-                $attribute = new \WC_Product_Attribute();
-                $attribute->set_id(0);
-                $attribute->set_name($taxonomy);
-                $attribute->set_options($values['value']);
-                $attribute->set_position($position);
-                $attribute->set_visible($values['is_visible']);
-                $attribute->set_variation($values['is_variation']);
-
-                $data[$taxonomy] = $attribute; // Set in an array
+                $taxonomy_id = 0;
+                $options = $values['value'];
             }
+
+            $attribute->set_id($taxonomy_id);
+            $attribute->set_name($taxonomy);
+            $attribute->set_options($options);
+            $attribute->set_position($position);
+            $attribute->set_visible($values['is_visible']);
+            $attribute->set_variation($values['is_variation']);
+
+            $data[$taxonomy] = $attribute;
 
             $position++; // Increase position
         }

@@ -46,14 +46,6 @@ class ProductCommand extends AbstractCommand
         foreach ($products as $ak_product) {
             $enabled = $ak_product->isEnabled();
 
-            /**
-             * TMP DEBUG
-             */
-            if ($ak_product->getIdentifier() != '199001') {
-                continue;
-            }
-            // dd($ak_product);
-
             $this->print(sprintf('Running Product with code: %s, [ Enabled: %s ]', $ak_product->getIdentifier(), $enabled ? 'Yes' : 'No, skipping'));
 
             $wp_product = $adapter->fromProduct($ak_product);

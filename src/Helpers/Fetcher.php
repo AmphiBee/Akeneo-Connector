@@ -66,6 +66,20 @@ class Fetcher
                 ->first();
     }
 
+    /**
+     * Find the corresponding product variation based on akeneo code and locale.
+     *
+     * @param string $code     The Akeneo code
+     * @param string $locale   The locale to use
+     */
+    public static function getProductVariationByAkeneoCode(string $code, string $locale): ?Post
+    {
+        return Post::type('product_variation')
+                ->hasMeta('_akeneo_code', $code)
+                ->hasMeta('_akeneo_lang', $locale)
+                ->first();
+    }
+
 
     /**
      * Get product from SKU Code

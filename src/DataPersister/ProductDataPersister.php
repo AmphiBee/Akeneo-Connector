@@ -21,8 +21,10 @@ class ProductDataPersister extends AbstractDataPersister
 
     /**
      * @param WP_Product $product
+     *
+     * @return void
      */
-    public function createOrUpdate(WP_Product $product): void
+    public function createOrUpdate(WP_Product $product)
     {
         try {
             if (!$product->isEnabled()) {
@@ -31,12 +33,11 @@ class ProductDataPersister extends AbstractDataPersister
 
             # Product with product model (variable product in WC)
             if ($product->getParent()) {
-                $this->createOrUpdateProductVariable($product);
+                return $this->createOrUpdateProductVariable($product);
             }
+
             # Simple product
-            else {
-                $this->createOrUpdateProductSimple($product);
-            }
+            $this->createOrUpdateProductSimple($product);
 
             # catch error
         } catch (ExceptionInterface $e) {
@@ -78,7 +79,6 @@ class ProductDataPersister extends AbstractDataPersister
         if (count($ids) > 1) {
             $this->translator->syncPosts($ids);
         }
-
     }
 
 
@@ -89,97 +89,33 @@ class ProductDataPersister extends AbstractDataPersister
      */
     protected function createOrUpdateProductVariable(WP_Product $product): void
     {
-        $model  = ProductModel::where('model_code', $product->getParent())->first();
-        $locale = $this->translator->default;
+        $model = $md = ProductModel::where('model_code', $product->getParent())->first();
 
         # We need the product model to continue.
         if (!$model) {
             throw new \Exception(sprintf('The product model with code `%s` could not be found. Skipping product with code `%s`.', $product->getParent(), $product->getCode()));
         }
 
-        $wc_product = wc_get_product($model->product_id);
+        # Build up the translation array for variation creation
+        if ($this->translator->active()) {
+            $translations = $this->translator->getPostIds($model->product_id);
+        } else {
+            $translations = [
+                $this->translator->default => $model->product_id,
+            ];
+        }
 
-        /**
-         * TODO : check if variation already exists
-         * TODO : support multilingual
-         */
-        $variation_id = \wp_insert_post([
-            'post_title'  => $wc_product->get_name(),
-            'post_name'   => 'product-'.$model->product_id.'-variation',
-            'post_status' => 'publish',
-            'post_parent' => $model->product_id,
-            'post_type'   => 'product_variation',
-            'guid'        => $wc_product->get_permalink(),
-            'meta_input'  => [
-                '_akeneo_code' => $product->getCode(),
-            ],
-        ]);
-
-        # Get an instance of the WC_Product_Variation object
-        $variation = new \WC_Product_Variation($variation_id);
-
-        /**
-         * Recursively get variant(s)
-         */
-        $md         = $model;
+        # Hierarchical loop to get variant(s) from models
         $attributes = [];
-
         do {
             $attributes[] = $md->variant_code;
             $md = $md->parent;
         } while ($md);
 
-
-        $values = $product->getValues();
-
-        foreach ($attributes as $attribute) {
-            $val = $values[$attribute][0]['data'] ?? '';
-            $taxonomy = strtolower('pa_' . $attribute);
-            $term_id = Fetcher::getTermIdByAkeneoCode($val, $taxonomy, $locale);
-
-            if (!$term_id) {
-                return; # Missing attribute term, skip this variation.
-            }
-
-            $term = get_term($term_id);
-
-            # Make sure the term is allowed in the variable product
-            $post_attr_terms = wp_get_post_terms($model->product_id, $taxonomy);
-
-            if (!in_array($term, $post_attr_terms)) {
-                wp_set_post_terms($model->product_id, [$term->term_id], $taxonomy, true);
-            }
-
-            update_post_meta($variation_id, 'attribute_'.$taxonomy, $term->slug);
+        # Register the translation for each translation of the product
+        foreach ($translations as $locale => $product_id) {
+            $this->makeVariation($product_id, $product, $attributes, $locale);
         }
-
-        $variation->set_sku($product->getCode());
-
-        /*
-
-        // Prices
-        if( empty( $variation_data['sale_price'] ) ){
-            $variation->set_price( $variation_data['regular_price'] );
-        } else {
-            $variation->set_price( $variation_data['sale_price'] );
-            $variation->set_sale_price( $variation_data['sale_price'] );
-        }
-        $variation->set_regular_price( $variation_data['regular_price'] );
-
-        // Stock
-        if( ! empty($variation_data['stock_qty']) ){
-            $variation->set_stock_quantity( $variation_data['stock_qty'] );
-            $variation->set_manage_stock(true);
-            $variation->set_stock_status('');
-        } else {
-            $variation->set_manage_stock(false);
-        }
-
-         $variation->set_weight(''); // weight (reseting)
-
-        */
-
-        $variation->save(); // Save the data
     }
 
 

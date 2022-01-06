@@ -87,7 +87,7 @@ class Translator
         $this->default = $this->driver->getPrimaryLang('locale');
 
         $this->available = collect($this->driver->getAvailableLanguages())->map(function ($l) {
-            return $l->description;
+            return $l->locale;
         })->toArray();
     }
 
