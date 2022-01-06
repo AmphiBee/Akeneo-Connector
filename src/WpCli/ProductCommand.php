@@ -41,7 +41,9 @@ class ProductCommand extends AbstractCommand
         # Allow duplicate SKUs, for translations to work properly
         add_filter('wc_product_has_unique_sku', '__return_false');
 
-        foreach ($provider->getAll() as $ak_product) {
+        $products = (array) apply_filters('ak/f/products/import_data', iterator_to_array($provider->getAll()));
+
+        foreach ($products as $ak_product) {
             $enabled = $ak_product->isEnabled();
 
             $this->print(sprintf('Running Product with code: %s, [ Enabled: %s ]', $ak_product->getIdentifier(), $enabled ? 'Yes' : 'No, skipping'));

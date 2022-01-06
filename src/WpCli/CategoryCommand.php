@@ -39,7 +39,7 @@ class CategoryCommand extends AbstractCommand
 
         do_action('ak/a/categories/before_import', $provider->getAll());
 
-        $categories = apply_filters('ak/f/categories/import_data', iterator_to_array($provider->getAll()));
+        $categories = (array) apply_filters('ak/f/categories/import_data', iterator_to_array($provider->getAll()));
 
         # Remove default categories (corresponding to site name) and clean $parent data
         $categories = $this->filterCategories($categories);

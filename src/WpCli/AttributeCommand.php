@@ -40,7 +40,7 @@ class AttributeCommand extends AbstractCommand
 
         do_action('ak/attributes/before_import', $attributeDataProvider->getAll());
 
-        $attribute_data = apply_filters('ak/attributes/import_data', iterator_to_array($attributeDataProvider->getAll()));
+        $attribute_data = (array) apply_filters('ak/attributes/import_data', iterator_to_array($attributeDataProvider->getAll()));
 
         /**
          * @var Attribute $AknAttr

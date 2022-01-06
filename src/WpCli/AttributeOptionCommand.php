@@ -44,7 +44,7 @@ class AttributeOptionCommand extends AbstractCommand
 
         do_action('ak/a/options/before_import', $provider->getAll());
 
-        $attribute_data = apply_filters('ak/f/options/import_data', iterator_to_array($provider->getAll()));
+        $attribute_data = (array) apply_filters('ak/f/options/import_data', iterator_to_array($provider->getAll()));
 
         foreach ($attribute_data as $ak_attribute) {
             if (!in_array($ak_attribute->getType(), static::ALLOWED_TYPES)) {

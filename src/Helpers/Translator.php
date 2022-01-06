@@ -40,7 +40,7 @@ class Translator
     /**
      * Available languages.
      *
-     * @var Translator
+     * @var array
      */
     public array $available;
 
@@ -48,7 +48,7 @@ class Translator
     /**
      * Default language.
      *
-     * @var Translator
+     * @var string
      */
     public string $default;
 
@@ -87,7 +87,7 @@ class Translator
         $this->default = $this->driver->getPrimaryLang('locale');
 
         $this->available = collect($this->driver->getAvailableLanguages())->map(function ($l) {
-            return $l->description;
+            return $l->locale;
         })->toArray();
     }
 
@@ -147,6 +147,26 @@ class Translator
 
         # Make sure to start the array with default language
         return [$this->default] + array_diff($available, [$this->default]);
+    }
+
+
+    /**
+     * Transfom given locale into slug.
+     *
+     * @return string
+     */
+    public function localeToSlug(string $locale): string
+    {
+        $matches = [];
+
+        if (preg_match('/^[a-z]{2}$/', $locale)) {
+            return $locale;
+        }
+        if (preg_match('/^([a-z]{2})_[A-Z]{2}$/', $locale, $matches)) {
+            return $matches[1];
+        }
+
+        return '';
     }
 
 

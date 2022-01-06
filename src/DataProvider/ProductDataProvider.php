@@ -40,6 +40,7 @@ class ProductDataProvider extends AbstractDataProvider
     {
         foreach ($this->api->all($pageSize, $queryParameters) as $product) {
             try {
+                // dd($product);
                 yield $this->getSerializer()->denormalize($product, Product::class);
             } catch (ExceptionInterface $exception) {
                 LoggerService::log(Logger::ERROR, sprintf(
