@@ -2,8 +2,8 @@
 namespace AmphiBee\AkeneoConnector\Admin;
 
 use AmphiBee\AkeneoConnector\Blade;
-use AmphiBee\AkeneoConnector\Plugin;
 use AmphiBee\AkeneoConnector\Helpers\Translator;
+use AmphiBee\AkeneoConnector\Plugin;
 use AmphiBee\AkeneoConnector\Service\AkeneoClientBuilder;
 
 /**
@@ -27,12 +27,6 @@ class Settings
     {
         add_action('admin_menu', array( $this, 'akeneo_settings_add_plugin_page' ));
         add_action('admin_init', array( $this, 'akeneo_settings_page_init' ));
-    }
-
-    public static function getDamUrl()
-    {
-        // TODO: @todo dynamiser
-        return 'https://dam.meo.fr';
     }
 
     public function akeneo_settings_add_plugin_page()
@@ -242,6 +236,7 @@ class Settings
         $translator   = new Translator;
 
         foreach ($settingsFlds as $settingsFld) {
+
             $labels  = collect($settingsFld['labels'] ?: []);
             $current = $translator->current();
             $primary = $translator->default;
@@ -258,6 +253,8 @@ class Settings
                 'akeneo_settings_synchronization_section'   // section
             );
         }
+
+
     }
 
 

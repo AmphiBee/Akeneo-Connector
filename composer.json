@@ -29,7 +29,8 @@
         "monolog/monolog": "^2.2",
         "akeneo/api-php-client-ee": "^6.0",
         "tgeorgel/objectpress": " dev-dev-2.0",
-        "amphibee/hookable": " dev-main"
+        "amphibee/hookable": " dev-main",
+        "ext-json": "*"
     },
     "require-dev": {
         "phpro/grumphp": "^0.20.0",

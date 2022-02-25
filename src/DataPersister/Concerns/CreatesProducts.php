@@ -6,6 +6,7 @@
 
 namespace AmphiBee\AkeneoConnector\DataPersister\Concerns;
 
+use AmphiBee\AkeneoConnector\DataPersister\Attachment;
 use WC_Product_Simple;
 use OP\Lib\WpEloquent\Model\Post;
 use AmphiBee\AkeneoConnector\Admin\Settings;
@@ -367,9 +368,8 @@ trait CreatesProducts
         }
 
         // Images and Gallery
-        /*
-        if (isset($args['images']) && is_array($args['images'])) {
-            $image_id = self::assignRemoteAttachment($args['images'][0]);
+        if (count($args['images']) > 0) {
+            $image_id = Attachment::assignRemoteAttachment($args['images'][0]);
             $product->set_image_id($image_id ? $image_id : "");
         }
 
@@ -378,12 +378,11 @@ trait CreatesProducts
         if (count($args['images']) > 1) {
             array_shift($args['images']);
             foreach ($args['images'] as $img) {
-                $gallery_ids[] = self::assignRemoteAttachment($img);
+                $gallery_ids[] = Attachment::assignRemoteAttachment($img);
             }
+            $product->set_gallery_image_ids($gallery_ids);
         }
 
-        $product->set_gallery_image_ids($gallery_ids);
-        */
 
         // Attributes and default attributes
         if (isset($args['attributes'])) {
@@ -399,10 +398,6 @@ trait CreatesProducts
          * SAVE
          */
         $product_id = $product->save();
-        /**
-         * SAVE
-         */
-
 
         /**
          * Sync the taxonomies. We don't use something like `$product->set_category_ids()`
@@ -550,6 +545,12 @@ trait CreatesProducts
         $variation->set_regular_price($regular);
         $variation->set_sale_price($sale ?: '');
         $variation->set_price($sale ?: $regular);
+
+        // Images and Gallery
+        if (count($data['images']) > 0) {
+            $image_id = Attachment::assignRemoteAttachment($data['images'][0]);
+            $variation->set_image_id($image_id ? $image_id : "");
+        }
 
         // Taxes
         if (\get_option('woocommerce_calc_taxes') === 'yes') {
