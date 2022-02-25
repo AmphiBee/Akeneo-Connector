@@ -109,6 +109,19 @@ class VariableProduct
         }
         $variation->set_regular_price($variation_data['regular_price']);
 
+        // Taxes
+        //if (\get_option('woocommerce_calc_taxes') === 'yes') {
+            var_dump($args);
+            die();
+            $variation->set_tax_status(isset($args['tax_status']) ? $args['tax_status'] : 'taxable');
+            $tax_class = is_array($args['tax_class']) ? $args['tax_class'][0] : $args['tax_class'];
+            if ($tax_class === 'tva_55') {
+                $tax_class = \sanitize_title('Taux réduit');
+            }
+
+            $variation->set_tax_class(isset($args['tax_class']) ? $tax_class : '');
+        //}
+
         // Stock
         if (!empty($variation_data['stock_qty'])) {
             $variation->set_stock_quantity($variation_data['stock_qty']);

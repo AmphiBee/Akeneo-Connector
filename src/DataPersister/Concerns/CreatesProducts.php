@@ -309,7 +309,7 @@ trait CreatesProducts
         // Taxes
         if (\get_option('woocommerce_calc_taxes') === 'yes') {
             $product->set_tax_status(isset($args['tax_status']) ? $args['tax_status'] : 'taxable');
-            $tax_class = $args['tax_class'][0];
+            $tax_class = is_array($args['tax_class']) ? $args['tax_class'][0] : $args['tax_class'];
             if ($tax_class === 'tva_55') {
                 $tax_class = \sanitize_title('Taux réduit');
             }
@@ -550,6 +550,14 @@ trait CreatesProducts
         $variation->set_regular_price($regular);
         $variation->set_sale_price($sale ?: '');
         $variation->set_price($sale ?: $regular);
+
+        // Taxes
+        if (\get_option('woocommerce_calc_taxes') === 'yes') {
+            $tax_class = $wc_product->get_tax_class();
+            $tax_status = $wc_product->get_tax_status();
+            $variation->set_tax_status($tax_status);
+            $variation->set_tax_class($tax_class);
+        }
 
         # Stock (Not a virtual product)
         $virtual      = isset($data['virtual']) && !$data['virtual'];
