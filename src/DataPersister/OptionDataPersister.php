@@ -36,7 +36,7 @@ class OptionDataPersister extends AbstractDataPersister
             $mapping   = Settings::getMappingValue($attribute);
             $ids       = [];
 
-            if ($mapping !== 'global_attribute' || !taxonomy_exists($taxonomy)) {
+            if (!($mapping === 'global_attribute' || $mapping === 'private_global_attribute')) {
                 return;
             }
 

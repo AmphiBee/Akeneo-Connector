@@ -76,6 +76,7 @@ class RegisterAttributes extends Hook
                     $taxonomies[] = $tax_object;
                 }
 
+
                 # Save strings in db
                 LocaleStrings::commit();
 

@@ -4,6 +4,9 @@ namespace AmphiBee\AkeneoConnector\DataPersister;
 
 use WP_Error;
 
+/**
+ * @TODO delete this class, use ProductDataPersister instead
+ */
 class Attachment
 {
 
@@ -20,7 +23,7 @@ class Attachment
         // Images and Gallery
         if (isset($args['images']) && is_array($args['images'])) {
             $image_id = self::assignRemoteAttachment($args['images'][0]);
-            $product->set_image_id($image_id ?? "");
+            $product->set_image_id($image_id ? $image_id : "");
         }
 
         $gallery_ids = [];

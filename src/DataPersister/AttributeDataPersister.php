@@ -30,7 +30,7 @@ class AttributeDataPersister extends AbstractDataPersister
             $lang     = $this->translator;
             $original = null;
 
-            if ($mapping !== 'global_attribute' || $attr->getType() !== 'pim_catalog_boolean') {
+            if ($mapping !== 'private_global_attribute' || $mapping !== 'global_attribute' || $attr->getType() !== 'pim_catalog_boolean') {
                 return;
             }
 
@@ -104,7 +104,7 @@ class AttributeDataPersister extends AbstractDataPersister
         try {
             $mapping = Settings::getMappingValue($attribute['code']);
 
-            if ($mapping !== 'global_attribute') {
+            if (!($mapping === 'global_attribute' || $mapping === 'private_global_attribute')) {
                 return;
             }
 

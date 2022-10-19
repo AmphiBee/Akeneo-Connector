@@ -6,7 +6,6 @@
 
 namespace AmphiBee\AkeneoConnector\DataPersister\Concerns;
 
-use AmphiBee\AkeneoConnector\DataPersister\Attachment;
 use WC_Product_Simple;
 use OP\Lib\WpEloquent\Model\Post;
 use AmphiBee\AkeneoConnector\Admin\Settings;
@@ -33,7 +32,6 @@ trait CreatesProducts
         'sku'               => '',
         'regular_price'     => '',
         'sale_price'        => '',
-        'reviews_allowed'   => '',
         'attributes'        => [],
         'metas'             => [],
         'product_cat'       => [],
@@ -136,8 +134,8 @@ trait CreatesProducts
                 continue;
             }
 
-            if (in_array($mapping, ['global_attribute', 'text_attribute'])) {
-                if ($mapping === 'global_attribute') {
+            if (in_array($mapping, ['global_attribute', 'text_attribute', 'private_global_attribute', 'private_text_attribute'])) {
+                if ($mapping === 'global_attribute' || $mapping === 'private_global_attribute') {
                     $taxonomy = sprintf('pa_%s', strtolower($attr_key));
 
                     if ($attr_type === 'pim_catalog_boolean') {
@@ -171,12 +169,12 @@ trait CreatesProducts
                 }
 
                 $product['attributes'][$attr_key] = [
-                    'is_taxonomy'  => ($mapping === 'global_attribute'),
-                    'is_visible'   => true,
+                    'is_taxonomy'  => ($mapping === 'global_attribute' || $mapping === 'private_global_attribute'),
+                    'is_visible'   => ($mapping === 'global_attribute' || $mapping === 'text_attributes'),
                     'is_variation' => false,
                 ];
 
-                if ($mapping === 'global_attribute') {
+                if ($mapping === 'global_attribute' || $mapping === 'private_global_attribute') {
                     $product['attributes'][$attr_key]['term_ids'] = $attr_value;
                 } else {
                     $product['attributes'][$attr_key]['value'] = (array) $attr_value;
@@ -218,7 +216,7 @@ trait CreatesProducts
         $mapping = Settings::getMappingValue($attr_key);
 
         return [
-            'is_taxonomy'  => ($mapping === 'global_attribute'),
+            'is_taxonomy'  => ($mapping === 'global_attribute' || $mapping === 'private_global_attribute'),
             'is_visible'   => true,
             'is_variation' => true,
             'term_ids'     => [],
@@ -322,7 +320,15 @@ trait CreatesProducts
         $product->set_featured(isset($args['featured']) ? $args['featured'] : false);
 
         // Reviews, purchase note
-        $product->set_reviews_allowed(isset($args['reviews']) ? $args['reviews'] : false);
+        $args['reviews_allowed'] = apply_filters('ak/f/product/single/reviews_allowed', $args['reviews_allowed'] ?? get_option('woocommerce_enable_reviews', 'yes') === 'yes');
+
+        if (isset($args['reviews_allowed'])) {
+            $product->set_reviews_allowed($args['reviews_allowed']);
+        }
+
+        if (isset($args['purchase_note'])) {
+            $product->set_purchase_note($args['note']);
+        }
         $product->set_purchase_note(isset($args['note']) ? $args['note'] : '');
 
         // Sold Individually
@@ -368,8 +374,9 @@ trait CreatesProducts
         }
 
         // Images and Gallery
-        if (count($args['images']) > 0) {
-            $image_id = Attachment::assignRemoteAttachment($args['images'][0]);
+        /*
+        if (isset($args['images']) && is_array($args['images'])) {
+            $image_id = self::assignRemoteAttachment($args['images'][0]);
             $product->set_image_id($image_id ? $image_id : "");
         }
 
@@ -378,11 +385,12 @@ trait CreatesProducts
         if (count($args['images']) > 1) {
             array_shift($args['images']);
             foreach ($args['images'] as $img) {
-                $gallery_ids[] = Attachment::assignRemoteAttachment($img);
+                $gallery_ids[] = self::assignRemoteAttachment($img);
             }
-            $product->set_gallery_image_ids($gallery_ids);
         }
 
+        $product->set_gallery_image_ids($gallery_ids);
+        */
 
         // Attributes and default attributes
         if (isset($args['attributes'])) {
@@ -393,11 +401,14 @@ trait CreatesProducts
             $product->set_default_attributes($args['default_attributes']);
         }
 
-
         /**
          * SAVE
          */
         $product_id = $product->save();
+        /**
+         * SAVE
+         */
+
 
         /**
          * Sync the taxonomies. We don't use something like `$product->set_category_ids()`
@@ -468,7 +479,6 @@ trait CreatesProducts
         do_action('ak/product/external_gallery', $product_id, $args['external_gallery'] ?? [], $locale);
         do_action('ak/product/external_media', $product_id, $args['external_media'] ?? [], $locale);
         do_action('ak/product/after_save', $product_id, $args, $locale);
-
 
         return $product_id;
     }
@@ -545,20 +555,6 @@ trait CreatesProducts
         $variation->set_regular_price($regular);
         $variation->set_sale_price($sale ?: '');
         $variation->set_price($sale ?: $regular);
-
-        // Images and Gallery
-        if (count($data['images']) > 0) {
-            $image_id = Attachment::assignRemoteAttachment($data['images'][0]);
-            $variation->set_image_id($image_id ? $image_id : "");
-        }
-
-        // Taxes
-        if (\get_option('woocommerce_calc_taxes') === 'yes') {
-            $tax_class = $wc_product->get_tax_class();
-            $tax_status = $wc_product->get_tax_status();
-            $variation->set_tax_status($tax_status);
-            $variation->set_tax_class($tax_class);
-        }
 
         # Stock (Not a virtual product)
         $virtual      = isset($data['virtual']) && !$data['virtual'];

@@ -62,6 +62,8 @@ class ProductModelCommand extends AbstractCommand
         $persister->setupVariationAttributes();
 
         do_action('ak/a/product_models/after_import', $provider->getAll());
+
+        $this->print('Models imported successfully');
     }
 
 

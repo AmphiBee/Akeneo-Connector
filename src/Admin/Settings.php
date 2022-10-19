@@ -2,8 +2,8 @@
 namespace AmphiBee\AkeneoConnector\Admin;
 
 use AmphiBee\AkeneoConnector\Blade;
-use AmphiBee\AkeneoConnector\Helpers\Translator;
 use AmphiBee\AkeneoConnector\Plugin;
+use AmphiBee\AkeneoConnector\Helpers\Translator;
 use AmphiBee\AkeneoConnector\Service\AkeneoClientBuilder;
 
 /**
@@ -236,7 +236,6 @@ class Settings
         $translator   = new Translator;
 
         foreach ($settingsFlds as $settingsFld) {
-
             $labels  = collect($settingsFld['labels'] ?: []);
             $current = $translator->current();
             $primary = $translator->default;
@@ -253,8 +252,6 @@ class Settings
                 'akeneo_settings_synchronization_section'   // section
             );
         }
-
-
     }
 
 
@@ -344,6 +341,8 @@ class Settings
                 'tax_class'          => __('Tax class', 'akeneo-connector'),
                 'text_attribute'     => __('Text Attribute', 'akeneo-connector'),
                 'global_attribute'   => __('Global Attribute', 'akeneo-connector'),
+                'private_text_attribute'     => __('Text Attribute (private)', 'akeneo-connector'),
+                'private_global_attribute'   => __('Global Attribute (private)', 'akeneo-connector'),
             ],
             # Taxonomies
             __('Product taxonomies', 'akeneo-connector') => [
