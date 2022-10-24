@@ -13,8 +13,5 @@
 # PHP Storm
 .idea/*
 
-# Composer
-/vendor
-
 cache/*
 !cache/.gitkeep
