@@ -24,7 +24,6 @@ grumphp:
             phpunit: null
             configuration: null
             runner: null
-            debugger: null
             coverage-clover: null
             coverage-html: null
             coverage-php: null
@@ -125,5 +124,3 @@ Filter which testsuite to run. Run multiple suits by separating them with ",". E
 *Default: false*
 
 Adds additional debugging information to the screen when running paratest.
-
-

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace GrumPHP\Task;
 
+use GrumPHP\Formatter\ProcessFormatterInterface;
 use GrumPHP\Runner\TaskResult;
 use GrumPHP\Runner\TaskResultInterface;
 use GrumPHP\Task\Context\ContextInterface;
@@ -12,7 +13,7 @@ use GrumPHP\Task\Context\RunContext;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * PhpMnd task.
+ * @extends AbstractExternalTask<ProcessFormatterInterface>
  */
 class PhpMnd extends AbstractExternalTask
 {
@@ -92,7 +93,6 @@ class PhpMnd extends AbstractExternalTask
         $arguments->addOptionalCommaSeparatedArgument('--ignore-strings=%s', $config['ignore_strings']);
         $arguments->addOptionalArgument('--strings', $config['strings']);
         $arguments->addOptionalCommaSeparatedArgument('--suffixes=%s', $config['triggered_by']);
-        $arguments->add('--non-zero-exit-on-violation');
         $arguments->add($config['directory']);
 
         $process = $this->processBuilder->buildProcess($arguments);

@@ -14,6 +14,9 @@ use GrumPHP\Task\Context\ContextInterface;
 use GrumPHP\Task\Context\GitPreCommitContext;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+/**
+ * @extends AbstractExternalTask<ProcessFormatterInterface>
+ */
 class Blacklist extends AbstractExternalTask
 {
     /**
@@ -41,6 +44,8 @@ class Blacklist extends AbstractExternalTask
             'whitelist_patterns' => [],
             'triggered_by' => ['php'],
             'regexp_type' => 'G',
+            'match_word' => false,
+            'ignore_patterns' => []
         ]);
 
         $resolver->addAllowedTypes('keywords', ['array']);
@@ -49,6 +54,8 @@ class Blacklist extends AbstractExternalTask
         $resolver->addAllowedTypes('regexp_type', ['string']);
 
         $resolver->setAllowedValues('regexp_type', ['G', 'E', 'P']);
+        $resolver->addAllowedTypes('match_word', ['bool']);
+        $resolver->addAllowedTypes('ignore_patterns', ['array']);
 
         return $resolver;
     }
@@ -63,13 +70,12 @@ class Blacklist extends AbstractExternalTask
         $config = $this->getConfig()->getOptions();
 
         $whitelistPatterns = $config['whitelist_patterns'];
-        $extensions = $config['triggered_by'];
 
         $files = $context->getFiles();
         if (0 !== \count($whitelistPatterns)) {
             $files = $files->paths($whitelistPatterns);
         }
-        $files = $files->extensions($extensions);
+        $files = $files->extensions($config['triggered_by'])->notPaths($config['ignore_patterns']);
 
         if (0 === \count($files) || empty($config['keywords'])) {
             return TaskResult::createSkipped($this, $context);
@@ -81,6 +87,7 @@ class Blacklist extends AbstractExternalTask
         $arguments->add('-n');
         $arguments->add('--break');
         $arguments->add('--heading');
+        $arguments->addOptionalArgument('--word-regexp', $config['match_word']);
         $arguments->addOptionalArgument('--color', $this->IO->isDecorated());
         $arguments->addOptionalArgument('-%s', $config['regexp_type']);
         $arguments->addArgumentArrayWithSeparatedValue('-e', $config['keywords']);

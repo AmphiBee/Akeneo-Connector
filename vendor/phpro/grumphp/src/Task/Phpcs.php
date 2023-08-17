@@ -5,18 +5,23 @@ declare(strict_types=1);
 namespace GrumPHP\Task;
 
 use GrumPHP\Collection\ProcessArgumentsCollection;
-use GrumPHP\Fixer\Provider\FixableProcessProvider;
+use GrumPHP\Exception\ExecutableNotFoundException;
+use GrumPHP\Fixer\Provider\FixableProcessResultProvider;
 use GrumPHP\Formatter\PhpcsFormatter;
-use GrumPHP\Runner\FixableTaskResult;
+use GrumPHP\Formatter\ProcessFormatterInterface;
+use GrumPHP\Process\TmpFileUsingProcessRunner;
 use GrumPHP\Runner\TaskResult;
 use GrumPHP\Runner\TaskResultInterface;
 use GrumPHP\Task\Context\ContextInterface;
 use GrumPHP\Task\Context\GitPreCommitContext;
 use GrumPHP\Task\Context\RunContext;
-use RuntimeException;
+use Symfony\Component\Console\Exception\CommandNotFoundException;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Process\Process;
 
+/**
+ * @extends AbstractExternalTask<ProcessFormatterInterface>
+ */
 class Phpcs extends AbstractExternalTask
 {
     /**
@@ -41,6 +46,7 @@ class Phpcs extends AbstractExternalTask
             'report' => 'full',
             'report_width' => null,
             'exclude' => [],
+            'show_sniffs_error_path' => true
         ]);
 
         $resolver->addAllowedTypes('standard', ['array', 'null', 'string']);
@@ -56,6 +62,7 @@ class Phpcs extends AbstractExternalTask
         $resolver->addAllowedTypes('report', ['null', 'string']);
         $resolver->addAllowedTypes('report_width', ['null', 'int']);
         $resolver->addAllowedTypes('exclude', ['array']);
+        $resolver->addAllowedTypes('show_sniffs_error_path', ['bool']);
 
         return $resolver;
     }
@@ -69,48 +76,52 @@ class Phpcs extends AbstractExternalTask
     {
         /** @var array $config */
         $config = $this->getConfig()->getOptions();
-        /** @var array $whitelistPatterns */
-        $whitelistPatterns = $config['whitelist_patterns'];
-        /** @var array $extensions */
-        $extensions = $config['triggered_by'];
 
-        /** @var \GrumPHP\Collection\FilesCollection $files */
-        $files = $context->getFiles();
-        if (\count($whitelistPatterns)) {
-            $files = $files->paths($whitelistPatterns);
-        }
-        $files = $files->extensions($extensions);
+        $files = $context->getFiles()
+            ->extensions($config['triggered_by'])
+            ->paths($config['whitelist_patterns'] ?? [])
+            ->notPaths($config['ignore_patterns'] ?? []);
 
         if (0 === \count($files)) {
             return TaskResult::createSkipped($this, $context);
         }
 
-        $arguments = $this->processBuilder->createArgumentsForCommand('phpcs');
-        $arguments = $this->addArgumentsFromConfig($arguments, $config);
-        $arguments->add('--report-json');
-        $arguments->addFiles($files);
+        $process = TmpFileUsingProcessRunner::run(
+            function (string $tmpFile) use ($config): Process {
+                $arguments = $this->processBuilder->createArgumentsForCommand('phpcs');
+                $arguments = $this->addArgumentsFromConfig($arguments, $config);
+                $arguments->add('--report-json');
+                $arguments->add('--file-list='.$tmpFile);
 
-        $process = $this->processBuilder->buildProcess($arguments);
-        $process->run();
+                return $this->processBuilder->buildProcess($arguments);
+            },
+            static function () use ($files): \Generator {
+                yield $files->toFileList();
+            }
+        );
 
         if (!$process->isSuccessful()) {
-            $output = $this->formatter->format($process);
-            try {
-                $fixProcess = $this->createFixerProcess($this->formatter->getSuggestedFiles());
-            } catch (RuntimeException $exception) { // phpcbf could not get found.
-                $output .= PHP_EOL.'Info: phpcbf could not get found. Please consider to install it for suggestions.';
-                return TaskResult::createFailed($this, $context, $output);
-            }
+            $failedResult = TaskResult::createFailed($this, $context, $this->formatter->format($process));
 
-            if ($fixProcess) {
-                $output .= $this->formatter->formatManualFixingOutput($fixProcess);
-                return new FixableTaskResult(
-                    TaskResult::createFailed($this, $context, $output),
-                    FixableProcessProvider::provide($fixProcess->getCommandLine(), [0, 1])
+            try {
+                $fixerProcess = $this->createFixerProcess($this->formatter->getSuggestedFiles());
+            } catch (CommandNotFoundException|ExecutableNotFoundException $e) {
+                return $failedResult->withAppendedMessage(
+                    PHP_EOL.'Info: phpcbf could not be found. Please consider installing it for auto-fixing.'
                 );
             }
 
-            return TaskResult::createFailed($this, $context, $output);
+            if ($fixerProcess) {
+                return FixableProcessResultProvider::provide(
+                    $failedResult,
+                    function () use ($fixerProcess): Process {
+                        return $fixerProcess;
+                    },
+                    [0, 1]
+                );
+            }
+
+            return $failedResult;
         }
 
         return TaskResult::createPassed($this, $context);
@@ -148,6 +159,7 @@ class Phpcs extends AbstractExternalTask
         $arguments->addOptionalCommaSeparatedArgument('--sniffs=%s', $config['sniffs']);
         $arguments->addOptionalCommaSeparatedArgument('--ignore=%s', $config['ignore_patterns']);
         $arguments->addOptionalCommaSeparatedArgument('--exclude=%s', $config['exclude']);
+        $arguments->addOptionalArgument('-s', $config['show_sniffs_error_path']);
 
         return $arguments;
     }

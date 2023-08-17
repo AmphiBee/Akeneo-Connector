@@ -11,7 +11,7 @@
 
 ## How can I bypass GrumPHP
 
-You shouldn't! Its to maintain clean and well formatted code.
+You shouldn't! It's to maintain clean and well formatted code.
 Don't make your co-worker pissed off again...
 
 *Note: use `--no-verify` or `-n` flag when you commit, 
@@ -39,13 +39,13 @@ Yes, he does. But there are some limitations.
 
 **PHPCS and PHPLint tasks fail on Windows 7**
 
-This is due to the cmd input limit on windows.
+This is due to the cmd input limit on Windows.
 The problem is that the CLI input string on cmd.exe 
 is limited to 8191 characters. Tasks like phplint 
 and phpcs contain the paths to the files that are 
 being checked. During a run command, the list of 
 files wil exceed this amount which results in some 
-strange errors on windows.
+strange errors on Windows.
 
 [up](#table-of-content)
 
@@ -57,7 +57,7 @@ In some cases, you might get require conflicts between your project and GrumPHP 
 For example, Magento 2 has the following requirement for `symfony/console`
 
     "symfony/console": "~2.3, !=2.7.0"
-    
+
 On the other hand, grumPHP has this requirement
 
     "symfony/console": "~2.7|~3.0"
@@ -73,9 +73,12 @@ You can resolve this problem by adding the following (or similar) to the compose
 [up](#table-of-content)
 
 
-## Why is the unstaged file state being used?
+## Why is the unstaged/untracked file state being used?
 
-GrumPHP can only work with the actual files on the filesystem. This means that your unstaged changes will be staged when GrumPHP checks your codebase. It is possible to use the staged files by stashing your changes with the `ignore_unstaged_changes` parameter. Do note that this parameter is risky and won't work with partial commits. [More information can be found here](https://github.com/phpro/grumphp/blob/master/doc/parameters.md).
+GrumPHP can only work with the actual files on the filesystem.  
+This means that your unstaged changes and untracked files will be staged when GrumPHP checks your codebase.  
+It is possible to use the staged files by stashing your changes with the `ignore_unstaged_changes` parameter.  
+Do note that this parameter is risky and won't work with partial commits. [More information can be found here](https://github.com/phpro/grumphp/blob/master/doc/parameters.md).
 
 [up](#table-of-content)
 
@@ -85,7 +88,7 @@ For example:
 - Warning: Unsupported declare 'strict_types' in vendor/ocramius/proxy-manager/src/ProxyManager/Configuration.php on line 19
 - Parse error: parse error, expecting ';'' or'{'' in vendor/ocramius/proxy-manager/src/ProxyManager/Configuration.php on line 87
 
-SourceTree probably doesn't import your local $PATH variable before running the scripts. This causes a lot of issues like a different PHP version than the one installed locally or exectuables that can't be found.
+SourceTree probably doesn't import your local $PATH variable before running the scripts. This causes a lot of issues like a different PHP version than the one installed locally or executables that can't be found.
 
 You can fix this by adding following line to the top of the git hooks:
 

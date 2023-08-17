@@ -63,19 +63,30 @@ class Filesystem extends SymfonyFilesystem
         return $baseDir.DIRECTORY_SEPARATOR.$path;
     }
 
+    /**
+     * @param non-empty-list<?string> $paths
+     */
     public function guessPath(array $paths): string
     {
+        $paths = array_filter($paths);
         foreach ($paths as $path) {
             if ($this->exists($path) && is_dir($path)) {
                 return $path;
             }
         }
 
-        return current($paths);
+        return (string) current($paths);
     }
 
+    /**
+     * @param non-empty-list<?string> $paths
+     * @param non-empty-list<?string> $fileNames
+     */
     public function guessFile(array $paths, array $fileNames): string
     {
+        $paths = array_filter($paths);
+        $fileNames = array_filter($fileNames);
+
         foreach ($paths as $path) {
             if (!$this->exists($path)) {
                 continue;
@@ -93,8 +104,8 @@ class Filesystem extends SymfonyFilesystem
             }
         }
 
-        $firstPath = current($paths);
-        $firstName = current($fileNames);
+        $firstPath = (string) current($paths);
+        $firstName = (string) current($fileNames);
 
         if (preg_match('#'.preg_quote($firstName, '#').'$#', $firstPath)) {
             return $firstPath;
@@ -135,5 +146,28 @@ class Filesystem extends SymfonyFilesystem
         }
 
         return $path;
+    }
+
+    /**
+     * This method can be used to create a backup of current file.
+     * It used md5 to hash the content.
+     * So multiple backups of a file can exist (depending on the content)
+     */
+    public function backupFile(string $fileName, ?string $hashOfNewContent = null): void
+    {
+        if (!$this->isFile($fileName)) {
+            return;
+        }
+
+        if (!$hash = md5_file($fileName)) {
+            return;
+        }
+
+        // Skip backup if the new file has the same content as the old one.
+        if ($hashOfNewContent && $hashOfNewContent === $hash) {
+            return;
+        }
+
+        $this->copy($fileName, sprintf('%s.%s.backup', $fileName, $hash));
     }
 }

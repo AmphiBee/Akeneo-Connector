@@ -14,10 +14,18 @@ use Symfony\Component\Finder\SplFileInfo as SymfonySplFileInfo;
 use Traversable;
 
 /**
- * @extends ArrayCollection<int, \SplFileInfo>
+ * @extends ArrayCollection<array-key, \SplFileInfo>
  */
-class FilesCollection extends ArrayCollection implements \Serializable
+class FilesCollection extends ArrayCollection
 {
+    /**
+     * @param \Traversable<array-key, \SplFileInfo> $iterator
+     */
+    public static function fromTraversable(\Traversable $iterator): FilesCollection
+    {
+        return new self(array_values(iterator_to_array($iterator)));
+    }
+
     /**
      * Adds a rule that files must match.
      *
@@ -47,7 +55,7 @@ class FilesCollection extends ArrayCollection implements \Serializable
     {
         $filter = new Iterator\FilenameFilterIterator($this->getIterator(), $patterns, []);
 
-        return new self(iterator_to_array($filter));
+        return self::fromTraversable($filter);
     }
 
     /**
@@ -63,7 +71,7 @@ class FilesCollection extends ArrayCollection implements \Serializable
     {
         $filter = new Iterator\FilenameFilterIterator($this->getIterator(), [], [$pattern]);
 
-        return new self(iterator_to_array($filter));
+        return self::fromTraversable($filter);
     }
 
     /**
@@ -80,12 +88,14 @@ class FilesCollection extends ArrayCollection implements \Serializable
      * Filter by paths.
      *
      * $collection->paths(['/^spec\/','/^src\/'])
+     *
+     * @psalm-suppress ArgumentTypeCoercion - Works on int, \SplFileInfo as well
      */
     public function paths(array $patterns): self
     {
         $filter = new Iterator\PathFilterIterator($this->getIterator(), $patterns, []);
 
-        return new self(iterator_to_array($filter));
+        return self::fromTraversable($filter);
     }
 
     /**
@@ -106,12 +116,14 @@ class FilesCollection extends ArrayCollection implements \Serializable
      * You can use patterns (delimited with / sign) or simple strings.
      *
      * $collection->notPaths(['/^spec\/','/^src\/'])
+     *
+     * @psalm-suppress ArgumentTypeCoercion - Works on int, \SplFileInfo as well
      */
     public function notPaths(array $pattern): self
     {
         $filter = new Iterator\PathFilterIterator($this->getIterator(), [], $pattern);
 
-        return new self(iterator_to_array($filter));
+        return self::fromTraversable($filter);
     }
 
     public function extensions(array $extensions): self
@@ -139,7 +151,7 @@ class FilesCollection extends ArrayCollection implements \Serializable
         $comparator = new Comparator\NumberComparator($size);
         $filter = new Iterator\SizeRangeFilterIterator($this->getIterator(), [$comparator]);
 
-        return new self(iterator_to_array($filter));
+        return self::fromTraversable($filter);
     }
 
     /**
@@ -161,7 +173,7 @@ class FilesCollection extends ArrayCollection implements \Serializable
         $comparator = new Comparator\DateComparator($date);
         $filter = new Iterator\DateRangeFilterIterator($this->getIterator(), [$comparator]);
 
-        return new self(iterator_to_array($filter));
+        return self::fromTraversable($filter);
     }
 
     /**
@@ -175,14 +187,19 @@ class FilesCollection extends ArrayCollection implements \Serializable
      * @see CustomFilterIterator
      *
      * @psalm-suppress LessSpecificImplementedReturnType
+     * @psalm-suppress LessSpecificReturnStatement
+     * @psalm-suppress MoreSpecificReturnType
      */
-    public function filter(Closure $closure): self
+    public function filter(Closure $p): self
     {
-        $filter = new Iterator\CustomFilterIterator($this->getIterator(), [$closure]);
+        $filter = new Iterator\CustomFilterIterator($this->getIterator(), [$p]);
 
-        return new self(iterator_to_array($filter));
+        return self::fromTraversable($filter);
     }
 
+    /**
+     * @param Traversable<array-key, SplFileInfo> $fileList
+     */
     public function filterByFileList(Traversable $fileList): FilesCollection
     {
         $allowedFiles = array_map(function (SplFileInfo $file) {
@@ -214,28 +231,26 @@ class FilesCollection extends ArrayCollection implements \Serializable
         });
     }
 
-    /*
+    /**
      * SplFileInfo cannot be serialized. Therefor, we help PHP a bit.
      * This stuff is used for running tasks in parallel.
      */
-    public function serialize(): string
+    public function __serialize(): array
     {
-        return serialize($this->map(function (SplFileInfo $fileInfo): string {
-            return (string) (
-                $fileInfo instanceof SymfonySplFileInfo
-                    ? $fileInfo->getRelativePathname()
-                    : $fileInfo->getPathname()
-            );
-        })->toArray());
+        return $this->map(function (SplFileInfo $fileInfo): string {
+            return $fileInfo instanceof SymfonySplFileInfo
+                ? $fileInfo->getRelativePathname()
+                : $fileInfo->getPathname();
+        })->toArray();
     }
 
-    /*
+    /**
      * SplFileInfo cannot be serialized. Therefor, we help PHP a bit.
      * This stuff is used for running tasks in parallel.
      */
-    public function unserialize($serialized): void
+    public function __unserialize(array $data): void
     {
-        $files = unserialize($serialized, ['allowed_classes' => false]);
+        $files = $data;
         $this->clear();
         foreach ($files as $file) {
             $this->add(new SymfonySplFileInfo($file, dirname($file), $file));
@@ -245,10 +260,15 @@ class FilesCollection extends ArrayCollection implements \Serializable
     /**
      * Help Psalm out a bit:
      *
-     * @return \ArrayIterator<int, SplFileInfo>
+     * @return \ArrayIterator<array-key, SplFileInfo>
      */
     public function getIterator(): \ArrayIterator
     {
         return new \ArrayIterator($this->toArray());
+    }
+
+    public function toFileList(): string
+    {
+        return \implode(PHP_EOL, $this->toArray());
     }
 }

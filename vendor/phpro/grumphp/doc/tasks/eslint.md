@@ -1,11 +1,11 @@
-# ESLint
+# ESLint ![fixer](https://img.shields.io/badge/-fixer-informational)
 
 [ESLint](https://eslint.org/) is a static analysis tool for Javascript code. ESLint covers both code quality and coding style issues.
 
 ## NPM
 If you'd like to install it globally:
 ```bash
-npm -g eslint
+npm install -g eslint
 ```
 
 If you'd like install it as a dev dependency of your project:
@@ -33,6 +33,7 @@ grumphp:
             whitelist_patterns:
                 - /^resources\/js\/(.*)/
             config: .eslintrc.json
+            ignore_path: .eslintignore
             debug: false
             format: ~
             max_warnings: ~
@@ -60,10 +61,10 @@ This is a list of extensions which will trigger the ESLint task.
 
 This is a list of regex patterns that will filter files to validate. With this option you can specify the folders containing javascript files and thus skip folders like /tests/ or the /vendor/ directory. This option is used in conjunction with the parameter `triggered_by`.
 For example: to whitelist files in `resources/js/` (Laravel's JS directory) and `assets/js/` (Symfony's JS directory) you can use:
-```yml
+```yaml
 whitelist_patterns:
-  - /^resources\/js\/(.*)/
-  - /^assets\/js\/(.*)/
+    - /^resources\/js\/(.*)/
+    - /^assets\/js\/(.*)/
 ```
 
 **config**
@@ -71,6 +72,12 @@ whitelist_patterns:
 *Default: null*
 
 The path to your eslint's configuration file. Not necessary if using a standard eslintrc name, eg. .eslintrc.json, .eslint.js, or .eslint.yml
+
+**ignore_path**
+
+*Default: null*
+
+The path to your eslint's ignore file ([eslint.org](https://eslint.org/docs/user-guide/configuring/ignoring-code#using-an-alternate-file)). Not necessary if using standard .eslintignore name.
 
 **debug**
 
@@ -104,4 +111,4 @@ Report errors only (no warnings). [eslint.org](https://eslint.org/docs/user-guid
 
 **other settings**
 
-Any other eslint settings (such as rules, env, ignore patterns, etc) should be able to be set through an [eslint config file](https://eslint.org/docs/user-guide/configuring) (instructions to generate a config file at top of document).
+Any other eslint settings (such as rules, env, ignore patterns, etc.) should be able to be set through an [eslint config file](https://eslint.org/docs/user-guide/configuring) (instructions to generate a config file at top of document).

@@ -16,7 +16,6 @@ use GrumPHP\Runner\TaskResult;
 use GrumPHP\Runner\TaskResultInterface;
 use GrumPHP\Runner\TaskRunnerContext;
 use GrumPHP\Task\TaskInterface;
-use Opis\Closure\SerializableClosure;
 
 class ParallelProcessingMiddleware implements TaskHandlerMiddlewareInterface
 {
@@ -48,6 +47,8 @@ class ParallelProcessingMiddleware implements TaskHandlerMiddlewareInterface
             return $next($task, $runnerContext);
         }
 
+        $currentEnv = $_ENV;
+
         /**
          * This method creates a callable that can be used to enqueue to run the task in parallel.
          * The result is wrapped in a serializable closure
@@ -58,23 +59,17 @@ class ParallelProcessingMiddleware implements TaskHandlerMiddlewareInterface
          *
          * @var callable(): Promise<TaskResultInterface> $enqueueParallelTask
          */
-        $enqueueParallelTask = function () use ($task, $runnerContext, $next): Promise {
+        $enqueueParallelTask = function () use ($task, $runnerContext, $next, $currentEnv): Promise {
             return parallel(
-                static function () use ($task, $runnerContext, $next): SerializableClosure {
+                static function (array $parentEnv) use ($task, $runnerContext, $next): TaskResultInterface {
+                    $_ENV = array_merge($parentEnv, $_ENV);
                     /** @var TaskResultInterface $result */
                     $result = wait($next($task, $runnerContext));
 
-                    return new SerializableClosure(
-                        /**
-                         * @return TaskResultInterface
-                         */
-                        static function () use ($result) {
-                            return $result;
-                        }
-                    );
+                    return $result;
                 },
                 $this->poolFactory->create()
-            )();
+            )($currentEnv);
         };
 
         return call(
@@ -83,9 +78,7 @@ class ParallelProcessingMiddleware implements TaskHandlerMiddlewareInterface
              */
             function () use ($enqueueParallelTask, $task, $runnerContext): \Generator {
                 try {
-                    /** @var callable(): TaskResultInterface $resultProvider */
-                    $resultProvider = yield $enqueueParallelTask();
-                    $result = $resultProvider();
+                    $result = yield $enqueueParallelTask();
                 } catch (\Throwable $error) {
                     return TaskResult::createFailed(
                         $task,

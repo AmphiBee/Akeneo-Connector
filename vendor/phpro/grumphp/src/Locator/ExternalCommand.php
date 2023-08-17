@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace GrumPHP\Locator;
 
-use GrumPHP\Exception\RuntimeException;
+use GrumPHP\Exception\ExecutableNotFoundException;
 use GrumPHP\Util\Paths;
 use Symfony\Component\Process\ExecutableFinder;
 
@@ -51,8 +51,6 @@ class ExternalCommand
             }
         }
 
-        throw new RuntimeException(
-            sprintf('The executable for "%s" could not be found.', $command)
-        );
+        throw ExecutableNotFoundException::forCommand($command);
     }
 }

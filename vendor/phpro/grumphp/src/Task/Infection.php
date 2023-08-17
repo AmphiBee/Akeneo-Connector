@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace GrumPHP\Task;
 
+use GrumPHP\Formatter\ProcessFormatterInterface;
 use GrumPHP\Runner\TaskResult;
 use GrumPHP\Runner\TaskResultInterface;
 use GrumPHP\Task\Context\ContextInterface;
@@ -12,7 +13,7 @@ use GrumPHP\Task\Context\RunContext;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * Infection task.
+ * @extends AbstractExternalTask<ProcessFormatterInterface>
  */
 class Infection extends AbstractExternalTask
 {
@@ -24,6 +25,8 @@ class Infection extends AbstractExternalTask
             'threads' => null,
             'test_framework' => null,
             'only_covered' => false,
+            'show_mutations' => false,
+            'verbose' => false,
             'configuration' => null,
             'min_msi' => null,
             'min_covered_msi' => null,
@@ -35,6 +38,8 @@ class Infection extends AbstractExternalTask
         $resolver->addAllowedTypes('threads', ['null', 'int']);
         $resolver->addAllowedTypes('test_framework', ['null', 'string']);
         $resolver->addAllowedTypes('only_covered', ['bool']);
+        $resolver->addAllowedTypes('show_mutations', ['bool']);
+        $resolver->addAllowedTypes('verbose', ['bool']);
         $resolver->addAllowedTypes('configuration', ['null', 'string']);
         $resolver->addAllowedTypes('min_msi', ['null', 'integer']);
         $resolver->addAllowedTypes('min_covered_msi', ['null', 'integer']);
@@ -73,6 +78,8 @@ class Infection extends AbstractExternalTask
         $arguments->addOptionalArgument('--threads=%s', $config['threads']);
         $arguments->addOptionalArgument('--test-framework=%s', $config['test_framework']);
         $arguments->addOptionalArgument('--only-covered', $config['only_covered']);
+        $arguments->addOptionalArgument('--show-mutations', $config['show_mutations']);
+        $arguments->addOptionalArgument('-v', $config['verbose']);
         $arguments->addOptionalArgument('--configuration=%s', $config['configuration']);
         $arguments->addOptionalArgument('--min-msi=%s', $config['min_msi']);
         $arguments->addOptionalArgument('--min-covered-msi=%s', $config['min_covered_msi']);

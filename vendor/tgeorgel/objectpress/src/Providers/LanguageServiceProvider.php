@@ -42,13 +42,16 @@ class LanguageServiceProvider extends ServiceProvider
     {
         $driver = null;
 
-        // PolyLang
+        # Make sure to include is_plugin_active()
+        include_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+        # PolyLang
         if (!$driver && (is_plugin_active('polylang/polylang.php') || is_plugin_active('polylang-pro/polylang.php'))) {
             $driver = PolylangDriver::class;
         }
         
-        // WPML
-        if (!$driver && is_plugin_active('sitepress-multilingual-cms/sitepress.php')) {
+        # WPML
+        if (!$driver && (is_plugin_active('sitepress-multilingual-cms/sitepress.php') || is_plugin_active('wpml-multilingual-cms/sitepress.php'))) {
             $driver = WPMLDriver::class;
         }
 

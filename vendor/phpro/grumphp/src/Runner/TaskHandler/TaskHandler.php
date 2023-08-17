@@ -37,7 +37,6 @@ class TaskHandler
     }
 
     /**
-     * @psalm-pure
      * @return Promise<TaskResultInterface>
      */
     public function handle(TaskInterface $task, TaskRunnerContext $runnerContext): Promise

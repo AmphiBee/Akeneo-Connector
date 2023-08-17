@@ -20,7 +20,9 @@ grumphp:
             config_file: ~
             testsuite: ~
             group: []
+            exclude_group: []
             always_execute: false
+            order: null
 ```
 
 **config_file**
@@ -45,7 +47,15 @@ If you wish to only run tests from a certain Suite.
 *Default: array()*
 
 If you wish to only run tests from a certain Group.
-`group: [fast,quick,small]`
+`group: ['fast','quick','small']`
+
+
+**exclude_group**
+
+*Default: array()*
+
+If you wish to run tests excluding a certain Group.
+`group: ['big','risky']`
 
 
 **always_execute**
@@ -54,3 +64,8 @@ If you wish to only run tests from a certain Group.
 
 Always run the whole test suite, even if no PHP files were changed.
 
+**order**
+
+*Default: null*
+
+If you wish to run tests in a specific order. `order: [default,defects,duration,no-depends,random,reverse,size]`

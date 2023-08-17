@@ -1,4 +1,4 @@
-# Composer Normalize
+# Composer Normalize ![fixer](https://img.shields.io/badge/-fixer-informational)
 
 If you are using `composer`, you have probably modified the file `composer.json` at least once to keep things nice
 and tidy.
@@ -22,6 +22,7 @@ grumphp:
         composer_normalize:
             indent_size: ~
             indent_style: ~
+            no_check_lock: false
             no_update_lock: true
             verbose: false
 ```
@@ -37,6 +38,12 @@ Indent size (an integer greater than 0); must be used with the `indent_style` op
 *Default: null*
 
 Indent style (one of "space", "tab"); must be used with the `indent_size` option
+
+**no_check_lock**
+
+*Default: false*
+
+If `true`, do not check if lock file is up to date.
 
 **no_update_lock**
 

@@ -45,7 +45,7 @@ class GitBlacklistFormatter implements ProcessFormatterInterface
     {
         $result = static::RESET_COLOR;
         foreach (array_filter(explode("\n", $output)) as $lineNumber => $line) {
-            $result .= preg_match('/^[0-9]+/', $line) ? $this->trimOutputLine($line, (int) $lineNumber) : $line;
+            $result .= preg_match('/^[0-9]+/', $line) ? $this->trimOutputLine($line, $lineNumber) : $line;
             $result .= PHP_EOL;
         }
 
@@ -82,7 +82,7 @@ class GitBlacklistFormatter implements ProcessFormatterInterface
             } while ($pos2 < $pos);
 
             $pos -= static::SPACE_BEFORE;
-            //$pos can't be lower then 0 else we start at the end of the string instead of the beginning
+            //$pos can't be lower than 0 else we start at the end of the string instead of the beginning
             if ($pos < 0) {
                 $pos = 0;
             }

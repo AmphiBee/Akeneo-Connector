@@ -117,7 +117,7 @@ class Plugin
      * @param array $links The plugin links
      * @return array
      */
-    private function settingsLinks($links)
+    public function settingsLinks($links)
     {
         // Build and escape the URL.
         $url = esc_url(add_query_arg(

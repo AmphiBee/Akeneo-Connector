@@ -1,6 +1,6 @@
 # Deptrac
 
-Follow the [installation instructions](https://github.com/sensiolabs-de/deptrac#installation) to add deptrac to your 
+Follow the [installation instructions](https://qossmic.github.io/deptrac/#installation) to add deptrac to your 
 project.
 
 The Deptrac task will check for dependencies between the software layers of your project. It lives under the `deptrac` 
@@ -12,46 +12,32 @@ namespace and has following configurable parameters:
 grumphp:
     tasks:
         deptrac:
+            cache_file: ~
             depfile: ~
-            formatter_graphviz: ~
-            formatter_graphviz_display: ~
-            formatter_graphviz_dump_image: ~
-            formatter_graphviz_dump_dot: ~
-            formatter_graphviz_dump_html: ~
+            formatter: ~
+            output: ~
 ```
+
+**cache_file**
+
+*Default: null*
+
+Set location where cache file will be stored. Example: `/var/www/src/.deptrac.cache`
 
 **depfile**
 
 *Default: null*
 
-Set path to deptrac configuration file. Example: `/var/www/src/depfile.yml`
+Set path to deptrac configuration file. Example: `/var/www/src/deptrac.yaml`
 
-**formatter_graphviz**
-
-*Default: false*
-
-Set to `true` to enable the graphviz formatter.
-
-**formatter_graphviz_display**
-
-*Default: true*
-
-Open the generated graphviz image. Set to `true` to activate.
-
-**formatter_graphviz_dump_image**
+**formatter**
 
 *Default: null*
 
-Set path to a dumped png file.
+Enable formatter with this option, e.g. `console`, `github-actions`, `graphviz-display`, `graphviz-image`, `graphviz-dot`, `graphviz-html`, `junit`, `table`, `xml`, `baseline`, `json`.
 
-**formatter_graphviz_dump_dot**
-
-*Default: null*
-
-Set path to a dumped dot file.
-
-**formatter_graphviz_dump_html**
+**output**
 
 *Default: null*
 
-Set path to a dumped html file.
+Set output file path for formatter (if applicable).
