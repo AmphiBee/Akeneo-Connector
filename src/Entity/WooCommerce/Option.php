@@ -6,7 +6,7 @@
 
 namespace AmphiBee\AkeneoConnector\Entity\WooCommerce;
 
-use OP\Lib\WpEloquent\Model\Term;
+use OP\Framework\Models\Term;
 use AmphiBee\AkeneoConnector\Helpers\Fetcher;
 
 class Option implements WooCommerceEntityInterface
