@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'amphibee/akeneo-connector',
-        'pretty_version' => '1.15.2',
-        'version' => '1.15.2.0',
+        'pretty_version' => '1.16.0',
+        'version' => '1.16.0.0',
         'reference' => NULL,
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
@@ -29,8 +29,8 @@
             'dev_requirement' => false,
         ),
         'amphibee/akeneo-connector' => array(
-            'pretty_version' => '1.15.2',
-            'version' => '1.15.2.0',
+            'pretty_version' => '1.16.0',
+            'version' => '1.16.0.0',
             'reference' => NULL,
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
@@ -764,8 +764,8 @@
         'psr/http-factory-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '^1.0',
-                1 => '1.0',
+                0 => '1.0',
+                1 => '^1.0',
             ),
         ),
         'psr/http-message' => array(
@@ -795,8 +795,8 @@
         'psr/log-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.0|2.0',
-                1 => '1.0.0 || 2.0.0 || 3.0.0',
+                0 => '1.0.0 || 2.0.0 || 3.0.0',
+                1 => '1.0|2.0',
             ),
         ),
         'psr/simple-cache' => array(
