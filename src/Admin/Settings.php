@@ -285,6 +285,7 @@ class Settings
             'akaneo_client_secret' => __('Client secret', 'akeneo-connector'),
             'akaneo_user'          => __('User', 'akeneo-connector'),
             'akaneo_password'      => __('Password', 'akeneo-connector'),
+            'akaneo_channel'       => __('Channel', 'akeneo-connector'),
         ];
 
         foreach ($settings_flds as $id => $name) {

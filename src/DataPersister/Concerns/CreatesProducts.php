@@ -615,6 +615,8 @@ trait CreatesProducts
         foreach ($attributes as $taxonomy => $values) {
             # Get an instance of the WC_Product_Attribute Object
             $attribute = new \WC_Product_Attribute();
+            $taxonomy_id = 0;
+            $options = [];
 
             if ($values['is_taxonomy']) {
                 $taxonomy = strtolower('pa_' . $taxonomy);
@@ -626,7 +628,6 @@ trait CreatesProducts
                 $taxonomy_id = \wc_attribute_taxonomy_id_by_name($taxonomy); // Get taxonomy ID
                 $options = $values['term_ids'];
             } else if (!empty($values['value'])) {
-                $taxonomy_id = 0;
                 $options = $values['value'];
             }
 

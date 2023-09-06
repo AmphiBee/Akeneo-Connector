@@ -7,7 +7,9 @@
 namespace AmphiBee\AkeneoConnector\DataProvider;
 
 use Akeneo\Pim\ApiClient\Api\ProductModelApiInterface;
+use AmphiBee\AkeneoConnector\Entity\Akeneo\Credentials;
 use AmphiBee\AkeneoConnector\Entity\Akeneo\Model;
+use AmphiBee\AkeneoConnector\Service\AkeneoCredentialsBuilder;
 use Generator;
 use Monolog\Logger;
 use AmphiBee\AkeneoConnector\Service\LoggerService;
@@ -17,6 +19,7 @@ use Symfony\Component\Serializer\Exception\ExceptionInterface;
 class ProductModelDataProvider extends AbstractDataProvider
 {
     private ProductModelApiInterface $productModelApi;
+    private Credentials $credentials;
 
     /**
      * Category constructor.
@@ -26,6 +29,7 @@ class ProductModelDataProvider extends AbstractDataProvider
     public function __construct(AkeneoPimClientInterface $client)
     {
         $this->productModelApi = $client->getProductModelApi();
+        $this->credentials = AkeneoCredentialsBuilder::getCredentials();
 
         parent::__construct();
     }
@@ -38,6 +42,9 @@ class ProductModelDataProvider extends AbstractDataProvider
      */
     public function getAll(int $pageSize = 10, array $queryParameters = []): Generator
     {
+        if (!empty($this->credentials->getChannel())) {
+            $queryParameters += ['scope' => $this->credentials->getChannel()];
+        }
         foreach ($this->productModelApi->all($pageSize, $queryParameters) as $model) {
             try {
                 yield $this->getSerializer()->denormalize($model, Model::class);

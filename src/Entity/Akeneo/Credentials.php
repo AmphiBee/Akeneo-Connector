@@ -14,6 +14,7 @@ class Credentials
     private string $clientSecret;
     private string $user;
     private string $password;
+    private string $channel;
 
     /**
      * Credentials constructor.
@@ -23,14 +24,16 @@ class Credentials
      * @param string $clientSecret
      * @param string $user
      * @param string $password
+     * @param string $channel
      */
-    public function __construct(string $host, string $clientId, string $clientSecret, string $user, string $password)
+    public function __construct(string $host, string $clientId, string $clientSecret, string $user, string $password, string $channel)
     {
         $this->host = $host;
         $this->clientID = $clientId;
         $this->clientSecret = $clientSecret;
         $this->user = $user;
         $this->password = $password;
+        $this->channel = $channel;
     }
 
     /**
@@ -71,5 +74,13 @@ class Credentials
     public function getPassword(): string
     {
         return $this->password;
+    }
+
+    /**
+     * @return string
+     */
+    public function getChannel(): string
+    {
+        return $this->channel;
     }
 }
