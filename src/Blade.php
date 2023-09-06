@@ -36,6 +36,9 @@ final class Blade extends BaseBlade
             mkdir($cache_path, 0770, true);
         }
 
+        // Extra views paths
+        $views_path = apply_filters('ak/blade/views_paths', $views_path);
+
         parent::__construct($views_path, $cache_path);
     }
 
