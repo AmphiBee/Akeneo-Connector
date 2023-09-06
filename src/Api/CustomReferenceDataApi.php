@@ -47,7 +47,11 @@ class CustomReferenceDataApi implements CustomReferenceDataApiInterface
 
     public function get(string $code): array
     {
-        return $this->resourceClient->getResource(static::CRDATA_URI, [$code]);
+        try {
+            return $this->resourceClient->getResource(static::CRDATA_URI, [$code]);
+        } catch (\Exception $e) {
+            return [];
+        }
     }
 
     public function list(array $uriParameters = [], array $queryParameters = [])

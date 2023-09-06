@@ -1,4 +1,4 @@
-# Phpcs
+# Phpcs ![fixer](https://img.shields.io/badge/-fixer-informational)
 
 The Phpcs task will sniff your code for bad coding standards.
 
@@ -30,7 +30,7 @@ grumphp:
             sniffs: []
             triggered_by: [php]
             exclude: []
-            
+            show_sniffs_error_path: true
 ```
 
 **standard**
@@ -38,7 +38,7 @@ grumphp:
 *Default: []*
 
 This parameter will describe which standard/s is being used to validate your code for bad coding standards.
-By default it is set to null so that the Phpcs defaults are being used.
+By default, it is set to null so that the Phpcs defaults are being used.
 Phpcs will be using the PEAR or local `phpcs.xml` standard by default.
 You can configure this task to use any standard supported by the Phpcs CLI.
 For Example: `PEAR`, `PHPCS`, `PSR1`, `PSR2`, `PSR12`, `Squiz` and `Zend`
@@ -97,11 +97,11 @@ PHP_CodeSniffer will print all screen-based reports 80 characters wide. You may 
 *Default: []*
 
 This is a list of regex patterns that will filter files to validate. With this option you can skip files like tests. This option is used in relation with the parameter `triggered_by`.
-For exemple to validate only files in your `src/App/` and `src/AppBundle/` directories in a Symfony you can use 
-```yml
+For example to validate only files in your `src/App/` and `src/AppBundle/` directories in a Symfony you can use 
+```yaml
 whitelist_patterns:
-  - /^src\/App\/(.*)/
-  - /^src\/AppBundle\/(.*)/
+    - /^src\/App\/(.*)/
+    - /^src\/AppBundle\/(.*)/
 ```
 
 
@@ -130,11 +130,17 @@ This is a list of extensions to be sniffed. This list is also passed to phpcs us
 
 A list of rules that should not be checked. Leave this option blank to run all configured rules for the selected standard.
 
+**show_sniffs_error_path**
+
+*Default: true*
+
+Displays the sniff that triggered the error, allowing you to more easily find the specific rules with their namespaces.
+
 ## Framework presets
 
 ### Symfony 2
 
-If you want to use Phpcs for your Symfony2 projects, you can require the leanpub phpcs repo.
+If you want to use Phpcs for your Symfony2 projects, you can require the leaphub phpcs repo.
 
 ```sh
 composer require --dev leaphub/phpcs-symfony2-standard
@@ -142,7 +148,7 @@ composer require --dev leaphub/phpcs-symfony2-standard
 
 Following this, you can add the path to your phpcs task.
 
-```yml
+```yaml
 # grumphp.yml
 grumphp:
     tasks:
@@ -184,7 +190,7 @@ Next, add the following to your `composer.json` file, and run `composer run-scri
 
 Following this, you can add the path to your phpcs task.
 ```yaml
-# gumphp.yml
+# grumphp.yml
 grumphp:
     tasks:
         phpcs:
@@ -206,14 +212,14 @@ Following this, you can add the path to your phpcs task.
 grumphp:
     tasks:
         phpcs:
-            standard: 
-              - vendor/drupal/coder/coder_sniffer/Drupal
-              - vendor/drupal/coder/coder_sniffer/DrupalPractice
+            standard:
+                - vendor/drupal/coder/coder_sniffer/Drupal
+                - vendor/drupal/coder/coder_sniffer/DrupalPractice
             ignore_patterns:
-              - cfg/
-              - libraries/
+                - cfg/
+                - libraries/
             triggered_by:
-              - php
-              - module
-              - inc
+                - php
+                - module
+                - inc
 ```

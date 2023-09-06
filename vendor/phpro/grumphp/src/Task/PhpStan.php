@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace GrumPHP\Task;
 
+use GrumPHP\Formatter\ProcessFormatterInterface;
 use GrumPHP\Runner\TaskResult;
 use GrumPHP\Runner\TaskResultInterface;
 use GrumPHP\Task\Context\ContextInterface;
@@ -12,7 +13,7 @@ use GrumPHP\Task\Context\RunContext;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * PhpStan task.
+ * @extends AbstractExternalTask<ProcessFormatterInterface>
  */
 class PhpStan extends AbstractExternalTask
 {
@@ -22,11 +23,12 @@ class PhpStan extends AbstractExternalTask
         $resolver->setDefaults([
             'autoload_file' => null,
             'configuration' => null,
-            'level' => 0,
+            'level' => null,
             'ignore_patterns' => [],
             'force_patterns' => [],
             'triggered_by' => ['php'],
-            'memory_limit' => null
+            'memory_limit' => null,
+            'use_grumphp_paths' => true,
         ]);
 
         $resolver->addAllowedTypes('autoload_file', ['null', 'string']);
@@ -47,6 +49,7 @@ class PhpStan extends AbstractExternalTask
         $resolver->addAllowedTypes('ignore_patterns', ['array']);
         $resolver->addAllowedTypes('force_patterns', ['array']);
         $resolver->addAllowedTypes('triggered_by', ['array']);
+        $resolver->addAllowedTypes('use_grumphp_paths', ['bool']);
 
         return $resolver;
     }
@@ -76,7 +79,7 @@ class PhpStan extends AbstractExternalTask
             $files = $files->ensureFiles($forcedFiles);
         }
 
-        if (0 === \count($files)) {
+        if (0 === \count($files) && $config['use_grumphp_paths']) {
             return TaskResult::createSkipped($this, $context);
         }
 
@@ -90,7 +93,10 @@ class PhpStan extends AbstractExternalTask
         $arguments->add('--no-ansi');
         $arguments->add('--no-interaction');
         $arguments->add('--no-progress');
-        $arguments->addFiles($files);
+
+        if ($config['use_grumphp_paths']) {
+            $arguments->addFiles($files);
+        }
 
         $process = $this->processBuilder->buildProcess($arguments);
 

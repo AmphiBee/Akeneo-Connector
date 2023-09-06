@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace GrumPHP\Task;
 
+use GrumPHP\Formatter\ProcessFormatterInterface;
 use GrumPHP\Runner\TaskResult;
 use GrumPHP\Runner\TaskResultInterface;
 use GrumPHP\Task\Context\ContextInterface;
@@ -11,6 +12,9 @@ use GrumPHP\Task\Context\GitPreCommitContext;
 use GrumPHP\Task\Context\RunContext;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+/**
+ * @extends AbstractExternalTask<ProcessFormatterInterface>
+ */
 class SecurityChecker extends AbstractExternalTask
 {
     public static function getConfigurableOptions(): OptionsResolver
@@ -40,29 +44,17 @@ class SecurityChecker extends AbstractExternalTask
 
     public function run(ContextInterface $context): TaskResultInterface
     {
-        $config = $this->getConfig()->getOptions();
-
-        $files = $context->getFiles()
-            ->path(pathinfo($config['lockfile'], PATHINFO_DIRNAME))
-            ->name(pathinfo($config['lockfile'], PATHINFO_BASENAME));
-        if (0 === \count($files) && !$config['run_always']) {
-            return TaskResult::createSkipped($this, $context);
-        }
-
-        $arguments = $this->processBuilder->createArgumentsForCommand('security-checker');
-        $arguments->add('security:check');
-        $arguments->addOptionalArgument('%s', $config['lockfile']);
-        $arguments->addOptionalArgument('--format=%s', $config['format']);
-        $arguments->addOptionalArgument('--end-point=%s', $config['end_point']);
-        $arguments->addOptionalArgument('--timeout=%s', $config['timeout']);
-
-        $process = $this->processBuilder->buildProcess($arguments);
-        $process->run();
-
-        if (!$process->isSuccessful()) {
-            return TaskResult::createFailed($this, $context, $this->formatter->format($process));
-        }
-
-        return TaskResult::createPassed($this, $context);
+        return TaskResult::createFailed(
+            $this,
+            $context,
+            'The securitychecker task is discontinued by SensioLabs.'.PHP_EOL
+            . 'Please consider switching to one of the following tasks instead:'.PHP_EOL.PHP_EOL
+            . '- securitychecker_enlightn '
+            . '(https://github.com/phpro/grumphp/blob/master/doc/tasks/securitychecker/enlightn.md)'.PHP_EOL
+            . '- securitychecker_local '
+            . '(https://github.com/phpro/grumphp/blob/master/doc/tasks/securitychecker/local.md)'.PHP_EOL
+            . '- securitychecker_symfony '
+            . '(https://github.com/phpro/grumphp/blob/master/doc/tasks/securitychecker/symfony.md)'.PHP_EOL
+        );
     }
 }

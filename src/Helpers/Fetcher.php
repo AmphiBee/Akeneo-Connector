@@ -2,8 +2,8 @@
 
 namespace AmphiBee\AkeneoConnector\Helpers;
 
-use OP\Lib\WpEloquent\Model\Post;
-use OP\Lib\WpEloquent\Model\Term;
+use OP\Framework\Models\Post;
+use OP\Framework\Models\Term;
 
 /**
  * This file is part of the Amphibee package.
@@ -74,7 +74,7 @@ class Fetcher
      */
     public static function getProductVariationByAkeneoCode(string $code, string $locale): ?Post
     {
-        return Post::type('product_variation')
+        return Post::where('post_type', '=', 'product_variation')
                 ->hasMeta('_akeneo_code', $code)
                 ->hasMeta('_akeneo_lang', $locale)
                 ->first();
@@ -90,7 +90,7 @@ class Fetcher
      */
     public static function getProductBySku(string $sku, string $locale): ?Post
     {
-        return Post::type('product')
+        return Post::where('post_type', '=', 'product')
                 ->hasMeta('_sku', $sku)
                 ->first();
     }

@@ -74,7 +74,7 @@ class InsertTerm
     {
         $this->term     = $term;
         $this->taxonomy = $taxonomy;
-        if (is_array($args)) {
+        if (is_array($args) && !empty($args)) {
             $this->args = array_merge($this->defaults, $args);
         } else {
             $this->args = $this->defaults;
@@ -189,11 +189,11 @@ class InsertTerm
         }
 
         // Term is not empty, sanitize the term and trim any white spaces
-        $validateTerm = filter_var(trim($validateTerm), FILTER_SANITIZE_STRING);
+        $validateTerm = htmlspecialchars(trim($validateTerm));
         if (empty($validateTerm)) {
             throw new InvalidArgumentException(
                 sprintf(
-                    __('Invalid term supplied, please asdd a valid term name'),
+                    __('Invalid term supplied, please add a valid term name'),
                     __METHOD__
                 )
             );

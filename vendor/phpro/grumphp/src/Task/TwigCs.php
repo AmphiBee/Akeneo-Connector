@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace GrumPHP\Task;
 
+use GrumPHP\Formatter\ProcessFormatterInterface;
 use GrumPHP\Runner\TaskResult;
 use GrumPHP\Runner\TaskResultInterface;
 use GrumPHP\Task\Context\ContextInterface;
@@ -11,6 +12,9 @@ use GrumPHP\Task\Context\GitPreCommitContext;
 use GrumPHP\Task\Context\RunContext;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+/**
+ * @extends AbstractExternalTask<ProcessFormatterInterface>
+ */
 class TwigCs extends AbstractExternalTask
 {
     public static function getConfigurableOptions(): OptionsResolver
@@ -19,6 +23,7 @@ class TwigCs extends AbstractExternalTask
         $resolver->setDefaults([
             'path' => '.',
             'severity' => 'warning',
+            'display' => 'all',
             'ruleset' => 'FriendsOfTwig\Twigcs\Ruleset\Official',
             'triggered_by' => ['twig'],
             'exclude' => [],
@@ -27,6 +32,7 @@ class TwigCs extends AbstractExternalTask
         $resolver->addAllowedTypes('path', ['string']);
         $resolver->addAllowedTypes('exclude', ['array']);
         $resolver->addAllowedTypes('severity', ['string']);
+        $resolver->addAllowedTypes('display', ['string']);
         $resolver->addAllowedTypes('ruleset', ['string']);
         $resolver->addAllowedTypes('triggered_by', ['array']);
 
@@ -48,15 +54,29 @@ class TwigCs extends AbstractExternalTask
         }
 
         $arguments = $this->processBuilder->createArgumentsForCommand('twigcs');
-        $arguments->add($config['path']);
 
         $arguments->addOptionalArgument('--severity=%s', $config['severity']);
+        $arguments->addOptionalArgument('--display=%s', $config['display']);
         $arguments->addOptionalArgument('--ruleset=%s', $config['ruleset']);
         $arguments->addOptionalArgument('--ansi', true);
 
         // removes all NULL, FALSE and Empty Strings
-        $exclude = array_filter($config['exclude'], 'strlen');
+        $exclude = array_filter(
+            $config['exclude'],
+            /**
+             * @param mixed $exclude
+             */
+            static fn ($exclude): bool => $exclude && $exclude !== ''
+        );
         $arguments->addArgumentArray('--exclude=%s', $exclude);
+
+        if ($context instanceof GitPreCommitContext) {
+            $arguments->addFiles($files);
+        }
+
+        if ($context instanceof RunContext) {
+            $arguments->add($config['path']);
+        }
 
         $process = $this->processBuilder->buildProcess($arguments);
         $process->run();

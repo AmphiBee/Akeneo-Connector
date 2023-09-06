@@ -15,6 +15,9 @@ use GrumPHP\Util\Filesystem;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use SplFileInfo;
 
+/**
+ * @extends AbstractExternalTask<ProcessFormatterInterface>
+ */
 class Composer extends AbstractExternalTask
 {
     /**
@@ -105,7 +108,7 @@ class Composer extends AbstractExternalTask
         }
 
         foreach ($package['repositories'] as $repository) {
-            if ('path' === $repository['type']) {
+            if ('path' === ($repository['type'] ?? null)) {
                 return true;
             }
         }

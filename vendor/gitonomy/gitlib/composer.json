@@ -5,19 +5,23 @@
     "authors": [
         {
             "name": "Graham Campbell",
-            "email": "hello@gjcampbell.co.uk"
+            "email": "hello@gjcampbell.co.uk",
+            "homepage": "https://github.com/GrahamCampbell"
         },
         {
             "name": "Julien Didier",
-            "email": "genzo.wm@gmail.com"
+            "email": "genzo.wm@gmail.com",
+            "homepage": "https://github.com/juliendidier"
         },
         {
             "name": "Grégoire Pineau",
-            "email": "lyrixx@lyrixx.info"
+            "email": "lyrixx@lyrixx.info",
+            "homepage": "https://github.com/lyrixx"
         },
         {
             "name": "Alexandre Salomé",
-            "email": "alexandre.salome@gmail.com"
+            "email": "alexandre.salome@gmail.com",
+            "homepage": "https://github.com/alexandresalome"
         }
     ],
     "autoload": {
@@ -38,6 +42,7 @@
     },
     "require-dev": {
         "ext-fileinfo": "*",
+        "phpspec/prophecy": "^1.10.2",
         "phpunit/phpunit": "^5.7.27 || ^6.5.14 || ^7.5.20 || ^8.5.20 || ^9.5.9",
         "psr/log": "^1.0"
     },

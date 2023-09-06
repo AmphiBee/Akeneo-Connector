@@ -17,6 +17,8 @@
             'synchronization' => __('Synchronization', 'akeneo-connector'),
             'credentials'     => __('Credentials', 'akeneo-connector'),
         ];
+
+        $tabs = apply_filters('ak/settings/tabs', $tabs);
     @endphp
 
     {{-- Menu : Tabs   --}}

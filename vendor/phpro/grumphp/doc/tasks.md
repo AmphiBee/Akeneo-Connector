@@ -34,7 +34,8 @@ grumphp:
         make: ~
         npm_script: ~
         paratest: ~
-        phan: ~        
+        pest: ~
+        phan: ~
         phing: ~
         php7cc: ~
         phpcpd: ~
@@ -50,16 +51,22 @@ grumphp:
         phpunitbridge: ~
         phpversion: ~
         progpilot: ~
-        psalm: ~    
+        psalm: ~
+        rector: ~
         robo: ~
-        securitychecker: ~
+        securitychecker_enlightn: ~
+        securitychecker_local: ~
+        securitychecker_roave: ~
+        securitychecker_symfony: ~
         shell: ~
+        stylelint: ~
+        tester: ~
         twigcs: ~
         xmllint: ~
         yamllint: ~
 ```
 
-Every task has it's own default configuration. It is possible to overwrite the parameters per task.
+Every task has its own default configuration. It is possible to overwrite the parameters per task.
 
 ## Tasks
 
@@ -90,9 +97,11 @@ Every task has it's own default configuration. It is possible to overwrite the p
 - [Make](tasks/make.md)
 - [NPM script](tasks/npm_script.md)
 - [Paratest](tasks/paratest.md)
+- [Pest](tasks/pest.md)
 - [Phan](tasks/phan.md)
 - [Phing](tasks/phing.md)
 - [Php7cc](tasks/php7cc.md)
+- [PhpArkitect](tasks/phparkitect.md)
 - [PhpCpd](tasks/phpcpd.md)
 - [Phpcs](tasks/phpcs.md)
 - [PHP-CS-Fixer](tasks/phpcsfixer.md)
@@ -107,9 +116,16 @@ Every task has it's own default configuration. It is possible to overwrite the p
 - [PhpVersion](tasks/phpversion.md)
 - [Progpilot](tasks/progpilot.md)
 - [Psalm](tasks/psalm.md)
+- [Rector](tasks/rector.md)
 - [Robo](tasks/robo.md)
 - [Security Checker](tasks/securitychecker.md)
+  - [Enlightn](tasks/securitychecker/enlightn.md)
+  - [Local](tasks/securitychecker/local.md)
+  - [Roave](tasks/securitychecker/roave.md)
+  - [Symfony](tasks/securitychecker/symfony.md)
 - [Shell](tasks/shell.md)
+- [Stylelint](tasks/stylelint.md)
+- [Tester](tasks/tester.md)
 - [TwigCs](tasks/twigcs.md)
 - [XmlLint](tasks/xmllint.md)
 - [YamlLint](tasks/yamllint.md)
@@ -126,6 +142,7 @@ grumphp:
         anytask:
             metadata:
                 blocking: true
+                enabled: true
                 label: null
                 priority: 0
                 task: null
@@ -136,15 +153,23 @@ grumphp:
 *Default: true*
 
 This option can be used to make a failing task non-blocking.
-By default all tasks will be marked as blocking.
+By default, all tasks will be marked as blocking.
 When a task is non-blocking, the errors will be displayed but the tests will pass.
+
+**enabled**
+
+*Default: true*
+
+This option can be used to disable task execution.
+By default all tasks will be enabled.
+This makes it possible to conditionally run a task by setting parameters or changing the value through an extension.
 
 **label**
 
 *Default: null*
 
 This option can be used to display a label instead of the task name whilst running GrumPHP.
-By default the task name will be displayed.
+By default, the task name will be displayed.
 
 **priority**
 
@@ -165,7 +190,7 @@ This way you can configure the same task twice by using an alias with different 
 ## Creating a custom task
 
 Creating a custom task is a matter of implementing the provided `GrumPHP\Task\TaskInterface`.
-When your task is written, you have to register it to the service manager and add your task configuration to `grumphp.yaml`:
+When your task is written, you have to register it to the service manager and add your task configuration to `grumphp.yml`:
 
 ```php
 <?php
@@ -196,12 +221,15 @@ grumphp:
 services:
     My\Custom\Task:
         arguments:
-          - '@some.required.dependency'
+            - '@some.required.dependency'
         tags:
-          - {name: grumphp.task, task: defaultTaskName, priority: 0}
+            - {name: grumphp.task, task: defaultTaskName, priority: 0}
 ```
 
 You now registered your custom task! Pretty cool right?!
+
+
+❗**Note:** Be careful with adding dependencies to your task. When GrumPHP runs in parallel mode, the task and all of its dependencies get serialized in order to run in a separate process. This could lead to a delay when e.g. serializing a depenency container or lead to errors on unserializable objects. [More info](https://github.com/phpro/grumphp/issues/815)
 
 
 ## Testing your custom task.
@@ -224,13 +252,13 @@ Configuration of the additional task will look like this:
 # grumphp.yml
 grumphp:
     tasks:
-        phpcsfixer2:
+        phpcsfixer:
             allow_risky: true
             path_mode: intersection
-        phpcsfixer2_typo3:
+        phpcsfixer_typo3:
             allow_risky: true
-            config: .typo3.php_cs
-            path_mode: intersection       
+            config: .typo3.php-cs-fixer.php
+            path_mode: intersection
             metadata:
-                task: phpcsfixer2
+                task: phpcsfixer
 ```

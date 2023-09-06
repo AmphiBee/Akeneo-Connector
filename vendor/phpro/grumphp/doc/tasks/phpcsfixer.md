@@ -1,4 +1,4 @@
-# PHP-CS-Fixer
+# PHP-CS-Fixer ![fixer](https://img.shields.io/badge/-fixer-informational)
 
 The PHP-CS-Fixer task will run codestyle checks.
 
@@ -28,30 +28,27 @@ grumphp:
             triggered_by: ['php']
 ```
 
-
 **allow_risky**
 
 *Default: null*
 
 The allow_risky option allows you to set whether risky rules may run.
 Risky rule is a rule, which could change code behaviour.
-If not set, the default value is taken from config file (if it exists). By default no risky rules are run.
+If not set, the default value is taken from config file (if it exists). By default, no risky rules are run.
 
 **cache_file**
 
 *Default: null*
 
 You can change the location of the cache file by changing this property.
-When no cache_file is set, the default file `.php_cs.cache` will be used.
-
+When no cache_file is set, the default file `.php-cs-fixer.cache` will be used.
 
 **config**
 
 *Default: null*
 
-By default the `.php_cs` wil be used.
+By default, the `.php-cs-fixer.php` (local) or `.php-cs-fixer.dist.php` (to be distributed) will be used.
 You can specify an alternate location for this file by changing this option.
-
 
 **rules**
 
@@ -65,9 +62,9 @@ set, while the `array_syntax` rule is added.
 
 ```yaml
 rules:
-  - '@@PSR2'
-  - -line_ending
-  - array_syntax
+    - '@@PSR2'
+    - -line_ending
+    - array_syntax
 ```
 
 The following map-style example is the same as the previous, except we take advantage of rule configuration
@@ -76,10 +73,10 @@ to change the `array_syntax` validation mode to short array syntax (`[]`) instea
 
 ```yaml
 rules:
-  '@PSR2': true
-  line_ending: false
-  array_syntax:
-    syntax: short
+    '@PSR2': true
+    line_ending: false
+    array_syntax:
+        syntax: short
 ```
 
 Note that rule sets, beginning with the *at* symbol (`@`), must be escaped by being quoted and doubled due to
@@ -96,7 +93,6 @@ This will speed up further runs by fixing only files that were modified since th
 The tool will fix all files if the tool version has changed or the list of fixers has changed.
 Cache is supported only for tool downloaded as phar file or installed via composer.
 
-
 **config_contains_finder**
 
 *Default: true*
@@ -104,7 +100,7 @@ Cache is supported only for tool downloaded as phar file or installed via compos
 Intersection mode can only be used when you have a configuration file which contains a Finder.
 This mode works best since only files that are being commit and are in your configuration will be checked.
 When there is no Finder in your configuration, you'll have set this parameter to false.
-Otherwise php-cs-fixer will crash the execution.
+Otherwise, php-cs-fixer will crash the execution.
 
 Note that activating this option with a consequent target directory will be slow on certain envs such as
 osx+docker.
@@ -121,9 +117,8 @@ Show applied fixers.
 
 Show the full diff that will be applied.
 
-
 **triggered_by**
 
 *Default: [php]*
 
-This option will specify which file extensions will trigger the phpcsfixer2 task.
+This option will specify which file extensions will trigger the phpcsfixer task.

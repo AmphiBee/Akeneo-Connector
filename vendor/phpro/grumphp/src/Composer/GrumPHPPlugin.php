@@ -222,10 +222,15 @@ class GrumPHPPlugin implements PluginInterface, EventSubscriberInterface
         // Windows requires double double quotes
         // https://bugs.php.net/bug.php?id=49139
         $windowsIsInsane = function (string $command): string {
-            return $this->runsOnWindows() ? '"'.$command.'"' : $command;
+            // Looks like this is not needed anymore since PHP8 - even though the bug is still open.
+            if (PHP_MAJOR_VERSION === 7) {
+                return $this->runsOnWindows() ? '"'.$command.'"' : $command;
+            }
+            return $command;
         };
 
         // Run command
+        $pipes = [];
         $process = @proc_open(
             $run = $windowsIsInsane(implode(' ', array_map(
                 function (string $argument): string {
@@ -239,7 +244,7 @@ class GrumPHPPlugin implements PluginInterface, EventSubscriberInterface
                 1 => array('file', 'php://stdout', 'w'),
                 2 => array('file', 'php://stderr', 'w'),
             ),
-            $pipes = []
+            $pipes
         );
 
         // Check executable which is running:
@@ -255,7 +260,7 @@ class GrumPHPPlugin implements PluginInterface, EventSubscriberInterface
         // Loop on process until it exits normally.
         do {
             $status = proc_get_status($process);
-        } while ($status && $status['running']);
+        } while ($status['running']);
 
         $exitCode = $status['exitcode'] ?? -1;
         proc_close($process);

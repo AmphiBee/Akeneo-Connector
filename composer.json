@@ -2,7 +2,7 @@
     "name": "amphibee/akeneo-connector",
     "description": "Connect Akeneo with WooCommerce. The plugin uses the Akeneo api to import Akeneo PIM data (attributes, products, variations..)",
     "keywords": ["wordpress", "plugin"],
-    "version": "1.15.2",
+    "version": "1.16.0",
     "homepage": "https://amphibee.fr",
     "license": "GPL-3.0+",
     "authors": [
@@ -28,11 +28,11 @@
         "wp-cli/wp-cli": "^2.4",
         "monolog/monolog": "^2.2",
         "akeneo/api-php-client-ee": "^6.0",
-        "tgeorgel/objectpress": " dev-dev-2.0",
-        "amphibee/hookable": " dev-main"
+        "tgeorgel/objectpress": "^2.4",
+        "amphibee/hookable": "1.0.0"
     },
     "require-dev": {
-        "phpro/grumphp": "^0.20.0",
+        "phpro/grumphp": "^1.16.0",
         "friendsofphp/php-cs-fixer": "^2.16",
         "phpmd/phpmd": "^2.8",
         "sebastian/phpcpd": "^6.0",
@@ -45,7 +45,9 @@
     },
     "config": {
         "allow-plugins": {
-            "phpro/grumphp": true
+            "phpro/grumphp": true,
+            "composer/installers": true
         }
-    }
+    },
+    "minimum-stability": "dev"
 }

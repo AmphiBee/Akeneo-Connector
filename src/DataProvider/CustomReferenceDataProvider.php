@@ -196,7 +196,7 @@ class CustomReferenceDataProvider extends AbstractDataProvider
                 $prepare['meta_datas'] = $metas_datas;
 
                 yield $this->getSerializer()->denormalize($prepare, CustomReferenceData::class);
-            } catch (ExceptionInterface $exception) {
+            } catch (\Exception $exception) {
                 LoggerService::log(Logger::ERROR, sprintf(
                     'Cannot Denormalize Custom Reference data (AttrCode %s) %s',
                     print_r($ref_data, true),

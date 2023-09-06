@@ -16,9 +16,6 @@ use SimpleXMLElement;
 use SplFileInfo;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
-/**
- * Clover unit test coverage task.
- */
 class CloverCoverage implements TaskInterface
 {
     /**
@@ -84,7 +81,7 @@ class CloverCoverage implements TaskInterface
     {
         $configuration = $this->getConfig()->getOptions();
         $percentage = round(min(100, max(0, (float) $configuration['level'])), 2);
-        $cloverFile = $configuration['clover_file'];
+        $cloverFile = (string) $configuration['clover_file'];
 
         if (!$this->filesystem->exists($cloverFile)) {
             return TaskResult::createFailed($this, $context, 'Invalid input file provided');
@@ -102,7 +99,7 @@ class CloverCoverage implements TaskInterface
         $totalElements = (int) current($xml->xpath('/coverage/project/metrics/@elements'));
         $checkedElements = (int) current($xml->xpath('/coverage/project/metrics/@coveredelements'));
 
-        if (0 === (int) $totalElements) {
+        if (0 === $totalElements) {
             return TaskResult::createSkipped($this, $context);
         }
 

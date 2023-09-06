@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Amp\Serialization;
 
@@ -7,12 +7,15 @@ final class CompressingSerializer implements Serializer
     private const FLAG_COMPRESSED = 1;
     private const COMPRESSION_THRESHOLD = 256;
 
-    /** @var Serializer */
-    private $serializer;
+    private Serializer $serializer;
+
+    /** @var \Closure():true */
+    private \Closure $errorHandler;
 
     public function __construct(Serializer $serializer)
     {
         $this->serializer = $serializer;
+        $this->errorHandler = static fn () => true;
     }
 
     public function serialize($data): string
@@ -22,7 +25,13 @@ final class CompressingSerializer implements Serializer
         $flags = 0;
 
         if (\strlen($serializedData) > self::COMPRESSION_THRESHOLD) {
-            $serializedData = @\gzdeflate($serializedData, 1);
+            \set_error_handler($this->errorHandler);
+            try {
+                $serializedData = \gzdeflate($serializedData, 1);
+            } finally {
+                \restore_error_handler();
+            }
+
             if ($serializedData === false) {
                 $error = \error_get_last();
                 throw new SerializationException('Could not compress data: ' . ($error['message'] ?? 'unknown error'));
@@ -36,11 +45,21 @@ final class CompressingSerializer implements Serializer
 
     public function unserialize(string $data)
     {
+        if ($data === '') {
+            throw new SerializationException('Empty string provided');
+        }
+
         $firstByte = \ord($data[0]);
         $data = \substr($data, 1);
 
         if ($firstByte & self::FLAG_COMPRESSED) {
-            $data = @\gzinflate($data);
+            \set_error_handler($this->errorHandler);
+            try {
+                $data = \gzinflate($data);
+            } finally {
+                \restore_error_handler();
+            }
+
             if ($data === false) {
                 $error = \error_get_last();
                 throw new SerializationException('Could not decompress data: ' . ($error['message'] ?? 'unknown error'));

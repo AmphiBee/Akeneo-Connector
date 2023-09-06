@@ -6,6 +6,7 @@
 
 namespace AmphiBee\AkeneoConnector\DataPersister\Concerns;
 
+use AmphiBee\AkeneoConnector\Entity\WooCommerce\Product;
 use WC_Product_Simple;
 use OP\Lib\WpEloquent\Model\Post;
 use AmphiBee\AkeneoConnector\Admin\Settings;
@@ -308,7 +309,11 @@ trait CreatesProducts
         // Taxes
         if (\get_option('woocommerce_calc_taxes') === 'yes') {
             $product->set_tax_status(isset($args['tax_status']) ? $args['tax_status'] : 'taxable');
-            $tax_class = is_array($args['tax_class']) ? $args['tax_class'][0] : $args['tax_class'];
+            $tax_class = '';
+            if (!empty($args['tax_class'])) {
+                $tax_class = is_array($args['tax_class']) ? $args['tax_class'][0] : $args['tax_class'];
+            }
+
             if ($tax_class === 'tva_55') {
                 $tax_class = \sanitize_title('Taux réduit');
             }
@@ -503,13 +508,24 @@ trait CreatesProducts
         if ($variation) {
             $variation_id = $variation->id;
         } else {
+            $name = '';
+            $guid = '';
+            if ($wc_product instanceof \WC_Product) {
+                $name = $wc_product->get_name();
+                $guid = $wc_product->get_permalink();
+            } elseif ($product instanceof Product) {
+                $values = $product->getValues();
+                $name = collect($values['name'])->first()['data'];
+                $guid = getenv('WP_HOME') . '/' . sanitize_title($name);
+            }
+
             $variation_id = \wp_insert_post([
-                'post_title'  => $wc_product->get_name(),
+                'post_title'  => $name,
                 'post_name'   => 'product-'.$product_id.'-variation',
                 'post_status' => 'publish',
                 'post_parent' => $product_id,
                 'post_type'   => 'product_variation',
-                'guid'        => $wc_product->get_permalink(),
+                'guid'        => $guid,
                 'meta_input'  => [
                     '_akeneo_code' => $product->getCode(),
                     '_akeneo_lang' => $locale,
@@ -599,6 +615,8 @@ trait CreatesProducts
         foreach ($attributes as $taxonomy => $values) {
             # Get an instance of the WC_Product_Attribute Object
             $attribute = new \WC_Product_Attribute();
+            $taxonomy_id = 0;
+            $options = [];
 
             if ($values['is_taxonomy']) {
                 $taxonomy = strtolower('pa_' . $taxonomy);
@@ -609,9 +627,7 @@ trait CreatesProducts
 
                 $taxonomy_id = \wc_attribute_taxonomy_id_by_name($taxonomy); // Get taxonomy ID
                 $options = $values['term_ids'];
-            } else {
-
-                $taxonomy_id = 0;
+            } else if (!empty($values['value'])) {
                 $options = $values['value'];
             }
 

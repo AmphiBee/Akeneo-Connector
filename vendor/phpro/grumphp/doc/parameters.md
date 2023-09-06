@@ -14,7 +14,7 @@ grumphp:
     ignore_unstaged_changes: false
     hide_circumvention_tip: false
     process_timeout: 60
-    additonal_info: ~
+    additional_info: ~
     ascii:
         failed: resource/grumphp-grumpy.txt
         succeeded: resource/grumphp-happy.txt
@@ -52,7 +52,7 @@ GrumPHP comes with following presets:
 **git_hook_variables**
 
 This parameter will allow you to customize git hooks templates.
-After changing any of these variables, you need to run the `git:init` command in order to persist the changes inside your git hooks.
+After changing any of these variables, you need to run the `grumphp git:init` command in order to persist the changes inside your git hooks.
 A list of the supported variables: 
 
 -  `VAGRANT_HOST_DIR` : specifies the vagrant location on your host machine relative to the git working folder (_default_ `.`)
@@ -66,36 +66,51 @@ A list of the supported variables:
     Examples: 
     
     ```yaml
+    # grumphp.yml
     grumphp:
         git_hook_variables:
             EXEC_GRUMPHP_COMMAND: '/usr/local/bin/php72'
             EXEC_GRUMPHP_COMMAND: 'lando php'
             EXEC_GRUMPHP_COMMAND: 'fin exec php'
             EXEC_GRUMPHP_COMMAND: ['php', '-c /custom/config.ini']
-            EXEC_GRUMPHP_COMMAND: ['docker-compose', 'run', '--rm', '--no-deps', 'php']
+            EXEC_GRUMPHP_COMMAND: ['docker-compose', 'run', '-T', '--rm', '--no-deps', 'php']
             EXEC_GRUMPHP_COMMAND: 'docker run --rm -it -v $(pwd):/grumphp -w /grumphp webdevops/php:alpine'
+            EXEC_GRUMPHP_COMMAND: 'ddev exec php'
     ```
 -  `ENV` : Specify environment variables that will be placed in the git hook file. (_default_ `{}`)
 
     Examples: 
     
     ```yaml
+    # grumphp.yml
     grumphp:
         git_hook_variables:
             ENV:
-               VAR1: STRING
-               VAR2: "'escaped'"
-               VAR3: "$(pwd)"
+                VAR1: STRING
+                VAR2: "'escaped'"
+                VAR3: "$(pwd)"
     ```
    
    These environment variables can be overwritten by the `environment` settings inside your `grumphp.yml`.
+
+The added environment variables will also be presented to the tasks that GrumPHP executes.
+Note that `symfony/process` only passes string values.
+If you want to use integers, you need to wrap the value in quotes:
+
+```yaml
+# grumphp.yml
+grumphp:
+    environment:
+        variables:
+            PHP_CS_FIXER_IGNORE_ENV: "1"
+```
 
 **stop_on_failure**
 
 *Default: false*
 
 This parameter will tell GrumPHP to stop running tasks when one of the tasks results in an error.
-By default GrumPHP will continue running the configured tasks.
+By default, GrumPHP will continue running the configured tasks.
 
 **ignore_unstaged_changes**
 
@@ -118,7 +133,7 @@ Hides the tip describing how to circumvent the Git commit hook and bypass GrumPH
 
 GrumPHP uses the Symfony Process component to run external tasks.
 The component will trigger a timeout after 60 seconds by default.
-If you've got tools that run more then 60 seconds, you can increase this parameter.
+If you've got tools that run more than 60 seconds, you can increase this parameter.
 It is also possible to disable the timeout by setting the value to `null`.
 When receiving a `Symfony\Component\Process\Exception\ProcessTimedOutException` during the execution of GrumPHP, you probably need to increment this setting.
 
@@ -131,7 +146,7 @@ This parameter will display additional information at the end of a `success` *or
 ```yaml
 # grumphp.yml
 grumphp:
-  additional_info: "\nTo get full documentation for the project!\nVisit https://docs.example.com\n"
+    additional_info: "\nTo get full documentation for the project!\nVisit https://docs.example.com\n"
 ```
 
 *Example Result:*
@@ -149,7 +164,7 @@ Visit https://docs.example.com
 *Default: {failed: grumphp-grumpy.txt, succeeded: grumphp-happy.txt}*
 
 This parameter will tell GrumPHP where it can locate ascii images used in pre-commit hook.
-Currently there are only three images `failed` and `succeeded`. If path is not specified default image from
+Currently, there are only three images `failed` and `succeeded`. If path is not specified default image from
 `resources/ascii/` folder are used.
 
 You may also specify lists of ascii images, and GrumPHP will choose a random one
@@ -192,7 +207,8 @@ grumphp:
 The parallel section can be used to configure how parallel execution works inside GrumPHP.
 You can specify following options:
 
-```
+```yaml
+# grumphp.yml
 grumphp:
     parallel:
         enabled: true
@@ -220,7 +236,8 @@ GrumPHP provides a way of fixing your code.
 However, we won't automatically commit the changes, so that you have the chance to review what has been fixed!
 You can configure how fixers work with following config:
 
-```
+```yaml
+# grumphp.yml
 grumphp:
     fixer:
         enabled: true
@@ -246,9 +263,10 @@ Therefor, you can choose what the default answer will be.
 GrumPHP makes it possible to configure your environment from inside your config file. 
 It can load ini files, export bash variables and prepend paths to your `$PATH` variable.
 
-```
+```yaml
+# grumphp.yml
 grumphp:
-    environment
+    environment:
         files: []
         variables: {}
         paths: []
@@ -263,27 +281,29 @@ This parameter can be used to specify a list of ini or .env files that need to b
 Example:
 
 ```yaml
+# grumphp.yml
 grumphp:
-  environment:
-    files:
-        - .env
-        - .env.local
+    environment:
+        files:
+            - .env
+            - .env.local
 ```
 
 **environment.variables**
 
 *Default: {}*
 
-Besides loading variables from .env files, you can also specify them directly in your config file.
+Beside loading variables from .env files, you can also specify them directly in your config file.
 
 Example:
 
 ```yaml
+# grumphp.yml
 grumphp:
-  environment:
-    variables:
-        VAR1: "content"
-        VAR2: "content"
+    environment:
+        variables:
+            VAR1: "content"
+            VAR2: "content"
 ```
 
 **environment.paths**
@@ -296,8 +316,9 @@ This makes it possible to e.g. add the project's `phive` tools instead of adding
 Example:
 
 ```yaml
+# grumphp.yml
 grumphp:
-  environment:
-    paths:
-        - tools
+    environment:
+        paths:
+            - tools
 ```

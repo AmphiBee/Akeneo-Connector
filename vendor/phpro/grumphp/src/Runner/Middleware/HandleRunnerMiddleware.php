@@ -38,7 +38,7 @@ class HandleRunnerMiddleware implements RunnerMiddlewareInterface
     public function handle(TaskRunnerContext $context, callable $next): TaskResultCollection
     {
         return new TaskResultCollection(
-            (array) wait(
+            wait(
                 /**
                  * @return \Generator<mixed, mixed, mixed, TaskResultInterface[]>
                  */
@@ -52,7 +52,7 @@ class HandleRunnerMiddleware implements RunnerMiddlewareInterface
                     [$errors, $results] = yield MultiPromise::cancelable(
                         $this->handleTasks($context),
                         function (TaskResultInterface $result) {
-                            return $this->config->stopOnFailure() && $result->hasFailed();
+                            return $this->config->stopOnFailure() && $result->isBlocking();
                         }
                     );
 

@@ -30,9 +30,6 @@ class MiddlewareStack
         );
     }
 
-    /**
-     * @psalm-pure
-     */
     public function handle(TaskRunnerContext $context): TaskResultCollection
     {
         return ($this->stack)($context);

@@ -37,7 +37,7 @@ With this option you can skip files like tests. Leave this option blank to run a
 
 Can be one of: php5, php7.
 This option determines which Lexer the PHP_Parser uses to tokenize the PHP code.
-By default the PREFER_PHP7 is loaded.
+By default, the PREFER_PHP7 is loaded.
 
 **visitors**
 
@@ -53,7 +53,7 @@ It's also possible to write your own visitor!
 *Default: [php]*
 
 This option will specify which file extensions will trigger the php blacklist task.
-By default php blacklist will be triggered by altering a php file.
+By default, php blacklist will be triggered by altering a php file.
 You can overwrite this option to whatever filetype you want to validate!
 
 ## Built-in visitors
@@ -79,7 +79,7 @@ grumphp:
                 declare_strict_types: ~
 ```
 
-This visitore is not configurable!
+This visitor is not configurable!
 
 
 ### forbidden_class_method_calls
@@ -92,7 +92,7 @@ grumphp:
     tasks:
         phpparser:
             visitors:
-                forbidden_class_method_calls: 
+                forbidden_class_method_calls:
                     blacklist:
                         - '$dumper->dump'
 ```
@@ -103,7 +103,7 @@ grumphp:
 
 This is a list of blacklisted class method calls. The syntax is `$variableName->methodName`.
 When one of the functions inside this list is being called by your code, 
-the parser will markt this method as an error.
+the parser will mark this method as an error.
 
 
 ### forbidden_function_calls
@@ -116,8 +116,8 @@ grumphp:
     tasks:
         phpparser:
             visitors:
-                forbidden_function_calls: 
-                    blacklist: 
+                forbidden_function_calls:
+                    blacklist:
                         - 'var_dump'
 ```
 
@@ -127,7 +127,7 @@ grumphp:
 
 This is a list of blacklisted function calls.
 When one of the functions inside this list is being called by your code, 
-the parser will markt this method as an error.
+the parser will mark this method as an error.
 
 *Note* that statements like `die()` and `exit` are not functions but exit nodes. You can validate these statements by adding the [`no_exit_statements`](https://github.com/phpro/grumphp/blob/master/doc/tasks/phpparser.md#no_exit_statements) visitor to your configuration.
 
@@ -141,7 +141,7 @@ grumphp:
     tasks:
         phpparser:
             visitors:
-                forbidden_static_method_calls: 
+                forbidden_static_method_calls:
                     blacklist:
                         - 'Dumper::dump'
 ```
@@ -152,7 +152,7 @@ grumphp:
 
 This is a list of blacklisted static method calls. The syntax is `Fully\Qualified\ClassName::staticMethodName`.
 When one of the functions inside this list is being called by your code, 
-the parser will markt this method as an error.
+the parser will mark this method as an error.
 
 
 ### nameresolver
@@ -181,7 +181,7 @@ grumphp:
     tasks:
         phpparser:
             visitors:
-                never_use_else: ~ 
+                never_use_else: ~
 ```
 
 This visitor is not configurable!
@@ -198,7 +198,7 @@ grumphp:
     tasks:
         phpparser:
             visitors:
-                no_exit_statements: ~ 
+                no_exit_statements: ~
 ```
 
 This visitor is not configurable!
@@ -225,10 +225,10 @@ Once you've written your visitor, you'll have to register it to the service cont
 ```yaml
 services:
     grumphp.parser.php.visitor.your_visitor:
-      class: 'Your\Visitor\Class'
-      arguments: []
-      tags:
-        - {name: 'php_parser.visitor', alias: 'your_visitor'}
+        class: 'Your\Visitor\Class'
+        arguments: []
+        tags:
+            - {name: 'php_parser.visitor', alias: 'your_visitor'}
 
 ```
 
@@ -236,13 +236,13 @@ Since we use the service container, you are able to inject the dependencies you 
 The `php_parser.visitor` tag will make your class available in GrumPHP.
 Tha alias `your_visitor` can now be set as a visitor in the phpparser task:
 
-```yml
+```yaml
 # grumphp.yml
 grumphp:
     tasks:
         phpparser:
             visitors:
-                your_visitor: ~ 
+                your_visitor: ~
 ```
 
 ### Stateless visitors
@@ -258,7 +258,7 @@ This will result in easy and understandable visitors!
 
 ### Optional interfaces and classes
 
-We also added some optional interfaces and to make it easier to interct with the GrumPHP context:
+We also added some optional interfaces and to make it easier to interact with the GrumPHP context:
 
 
 **ConfigurableVisitorInterface**
@@ -295,7 +295,7 @@ interface ContextAwareVisitorInterface extends NodeVisitor
 In the built-in visitors, we use the `AbstractVisitor` that extends the `PhpParser\NodeVisitorAbstract`.
 This means that you only have to implement the methods from the `NodeVisitor` that you need.
 It also implements the `ContextAwareVisitorInterface` and provides an easy method for logging errors in your custom visitor.
-The bleuprint of this abstract visitor looks like this:
+The blueprint of this abstract visitor looks like this:
 
 
 ```php

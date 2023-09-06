@@ -5,7 +5,7 @@ Check Twig coding standard based on [FriendsOfTwig/TwigCs](https://github.com/Fr
 ***Composer***
 
 ```
-composer require --dev friendsoftwig/twigcs
+composer require --dev "friendsoftwig/twigcs:>=4"
 ```
 
 ***Config***
@@ -19,6 +19,7 @@ grumphp:
         twigcs:
             path: '.'
             severity: 'warning'
+            display: 'all'
             ruleset: 'FriendsOfTwig\Twigcs\Ruleset\Official'
             triggered_by: ['twig']
             exclude: []
@@ -29,13 +30,20 @@ grumphp:
 *Default: null*
 
 By default `.` (current folder) will be used.
-You can specify an alternate location by changing this option.
+On precommit the path will not be used, changed files will be passed as arguments instead.
+You can specify an alternate location by changing this option. If the path doesn't exist or is not accessible an exception will be thrown.
 
 **severity**
 
 *Default: 'warning'*
 
 Severity level of sniffing (possibles values are : 'IGNORE', 'INFO', 'WARNING', 'ERROR').
+
+**display**
+
+*Default: 'all'*
+
+The violations to display (possibles values are : 'all', 'blocking').
 
 **ruleset**
 
@@ -53,4 +61,4 @@ This option will specify which file extensions will trigger this task.
 
 *Default: []*
 
-This option will specify which relative subfolders or files will be exclude to this task.
+This option will specify which relative subfolders or files will be excluded from this task.

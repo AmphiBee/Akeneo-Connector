@@ -26,6 +26,7 @@ class AkeneoCredentialsBuilder
             $settings['akaneo_client_secret']   ?? '',
             $settings['akaneo_user']            ?? '',
             $settings['akaneo_password']        ?? '',
+            $settings['akaneo_channel']        ?? '',
         );
 
         return $credentials;

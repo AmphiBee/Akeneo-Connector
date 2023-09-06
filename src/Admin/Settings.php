@@ -19,7 +19,7 @@ use AmphiBee\AkeneoConnector\Service\AkeneoClientBuilder;
  */
 class Settings
 {
-    public static $akeneoSettings;
+    public static $akeneoSettings = [];
 
     public static $opt_page = 'configuration-akeneo-connector';
 
@@ -27,6 +27,10 @@ class Settings
     {
         add_action('admin_menu', array( $this, 'akeneo_settings_add_plugin_page' ));
         add_action('admin_init', array( $this, 'akeneo_settings_page_init' ));
+
+        add_filter('ak/settings/tabs/template', function ($template) {
+            return $template;
+        });
     }
 
     public function akeneo_settings_add_plugin_page()
@@ -48,11 +52,11 @@ class Settings
      */
     public static function getAkeneoSettings($key = false)
     {
-        if (!self::$akeneoSettings) {
-            self::$akeneoSettings = [
-                'synchronization' => get_option('akeneo_settings_synchronization') ?: [],
-                'credentials'     => get_option('akeneo_settings_credentials') ?: [],
-            ];
+        if (!isset(self::$akeneoSettings['synchronization'])) {
+            self::$akeneoSettings['synchronization'] = get_option('akeneo_settings_synchronization') ?: [];
+        }
+        if (!isset(self::$akeneoSettings['credentials'])) {
+            self::$akeneoSettings['credentials'] = get_option('akeneo_settings_credentials') ?: [];
         }
 
         if ($key) {
@@ -281,6 +285,7 @@ class Settings
             'akaneo_client_secret' => __('Client secret', 'akeneo-connector'),
             'akaneo_user'          => __('User', 'akeneo-connector'),
             'akaneo_password'      => __('Password', 'akeneo-connector'),
+            'akaneo_channel'       => __('Channel', 'akeneo-connector'),
         ];
 
         foreach ($settings_flds as $id => $name) {

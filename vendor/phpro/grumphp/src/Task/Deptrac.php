@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace GrumPHP\Task;
 
+use GrumPHP\Formatter\ProcessFormatterInterface;
 use GrumPHP\Runner\TaskResult;
 use GrumPHP\Runner\TaskResultInterface;
 use GrumPHP\Task\Context\ContextInterface;
@@ -12,7 +13,7 @@ use GrumPHP\Task\Context\RunContext;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * Deptrac task.
+ * @extends AbstractExternalTask<ProcessFormatterInterface>
  */
 class Deptrac extends AbstractExternalTask
 {
@@ -20,20 +21,16 @@ class Deptrac extends AbstractExternalTask
     {
         $resolver = new OptionsResolver();
         $resolver->setDefaults([
+            'cache_file' => null,
             'depfile' => null,
-            'formatter_graphviz' => false,
-            'formatter_graphviz_display' => true,
-            'formatter_graphviz_dump_image' => null,
-            'formatter_graphviz_dump_dot' => null,
-            'formatter_graphviz_dump_html' => null,
+            'formatter' => null,
+            'output' => null,
         ]);
 
+        $resolver->addAllowedTypes('cache_file', ['null', 'string']);
         $resolver->addAllowedTypes('depfile', ['null', 'string']);
-        $resolver->addAllowedTypes('formatter_graphviz', ['bool']);
-        $resolver->addAllowedTypes('formatter_graphviz_display', ['bool']);
-        $resolver->addAllowedTypes('formatter_graphviz_dump_image', ['null', 'string']);
-        $resolver->addAllowedTypes('formatter_graphviz_dump_dot', ['null', 'string']);
-        $resolver->addAllowedTypes('formatter_graphviz_dump_html', ['null', 'string']);
+        $resolver->addAllowedTypes('formatter', ['null', 'string']);
+        $resolver->addAllowedTypes('output', ['null', 'string']);
 
         return $resolver;
     }
@@ -53,13 +50,11 @@ class Deptrac extends AbstractExternalTask
         }
 
         $arguments = $this->processBuilder->createArgumentsForCommand('deptrac');
-        $arguments->add('analyze');
-        $arguments->add('--formatter-graphviz='.(int) $config['formatter_graphviz']);
-        $arguments->add('--formatter-graphviz-display='.(int) $config['formatter_graphviz_display']);
-        $arguments->addOptionalArgument('--formatter-graphviz-dump-image=%s', $config['formatter_graphviz_dump_image']);
-        $arguments->addOptionalArgument('--formatter-graphviz-dump-dot=%s', $config['formatter_graphviz_dump_dot']);
-        $arguments->addOptionalArgument('--formatter-graphviz-dump-html=%s', $config['formatter_graphviz_dump_html']);
-        $arguments->addOptionalArgument('%s', $config['depfile']);
+        $arguments->add('analyse');
+        $arguments->addOptionalArgument('--formatter=%s', $config['formatter']);
+        $arguments->addOptionalArgument('--output=%s', $config['output']);
+        $arguments->addOptionalArgument('--cache-file=%s', $config['cache_file']);
+        $arguments->addOptionalArgument('--config-file=%s', $config['depfile']);
 
         $process = $this->processBuilder->buildProcess($arguments);
         $process->run();

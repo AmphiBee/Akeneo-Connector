@@ -102,10 +102,10 @@ class InitCommand extends Command
         foreach (self::$hooks as $hook) {
             $gitHook = $this->filesystem->buildPath($gitHooksPath, $hook);
             $hookTemplate = $this->filesystem->guessFile(
-                array_filter([
+                [
                     $customHooksPath,
                     $resourceHooksPath,
-                ]),
+                ],
                 [$hook]
             );
 
@@ -116,6 +116,7 @@ class InitCommand extends Command
             }
 
             $content = $this->parseHookBody($hook, $hookTemplate);
+            $this->filesystem->backupFile($gitHook, md5($content));
             $this->filesystem->dumpFile($gitHook, $content);
             $this->filesystem->chmod($gitHook, 0775);
         }
@@ -152,7 +153,10 @@ class InitCommand extends Command
             case 'ENV':
                 return DotEnvSerializer::serialize($value);
             default:
-                /** @var string $value */
+                /**
+                 * @var string $value
+                 * @psalm-suppress PossiblyInvalidCast, RedundantCastGivenDocblockType
+                 */
                 return (string) $value;
         }
     }

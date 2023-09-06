@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace GrumPHP\Task;
 
+use GrumPHP\Formatter\ProcessFormatterInterface;
 use GrumPHP\Runner\TaskResult;
 use GrumPHP\Runner\TaskResultInterface;
 use GrumPHP\Task\Context\ContextInterface;
@@ -11,6 +12,9 @@ use GrumPHP\Task\Context\GitPreCommitContext;
 use GrumPHP\Task\Context\RunContext;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+/**
+ * @extends AbstractExternalTask<ProcessFormatterInterface>
+ */
 class Paratest extends AbstractExternalTask
 {
     public static function getConfigurableOptions(): OptionsResolver
@@ -68,9 +72,9 @@ class Paratest extends AbstractExternalTask
         }
 
         $arguments = $this->processBuilder->createArgumentsForCommand('paratest');
-        $arguments->addOptionalArgument('-p=%s', $config['processes']);
+        $arguments->addOptionalArgument('--processes=%s', $config['processes']);
         $arguments->addOptionalArgument('-f', $config['functional']);
-        $arguments->addOptionalArgument('-c=%s', $config['configuration']);
+        $arguments->addOptionalArgument('--configuration=%s', $config['configuration']);
         $arguments->addOptionalArgument('--phpunit=%s', $config['phpunit']);
         $arguments->addOptionalArgument('--runner=%s', $config['runner']);
         $arguments->addOptionalArgument('--coverage-clover=%s', $config['coverage-clover']);
@@ -79,7 +83,7 @@ class Paratest extends AbstractExternalTask
         $arguments->addOptionalArgument('--coverage-xml=%s', $config['coverage-xml']);
         $arguments->addOptionalArgument('--log-junit=%s', $config['log-junit']);
         $arguments->addOptionalArgument('--testsuite=%s', $config['testsuite']);
-        $arguments->addOptionalArgument('--verbose=1', $config['verbose']);
+        $arguments->addOptionalArgument('--verbose', $config['verbose']);
         $arguments->addOptionalCommaSeparatedArgument('--group=%s', $config['group']);
 
         $process = $this->processBuilder->buildProcess($arguments);

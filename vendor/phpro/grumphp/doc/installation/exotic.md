@@ -116,23 +116,24 @@ If you want to support multiple bin directories, you can prepend them to your pa
 
 ### Environment variables
 
-It is also possible to set some of the environment variables above inside the `grumphp.yaml` file directly:
+It is also possible to set some of the environment variables above inside the `grumphp.yml` file directly:
 
 ```yaml
+# grumphp.yml
 grumphp:
-  environment:
+    environment:
     variables:
-      GRUMPHP_PROJECT_DIR: "..."
-      GRUMPHP_GIT_WORKING_DIR: "..."
-      GRUMPHP_GIT_REPOSITORY_DIR: "..."
-      GRUMPHP_BIN_DIR: "..."
+        GRUMPHP_PROJECT_DIR: "..."
+        GRUMPHP_GIT_WORKING_DIR: "..."
+        GRUMPHP_GIT_REPOSITORY_DIR: "..."
+        GRUMPHP_BIN_DIR: "..."
     paths:
-      - 'tools' 
+        - 'tools'
 ```
 
-The configuration from inside the `grumphp.yaml` file will be loaded if the guessing system was able to determine an initial version of the guessed paths.
+The configuration from inside the `grumphp.yml` file will be loaded if the guessing system was able to determine an initial version of the guessed paths.
 This is required because GrumPHP tries to guess its config file based on all the parameters above.
-Once the config is loaded, it does a second guess based on environment variables that were detected inside the `grumphp.yaml` file.
+Once the config is loaded, it does a second guess based on environment variables that were detected inside the `grumphp.yml` file.
 
 
 ## Running GrumPHP with a custom config file
