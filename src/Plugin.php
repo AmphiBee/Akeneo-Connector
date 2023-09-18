@@ -27,7 +27,7 @@ class Plugin
 
     protected static array $errors = [];
 
-    protected const DB_VERSION = '1.14.0';
+    protected const DB_VERSION = '1.17.0';
 
     /**
      * Creates an instance if one isn't already available,
