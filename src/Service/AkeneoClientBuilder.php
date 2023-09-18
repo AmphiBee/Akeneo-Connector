@@ -6,6 +6,8 @@
 
 namespace AmphiBee\AkeneoConnector\Service;
 
+use AmphiBee\AkeneoConnector\DataProvider\FamilyDataProvider;
+use AmphiBee\AkeneoConnector\DataProvider\FamilyVariantDataProvider;
 use AmphiBee\AkeneoConnector\Service\Akeneo\AkeneoPimClientBuilder;
 use AmphiBee\AkeneoConnector\Service\Akeneo\AkeneoPimClientInterface;
 use Akeneo\PimEnterprise\ApiClient\AkeneoPimEnterpriseClientBuilder;
@@ -31,6 +33,8 @@ class AkeneoClientBuilder
     private CategoryDataProvider $category;
     private AttributeDataProvider $attribute;
     private AttributeOptionDataProvider $attributeOption;
+    private FamilyDataProvider $family;
+    private FamilyVariantDataProvider $familyVariant;
     private ProductModelDataProvider $productModel;
     private ProductDataProvider $product;
 
@@ -48,6 +52,8 @@ class AkeneoClientBuilder
         $this->category        = new CategoryDataProvider($this->getClient());
         $this->attribute       = new AttributeDataProvider($this->getClient());
         $this->attributeOption = new AttributeOptionDataProvider($this->getClient());
+        $this->family          = new FamilyDataProvider($this->getClient());
+        $this->familyVariant   = new FamilyVariantDataProvider($this->getClient());
         $this->productModel    = new ProductModelDataProvider($this->getClient());
         $this->product         = new ProductDataProvider($this->getClient());
 
@@ -124,6 +130,19 @@ class AkeneoClientBuilder
     public function getAttributeOptionProvider(): AttributeOptionDataProvider
     {
         return $this->attributeOption;
+    }
+
+    public function getFamilyProvider(): FamilyDataProvider
+    {
+        return $this->family;
+    }
+
+    /**
+     * @return FamilyVariantDataProvider
+     */
+    public function getFamilyVariantProvider(): FamilyVariantDataProvider
+    {
+        return $this->familyVariant;
     }
 
     /**

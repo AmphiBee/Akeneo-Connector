@@ -104,6 +104,10 @@ class AttributeDataPersister extends AbstractDataPersister
         try {
             $mapping = Settings::getMappingValue($attribute['code']);
 
+            if (!empty($attribute['family_variant']) && $attribute['family_variant'] === true) {
+                $mapping = 'global_attribute';
+            }
+
             if (!($mapping === 'global_attribute' || $mapping === 'private_global_attribute')) {
                 return;
             }

@@ -7,6 +7,7 @@
 
 namespace AmphiBee\AkeneoConnector\DataPersister;
 
+use AmphiBee\AkeneoConnector\DataProvider\FamilyVariantDataProvider;
 use Monolog\Logger;
 use AmphiBee\AkeneoConnector\Models\ProductModel;
 use AmphiBee\AkeneoConnector\Service\LoggerService;
@@ -120,6 +121,7 @@ class ModelDataPersister extends AbstractDataPersister
             'product_id'   => $product_id,
             'parent_id'    => $parent ? $parent->id : null,
             'model_code'   => $model->getCode(),
+            'family_code' => $model->getFamily(),
             'variant_code' => $model->getFamilyVariant(),
         ]);
     }
@@ -130,7 +132,7 @@ class ModelDataPersister extends AbstractDataPersister
      *
      * @return void
      */
-    public function setupVariationAttributes()
+    public function setupVariationAttributes(): void
     {
         $models = ProductModel::get()->groupBy('product_id');
 
@@ -141,7 +143,8 @@ class ModelDataPersister extends AbstractDataPersister
             }
 
             $attributes = $models->mapWithKeys(function ($model) {
-                return [$model->variant_code => $this->formatVariableAttribute($model->variant_code)];
+                $code = $this->getCodeFromModel($model);
+                return [$code => $this->formatVariableAttribute($code)];
             })->toArray();
 
             $attributes = $this->prepareProductAttributes($attributes);

@@ -106,20 +106,7 @@ class AttributeDataProvider extends AbstractDataProvider
     {
         foreach ($this->api->all($pageSize, $queryParameters) as $attribute) {
             try {
-                $prepare = [
-                    'code'         => $attribute['code'],
-                    'type'         => $attribute['type'],
-                    'localizable'  => $attribute['localizable'],
-                    'group'        => $attribute['group'],
-                    'labels'       => $attribute['labels'],
-                    'group_labels' => $attribute['group_labels'],
-                    'target'       => $this->getConversionTarget($attribute['type'], $attribute['code']),
-                ];
-
-                $metas_datas = array_diff_key($attribute, $prepare);
-
-                $prepare['meta_datas'] = $metas_datas;
-
+                $prepare = $this->prepare($attribute);
                 yield $this->getSerializer()->denormalize($prepare, AK_Attribute::class);
             } catch (ExceptionInterface $exception) {
                 LoggerService::log(Logger::ERROR, sprintf(
@@ -152,5 +139,25 @@ class AttributeDataProvider extends AbstractDataProvider
         $target = apply_filters("ak/import/single/target/attribute/type={$type}/code={$code}", $target);
 
         return $target;
+    }
+
+    protected function prepare($attribute): array
+    {
+        $prepare = [
+            'code'                   => $attribute['code'],
+            'type'                   => $attribute['type'],
+            'localizable'            => $attribute['localizable'],
+            'group'                  => $attribute['group'],
+            'labels'                 => $attribute['labels'],
+            'group_labels'           => $attribute['group_labels'],
+            'variant_attribute_sets' => $attribute['variant_attribute_sets'],
+            'target'                 => $this->getConversionTarget($attribute['type'], $attribute['code']),
+        ];
+
+        $metas_datas = array_diff_key($attribute, $prepare);
+
+        $prepare['meta_datas'] = $metas_datas;
+
+        return $prepare;
     }
 }

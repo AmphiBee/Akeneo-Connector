@@ -36,8 +36,9 @@ class ProductModelCommand extends AbstractCommand
         $this->print('Starting product model import');
 
         $provider  = AkeneoClientBuilder::create()->getProductModelProvider();
+        $familyVariantDataProvider = AkeneoClientBuilder::create()->getFamilyVariantProvider();
         $adapter   = new ModelAdapter();
-        $persister = new ModelDataPersister();
+        $persister = new ModelDataPersister($familyVariantDataProvider);
 
         do_action('ak/a/product_models/before_import', $provider->getAll());
 

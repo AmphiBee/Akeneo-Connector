@@ -6,6 +6,7 @@
 
 namespace AmphiBee\AkeneoConnector\DataPersister\Concerns;
 
+use AmphiBee\AkeneoConnector\DataProvider\FamilyVariantDataProvider;
 use AmphiBee\AkeneoConnector\Entity\WooCommerce\Product;
 use WC_Product_Simple;
 use OP\Lib\WpEloquent\Model\Post;
@@ -65,6 +66,21 @@ trait CreatesProducts
         'external_media',
         'external_gallery',
     ];
+    private $familyVariantDataProvider;
+
+    /**
+     * @param FamilyVariantDataProvider $familyVariantDataProvider
+     */
+    public function __construct(FamilyVariantDataProvider $familyVariantDataProvider)
+    {
+        $this->familyVariantDataProvider = $familyVariantDataProvider;
+        parent::__construct();
+    }
+
+    public function getFamilyVariantDataProvider(): FamilyVariantDataProvider
+    {
+        return $this->familyVariantDataProvider;
+    }
 
 
     /**
@@ -208,11 +224,11 @@ trait CreatesProducts
     /**
      * Format the a single Akeneo variable attribute for Wordpress, reading the mapping values.
      *
-     * @param array  $attr_key  The variable attribute key/code
+     * @param string $attr_key The variable attribute key/code
      *
-     * @return void
+     * @return array
      */
-    public function formatVariableAttribute(string $attr_key)
+    public function formatVariableAttribute(string $attr_key): array
     {
         $mapping = Settings::getMappingValue($attr_key);
 
@@ -644,5 +660,19 @@ trait CreatesProducts
         }
 
         return $data;
+    }
+
+    public function getCodeFromModel($model)
+    {
+        $ak_variant_attribute = $this->getFamilyVariantDataProvider()->get($model->family_code, $model->variant_code);
+        $code = $model->variant_code;
+        foreach ($ak_variant_attribute['variant_attribute_sets'] as $attribute_set) {
+            $level = $attribute_set['level'];
+            if ($level === 1 && !empty($attribute_set['axes'][0])) {
+                $code = $attribute_set['axes'][0];
+            }
+        }
+
+        return $code;
     }
 }

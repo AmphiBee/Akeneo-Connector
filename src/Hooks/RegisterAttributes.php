@@ -80,6 +80,13 @@ class RegisterAttributes extends Hook
                 # Save strings in db
                 LocaleStrings::commit();
 
+                # Create/Update attributes
+                if (is_array($taxonomies) && !empty($taxonomies)) {
+                    foreach ($taxonomies as $taxonomy) {
+                        $persister->createOrUpdateFromArray($taxonomy);
+                    }
+                }
+
                 set_transient('_ak_attributes', $taxonomies, 12 * HOUR_IN_SECONDS);
 
                 # Catch error
@@ -94,13 +101,6 @@ class RegisterAttributes extends Hook
                 else {
                     Plugin::addErrorMessage(sprintf('An error occured while retreiving attributes : %s', $message));
                 }
-            }
-        }
-
-        # Create/Update attributes
-        if (is_array($taxonomies) && !empty($taxonomies)) {
-            foreach ($taxonomies as $taxonomy) {
-                $persister->createOrUpdateFromArray($taxonomy);
             }
         }
     }
