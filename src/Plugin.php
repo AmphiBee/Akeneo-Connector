@@ -27,7 +27,7 @@ class Plugin
 
     protected static array $errors = [];
 
-    protected const DB_VERSION = '1.13.0';
+    protected const DB_VERSION = '1.17.0';
 
     /**
      * Creates an instance if one isn't already available,
@@ -158,11 +158,12 @@ class Plugin
              */
             $table = $wpdb->prefix . 'akconnector_products_models';
 
-            $sql = "CREATE TABLE IF NOT EXISTS $table (
+            $sql = "CREATE TABLE $table (
                 id mediumint(9) NOT NULL AUTO_INCREMENT,
                 product_id mediumint(9) DEFAULT NULL,
                 parent_id mediumint(9) DEFAULT NULL,
                 model_code varchar(45) DEFAULT NULL,
+                family_code varchar(45) DEFAULT NULL,
                 variant_code varchar(45) DEFAULT NULL,
                 created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
                 updated_at datetime DEFAULT NULL,

@@ -7,6 +7,7 @@
 
 namespace AmphiBee\AkeneoConnector\DataPersister;
 
+use AmphiBee\AkeneoConnector\DataProvider\FamilyVariantDataProvider;
 use Monolog\Logger;
 use AmphiBee\AkeneoConnector\Helpers\Fetcher;
 use AmphiBee\AkeneoConnector\Models\ProductModel;
@@ -20,24 +21,26 @@ class ProductDataPersister extends AbstractDataPersister
     use CreatesProducts;
 
     /**
-     * @param WP_Product $product
+     * @param FamilyVariantDataProvider $familyVariantDataProvider
+     * @param WP_Product                $product
      *
      * @return void
+     * @throws \Exception
      */
-    public function createOrUpdate(WP_Product $product)
+    public function createOrUpdate(WP_Product $product): void
     {
         try {
             if (!$product->isEnabled()) {
                 return;
             }
 
-            # Product with product model (variable product in WC)
             if ($product->getParent()) {
-                return $this->createOrUpdateProductVariable($product);
+                # Product with product model (variable product in WC)
+                $this->createOrUpdateProductVariable($product);
+            } else {
+                # Simple product
+                $this->createOrUpdateProductSimple($product);
             }
-
-            # Simple product
-            $this->createOrUpdateProductSimple($product);
 
             # catch error
         } catch (ExceptionInterface $e) {
@@ -108,7 +111,10 @@ class ProductDataPersister extends AbstractDataPersister
         # Hierarchical loop to get variant(s) from models
         $attributes = [];
         do {
-            $attributes[] = $md->variant_code;
+            $code = $this->getCodeFromModel($model);
+
+            $attributes[] = $code;
+
             $md = $md->parent;
         } while ($md);
 
@@ -131,5 +137,10 @@ class ProductDataPersister extends AbstractDataPersister
     public function updateSingleProduct(WP_Product $product, string $locale)
     {
         return $this->updateSingleElement(static::$base_product, $product, $locale);
+    }
+
+    public function getFamilyVariantDataProvider(): FamilyVariantDataProvider
+    {
+        return $this->familyVariantDataProvider;
     }
 }

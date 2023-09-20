@@ -33,8 +33,9 @@ class ProductCommand extends AbstractCommand
         $this->print('Starting product import');
 
         $provider  = AkeneoClientBuilder::create()->getProductProvider();
+        $familyVariantDataProvider = AkeneoClientBuilder::create()->getFamilyVariantProvider();
         $adapter   = new ProductAdapter();
-        $persister = new ProductDataPersister();
+        $persister = new ProductDataPersister($familyVariantDataProvider);
 
         do_action('ak/a/products/before_import', $provider->getAll());
 

@@ -35,6 +35,7 @@ class ProductModel extends Model
         'product_id',
         'parent_id',
         'model_code',
+        'family_code',
         'variant_code',
     ];
 
