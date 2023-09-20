@@ -610,6 +610,8 @@ trait CreatesProducts
         # Publish the product which was in draft waiting for a variation
         $wc_product->set_status('publish');
         $wc_product->save();
+
+        do_action('ak/a/product/variable/after_save', $variation, $wc_product, $data, $attributes, $locale);
     }
 
 
