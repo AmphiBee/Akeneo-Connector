@@ -54,9 +54,12 @@ class ProductModelCommand extends AbstractCommand
 
         foreach ($models as $ak_model) {
             $this->print(sprintf('Running Product Model with code: %s', $ak_model->getCode()));
-
-            $wp_model = $adapter->fromModel($ak_model);
-            $persister->createOrUpdate($wp_model);
+            try {
+                $wp_model = $adapter->fromModel($ak_model);
+                $persister->createOrUpdate($wp_model);
+            } catch (\Exception $e) {
+                $this->error('An error occurred while creating the product : ' . $e->getMessage() . "(" . $e->getCode() . ")");
+            }
         }
 
         # Add variant attributes to the created variable products
