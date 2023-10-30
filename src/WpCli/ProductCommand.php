@@ -49,8 +49,12 @@ class ProductCommand extends AbstractCommand
 
             $this->print(sprintf('Running Product with code: %s, [ Enabled: %s ]', $ak_product->getIdentifier(), $enabled ? 'Yes' : 'No, skipping'));
 
-            $wp_product = $adapter->fromProduct($ak_product);
-            $persister->createOrUpdate($wp_product);
+            try {
+                $wp_product = $adapter->fromProduct($ak_product);
+                $persister->createOrUpdate($wp_product);
+            } catch (\Exception $e) {
+                $this->error('An error occurred while creating the product : ' . $e->getMessage() . "(". $e->getCode() .")");
+            }
         }
 
         do_action('ak/a/products/after_import', $provider->getAll());
