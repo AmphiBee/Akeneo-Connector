@@ -150,7 +150,7 @@ class AttributeDataProvider extends AbstractDataProvider
             'group'                  => $attribute['group'],
             'labels'                 => $attribute['labels'],
             'group_labels'           => $attribute['group_labels'],
-            'variant_attribute_sets' => $attribute['variant_attribute_sets'],
+            'variant_attribute_sets' => $attribute['variant_attribute_sets'] ?? '',
             'target'                 => $this->getConversionTarget($attribute['type'], $attribute['code']),
         ];
 
