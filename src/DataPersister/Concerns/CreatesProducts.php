@@ -321,7 +321,7 @@ trait CreatesProducts
         if (isset($args['sale_price'])) {
             $sale_from = Carbon::parse($args['sale_from']);
             $sale_to = Carbon::parse($args['sale_to']);
-            $product->set_date_on_sale_to($sale_from->isValid() ? $sale_from->startOfDay()->toIso8601String() : '');
+            $product->set_date_on_sale_from($sale_from->isValid() ? $sale_from->startOfDay()->toIso8601String() : '');
             $product->set_date_on_sale_to($sale_to->isValid() ? $sale_to->endOfDay()->toIso8601String() : '');
         }
 
@@ -595,7 +595,7 @@ trait CreatesProducts
         if (isset($data['sale_price'])) {
             $sale_from = Carbon::parse($data['sale_from']);
             $sale_to = Carbon::parse($data['sale_to']);
-            $variation->set_date_on_sale_to($sale_from->isValid() ? $sale_from->startOfDay()->toIso8601String() : '');
+            $variation->set_date_on_sale_from($sale_from->isValid() ? $sale_from->startOfDay()->toIso8601String() : '');
             $variation->set_date_on_sale_to($sale_to->isValid() ? $sale_to->endOfDay()->toIso8601String() : '');
         }
 
