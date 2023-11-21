@@ -17,6 +17,7 @@ use AmphiBee\AkeneoConnector\Helpers\AttributeFormatter;
 use AmphiBee\AkeneoConnector\DataProvider\AttributeDataProvider;
 use AmphiBee\AkeneoConnector\Entity\WooCommerce\Model as WP_Model;
 use AmphiBee\AkeneoConnector\Entity\WooCommerce\Product as WP_Product;
+use Carbon\Carbon;
 
 trait CreatesProducts
 {
@@ -318,8 +319,10 @@ trait CreatesProducts
         $product->set_price($sale ?: $regular);
 
         if (isset($args['sale_price'])) {
-            $product->set_date_on_sale_from(isset($args['sale_from']) ? $args['sale_from'] : '');
-            $product->set_date_on_sale_to(isset($args['sale_to']) ? $args['sale_to'] : '');
+            $sale_from = Carbon::parse($args['sale_from']);
+            $sale_to = Carbon::parse($args['sale_to']);
+            $product->set_date_on_sale_to($sale_from->isValid() ? $sale_from->startOfDay()->toIso8601String() : '');
+            $product->set_date_on_sale_to($sale_to->isValid() ? $sale_to->endOfDay()->toIso8601String() : '');
         }
 
         // Taxes
@@ -584,9 +587,17 @@ trait CreatesProducts
         # Prices
         $regular = isset($data['regular_price'][0]) ? collect($data['regular_price'][0])->get('amount', '') : ($data['regular_price'] ?? '');
         $sale    = isset($data['sale_price'][0]) ? collect($data['sale_price'][0])->get('amount', '') : ($data['sale_price'] ?? '');
+        
         $variation->set_regular_price($regular);
         $variation->set_sale_price($sale ?: '');
         $variation->set_price($sale ?: $regular);
+
+        if (isset($data['sale_price'])) {
+            $sale_from = Carbon::parse($data['sale_from']);
+            $sale_to = Carbon::parse($data['sale_to']);
+            $variation->set_date_on_sale_to($sale_from->isValid() ? $sale_from->startOfDay()->toIso8601String() : '');
+            $variation->set_date_on_sale_to($sale_to->isValid() ? $sale_to->endOfDay()->toIso8601String() : '');
+        }
 
         # Stock (Not a virtual product)
         $virtual      = isset($data['virtual']) && !$data['virtual'];
