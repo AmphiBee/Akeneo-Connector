@@ -241,8 +241,8 @@ class Settings
 
         foreach ($settingsFlds as $settingsFld) {
             $labels  = collect($settingsFld['labels'] ?: []);
-            $current = $translator->current();
-            $primary = $translator->default;
+            $current = $translator->current() ?: '';
+            $primary = $translator->default ?: '';
 
             $attrName = ($labels->get($current) ?: $labels->get($primary)) ?: $labels->first();
 
