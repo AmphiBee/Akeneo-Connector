@@ -587,7 +587,7 @@ trait CreatesProducts
         # Prices
         $regular = isset($data['regular_price'][0]) ? collect($data['regular_price'][0])->get('amount', '') : ($data['regular_price'] ?? '');
         $sale    = isset($data['sale_price'][0]) ? collect($data['sale_price'][0])->get('amount', '') : ($data['sale_price'] ?? '');
-        
+
         $variation->set_regular_price($regular);
         $variation->set_sale_price($sale ?: '');
         $variation->set_price($sale ?: $regular);
@@ -621,6 +621,9 @@ trait CreatesProducts
         # Publish the product which was in draft waiting for a variation
         $wc_product->set_status('publish');
         $wc_product->save();
+
+        do_action('ak/a/product/variable/external_gallery', $variation_id, $data['external_gallery'] ?? [], $locale);
+        do_action('ak/a/product/variable/external_media', $variation_id, $data['external_media'] ?? [], $locale);
 
         do_action('ak/a/product/variable/after_save', $variation, $wc_product, $data, $attributes, $locale);
     }
