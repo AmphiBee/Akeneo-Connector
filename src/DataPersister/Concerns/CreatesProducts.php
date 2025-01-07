@@ -312,36 +312,39 @@ trait CreatesProducts
         }
 
         // Prices
-        $regular = isset($args['regular_price'][0]) ? collect($args['regular_price'][0])->get('amount', '') : ($args['regular_price'] ?? '');
-        $sale    = isset($args['sale_price'][0]) ? collect($args['sale_price'][0])->get('amount', '') : ($args['sale_price'] ?? '');
-        $product->set_regular_price($regular);
-        $product->set_sale_price($sale ?: '');
-        $product->set_price($sale ?: $regular);
+        if (apply_filters('ak/a/product/variable/manage_price', true, $data)) {
+            $regular = isset($args['regular_price'][0]) ? collect($args['regular_price'][0])->get('amount', '') : ($args['regular_price'] ?? '');
+            $sale = isset($args['sale_price'][0]) ? collect($args['sale_price'][0])->get('amount', '') : ($args['sale_price'] ?? '');
+            $product->set_regular_price($regular);
+            $product->set_sale_price($sale ?: '');
+            $product->set_price($sale ?: $regular);
 
-        if (isset($args['sale_price'])) {
-            if (isset($args['sale_from'])) {
-                $sale_from = Carbon::parse($args['sale_from']);
-                $product->set_date_on_sale_from($sale_from->isValid() ? $sale_from->startOfDay()->toIso8601String() : '');
-            }
-            if (isset($args['sale_to'])) {
-                $sale_to = Carbon::parse($args['sale_to']);
-                $product->set_date_on_sale_to($sale_to->isValid() ? $sale_to->endOfDay()->toIso8601String() : '');
-            }
-        }
-
-        // Taxes
-        if (\get_option('woocommerce_calc_taxes') === 'yes') {
-            $product->set_tax_status(isset($args['tax_status']) ? $args['tax_status'] : 'taxable');
-            $tax_class = '';
-            if (!empty($args['tax_class'])) {
-                $tax_class = is_array($args['tax_class']) ? $args['tax_class'][0] : $args['tax_class'];
+            if (isset($args['sale_price'])) {
+                if (isset($args['sale_from'])) {
+                    $sale_from = Carbon::parse($args['sale_from']);
+                    $product->set_date_on_sale_from($sale_from->isValid() ? $sale_from->startOfDay()->toIso8601String() : '');
+                }
+                if (isset($args['sale_to'])) {
+                    $sale_to = Carbon::parse($args['sale_to']);
+                    $product->set_date_on_sale_to($sale_to->isValid() ? $sale_to->endOfDay()->toIso8601String() : '');
+                }
             }
 
-            if ($tax_class === 'tva_55') {
-                $tax_class = \sanitize_title('Taux réduit');
-            }
 
-            $product->set_tax_class(isset($args['tax_class']) ? $tax_class : '');
+            // Taxes
+            if (\get_option('woocommerce_calc_taxes') === 'yes') {
+                $product->set_tax_status(isset($args['tax_status']) ? $args['tax_status'] : 'taxable');
+                $tax_class = '';
+                if (!empty($args['tax_class'])) {
+                    $tax_class = is_array($args['tax_class']) ? $args['tax_class'][0] : $args['tax_class'];
+                }
+
+                if ($tax_class === 'tva_55') {
+                    $tax_class = \sanitize_title('Taux réduit');
+                }
+
+                $product->set_tax_class(isset($args['tax_class']) ? $tax_class : '');
+            }
         }
 
         // Featured (boolean)
@@ -589,21 +592,23 @@ trait CreatesProducts
         $variation->set_sku($product->getCode());
 
         # Prices
-        $regular = isset($data['regular_price'][0]) ? collect($data['regular_price'][0])->get('amount', '') : ($data['regular_price'] ?? '');
-        $sale    = isset($data['sale_price'][0]) ? collect($data['sale_price'][0])->get('amount', '') : ($data['sale_price'] ?? '');
+        if (apply_filters('ak/a/product/variable/manage_price', true, $data)) {
+            $regular = isset($data['regular_price'][0]) ? collect($data['regular_price'][0])->get('amount', '') : ($data['regular_price'] ?? '');
+            $sale = isset($data['sale_price'][0]) ? collect($data['sale_price'][0])->get('amount', '') : ($data['sale_price'] ?? '');
 
-        $variation->set_regular_price($regular);
-        $variation->set_sale_price($sale ?: '');
-        $variation->set_price($sale ?: $regular);
+            $variation->set_regular_price($regular);
+            $variation->set_sale_price($sale ?: '');
+            $variation->set_price($sale ?: $regular);
 
-        if (isset($data['sale_price'])) {
-            if (isset($data['sale_from'])) {
-                $sale_from = Carbon::parse($data['sale_from']);
-                $variation->set_date_on_sale_from($sale_from->isValid() ? $sale_from->startOfDay()->toIso8601String() : '');
-            }
-            if (isset($data['sale_to'])) {
-                $sale_to = Carbon::parse($data['sale_to']);
-                $variation->set_date_on_sale_to($sale_to->isValid() ? $sale_to->endOfDay()->toIso8601String() : '');
+            if (isset($data['sale_price'])) {
+                if (isset($data['sale_from'])) {
+                    $sale_from = Carbon::parse($data['sale_from']);
+                    $variation->set_date_on_sale_from($sale_from->isValid() ? $sale_from->startOfDay()->toIso8601String() : '');
+                }
+                if (isset($data['sale_to'])) {
+                    $sale_to = Carbon::parse($data['sale_to']);
+                    $variation->set_date_on_sale_to($sale_to->isValid() ? $sale_to->endOfDay()->toIso8601String() : '');
+                }
             }
         }
 
