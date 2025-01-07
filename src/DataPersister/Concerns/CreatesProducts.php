@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * This file is part of the Amphibee package.
  * (c) Amphibee <hello@amphibee.fr>
@@ -6,17 +8,16 @@
 
 namespace AmphiBee\AkeneoConnector\DataPersister\Concerns;
 
-use AmphiBee\AkeneoConnector\DataProvider\FamilyVariantDataProvider;
-use AmphiBee\AkeneoConnector\Entity\WooCommerce\Product;
-use WC_Product_Simple;
-use OP\Lib\WpEloquent\Model\Post;
 use AmphiBee\AkeneoConnector\Admin\Settings;
-use AmphiBee\AkeneoConnector\Helpers\Fetcher;
-use AmphiBee\AkeneoConnector\Models\ProductModel;
-use AmphiBee\AkeneoConnector\Helpers\AttributeFormatter;
 use AmphiBee\AkeneoConnector\DataProvider\AttributeDataProvider;
+use AmphiBee\AkeneoConnector\DataProvider\FamilyVariantDataProvider;
 use AmphiBee\AkeneoConnector\Entity\WooCommerce\Model as WP_Model;
+use AmphiBee\AkeneoConnector\Entity\WooCommerce\Product;
 use AmphiBee\AkeneoConnector\Entity\WooCommerce\Product as WP_Product;
+use AmphiBee\AkeneoConnector\Helpers\AttributeFormatter;
+use AmphiBee\AkeneoConnector\Helpers\Fetcher;
+use Carbon\Carbon;
+use OP\Lib\WpEloquent\Model\Post;
 
 trait CreatesProducts
 {
@@ -26,21 +27,21 @@ trait CreatesProducts
      * @var array
      */
     protected static $base_product = [
-        'type'              => 'simple',
-        'name'              => '',
-        'description'       => '',
+        'type' => 'simple',
+        'name' => '',
+        'description' => '',
         'short_description' => '',
-        'images'            => [],
-        'sku'               => '',
-        'regular_price'     => '',
-        'sale_price'        => '',
-        'attributes'        => [],
-        'metas'             => [],
-        'product_cat'       => [],
-        'external_media'    => [],
-        'external_gallery'  => [],
-        'upsells'           => [],
-        'cross_sells'       => [],
+        'images' => [],
+        'sku' => '',
+        'regular_price' => '',
+        'sale_price' => '',
+        'attributes' => [],
+        'metas' => [],
+        'product_cat' => [],
+        'external_media' => [],
+        'external_gallery' => [],
+        'upsells' => [],
+        'cross_sells' => [],
     ];
 
     /**
@@ -49,12 +50,12 @@ trait CreatesProducts
      * @var array
      */
     protected static $aliases = [
-        'post_title'     => 'name',
-        'post_excerpt'   => 'short_description',
-        'post_content'   => 'description',
+        'post_title' => 'name',
+        'post_excerpt' => 'short_description',
+        'post_content' => 'description',
         'post_thumbnail' => 'thumbnail',
-        'ugs'            => 'sku',
-        'gallery'        => 'images',
+        'ugs' => 'sku',
+        'gallery' => 'images',
     ];
 
     /**
@@ -66,11 +67,9 @@ trait CreatesProducts
         'external_media',
         'external_gallery',
     ];
+
     private $familyVariantDataProvider;
 
-    /**
-     * @param FamilyVariantDataProvider $familyVariantDataProvider
-     */
     public function __construct(FamilyVariantDataProvider $familyVariantDataProvider)
     {
         $this->familyVariantDataProvider = $familyVariantDataProvider;
@@ -82,14 +81,11 @@ trait CreatesProducts
         return $this->familyVariantDataProvider;
     }
 
-
     /**
      * Save a single product by locale.
      *
-     * @param array                $product_parsed  The default product attributes
-     * @param WP_Product|WP_Model  $product
-     * @param string               $locale
-     *
+     * @param array $product_parsed The default product attributes
+     * @param WP_Product|WP_Model $product
      * @return int
      */
     protected function updateSingleElement(array $product_parsed, $product, string $locale)
@@ -98,10 +94,10 @@ trait CreatesProducts
         $this->formatAssociations($product_parsed, $product->getAssociation());
 
         if (!$product_parsed['name']) {
-            return 0; # A girl has no name.
+            return 0; // A girl has no name.
         }
 
-        $product_parsed['product_id']            = Fetcher::getProductIdBySku($product->getCode(), $locale);
+        $product_parsed['product_id'] = Fetcher::getProductIdBySku($product->getCode(), $locale);
         $product_parsed['metas']['_akeneo_lang'] = $locale;
         $product_parsed['metas']['_akeneo_code'] = $product->getCode();
 
@@ -128,24 +124,22 @@ trait CreatesProducts
         return $product_id;
     }
 
-
     /**
      * Format the Akeneo attributes for Wordpress, reading the mapping values.
      *
-     * @param array  &$product  The product as array containing WooCommerce data
-     * @param array  $attrs     The Attributes
-     * @param string $locale    The current locale
-     *
+     * @param array  &$product The product as array containing WooCommerce data
+     * @param array $attrs The Attributes
+     * @param string $locale The current locale
      * @return void
      */
     public function formatAttributes(array &$product, array $attrs, string $locale)
     {
-        $aliases  = static::$aliases;
+        $aliases = static::$aliases;
 
         foreach ($attrs as $attr_key => $attr_value) {
-            $attr_type  = AttributeDataProvider::getAttributeType($attr_key);
+            $attr_type = AttributeDataProvider::getAttributeType($attr_key);
             $attr_value = AttributeFormatter::process($attr_value, $attr_type, $locale);
-            $mapping    = Settings::getMappingValue($attr_key);
+            $mapping = Settings::getMappingValue($attr_key);
 
             if (!$attr_value) {
                 continue;
@@ -156,13 +150,13 @@ trait CreatesProducts
                     $taxonomy = sprintf('pa_%s', strtolower($attr_key));
 
                     if ($attr_type === 'pim_catalog_boolean') {
-                        $label      = $attr_value === true ? 'true' : 'false';
-                        $term       = Fetcher::getTermBooleanByAkeneoCode($label, $taxonomy, $locale);
-                        $attr_value = (array) ($term ? $term->term_id : null);
+                        $label = $attr_value === true ? 'true' : 'false';
+                        $term = Fetcher::getTermBooleanByAkeneoCode($label, $taxonomy, $locale);
+                        $attr_value = (array)($term ? $term->term_id : null);
                     } else {
-                        # If we got an array
+                        // If we got an array
                         if (is_array($attr_value)) {
-                            # Flatten array, needed for WooCommerce
+                            // Flatten array, needed for WooCommerce
                             if (isset($attr_value[0][0])) {
                                 $attr_value = AttributeFormatter::arrayFlatten($attr_value);
                             }
@@ -175,9 +169,9 @@ trait CreatesProducts
 
                             $attr_value = array_filter($terms);
 
-                        # If we got a string
+                            // If we got a string
                         } elseif (is_string($attr_value)) {
-                            $option     = Fetcher::getTermIdByAkeneoCode($attr_value, $taxonomy, $locale);
+                            $option = Fetcher::getTermIdByAkeneoCode($attr_value, $taxonomy, $locale);
                             $attr_value = $option ? [$option] : [];
                         }
                     }
@@ -186,15 +180,15 @@ trait CreatesProducts
                 }
 
                 $product['attributes'][$attr_key] = [
-                    'is_taxonomy'  => ($mapping === 'global_attribute' || $mapping === 'private_global_attribute'),
-                    'is_visible'   => ($mapping === 'global_attribute' || $mapping === 'text_attributes'),
+                    'is_taxonomy' => ($mapping === 'global_attribute' || $mapping === 'private_global_attribute'),
+                    'is_visible' => ($mapping === 'global_attribute' || $mapping === 'text_attributes'),
                     'is_variation' => false,
                 ];
 
                 if ($mapping === 'global_attribute' || $mapping === 'private_global_attribute') {
                     $product['attributes'][$attr_key]['term_ids'] = $attr_value;
                 } else {
-                    $product['attributes'][$attr_key]['value'] = (array) $attr_value;
+                    $product['attributes'][$attr_key]['value'] = (array)$attr_value;
                 }
             } elseif ($mapping === 'post_meta') {
                 $product['metas'][$attr_key] = $attr_value;
@@ -202,7 +196,7 @@ trait CreatesProducts
                 $attr_key = AttributeDataProvider::getAttributeLabel($attr_key, $locale);
                 $product['external_media'][$attr_key] = $attr_value;
             } elseif ($mapping === 'product_tag') {
-                $ids    = [];
+                $ids = [];
 
                 foreach ($attr_value as $value) {
                     $ids[] = Fetcher::getTermIdByAkeneoCode($value, 'product_tag', $locale);
@@ -225,28 +219,24 @@ trait CreatesProducts
      * Format the a single Akeneo variable attribute for Wordpress, reading the mapping values.
      *
      * @param string $attr_key The variable attribute key/code
-     *
-     * @return array
      */
     public function formatVariableAttribute(string $attr_key): array
     {
         $mapping = Settings::getMappingValue($attr_key);
 
         return [
-            'is_taxonomy'  => ($mapping === 'global_attribute' || $mapping === 'private_global_attribute'),
-            'is_visible'   => true,
+            'is_taxonomy' => ($mapping === 'global_attribute' || $mapping === 'private_global_attribute'),
+            'is_visible' => true,
             'is_variation' => true,
-            'term_ids'     => [],
+            'term_ids' => [],
         ];
     }
-
 
     /**
      * Format the Akeneo attributes for Wordpress, reading the mapping values.
      *
-     * @param array &$product      The product as array containing WooCommerce data
-     * @param array $associations  The associations
-     *
+     * @param array  &$product The product as array containing WooCommerce data
+     * @param array $associations The associations
      * @return void
      */
     public function formatAssociations(array &$product, array $associations)
@@ -264,7 +254,6 @@ trait CreatesProducts
         }
     }
 
-
     /**
      * Make or update a product from parsed array.
      *
@@ -272,7 +261,7 @@ trait CreatesProducts
      */
     public function makeProduct(array $args, string $locale): ?int
     {
-        $type       = $args['type'];
+        $type = $args['type'];
         $product_id = $args['product_id'];
 
         // Get an instance of the WC_Product object (depending on his type)
@@ -311,30 +300,38 @@ trait CreatesProducts
         }
 
         // Prices
-        $regular = isset($args['regular_price'][0]) ? collect($args['regular_price'][0])->get('amount', '') : ($args['regular_price'] ?? '');
-        $sale    = isset($args['sale_price'][0]) ? collect($args['sale_price'][0])->get('amount', '') : ($args['sale_price'] ?? '');
-        $product->set_regular_price($regular);
-        $product->set_sale_price($sale ?: '');
-        $product->set_price($sale ?: $regular);
 
-        if (isset($args['sale_price'])) {
-            $product->set_date_on_sale_from(isset($args['sale_from']) ? $args['sale_from'] : '');
-            $product->set_date_on_sale_to(isset($args['sale_to']) ? $args['sale_to'] : '');
-        }
+        if (apply_filters('ak/a/product/single/manage_price', true, $args)) {
+            $regular = isset($args['regular_price'][0]) ? collect($args['regular_price'][0])->get('amount', '') : ($args['regular_price'] ?? '');
+            $sale = isset($args['sale_price'][0]) ? collect($args['sale_price'][0])->get('amount', '') : ($args['sale_price'] ?? '');
+            $product->set_regular_price($regular);
+            $product->set_sale_price($sale ?: '');
+            $product->set_price($sale ?: $regular);
 
-        // Taxes
-        if (\get_option('woocommerce_calc_taxes') === 'yes') {
-            $product->set_tax_status(isset($args['tax_status']) ? $args['tax_status'] : 'taxable');
-            $tax_class = '';
-            if (!empty($args['tax_class'])) {
-                $tax_class = is_array($args['tax_class']) ? $args['tax_class'][0] : $args['tax_class'];
+            $product->set_date_on_sale_from('');
+            $product->set_date_on_sale_to('');
+
+            if (isset($args['sale_price'])) {
+                $sale_from = Carbon::parse($args['sale_from']);
+                $sale_to = Carbon::parse($args['sale_to']);
+                $product->set_date_on_sale_from($sale_from->isValid() ? $sale_from->startOfDay()->toIso8601String() : '');
+                $product->set_date_on_sale_to($sale_to->isValid() ? $sale_to->endOfDay()->toIso8601String() : '');
             }
 
-            if ($tax_class === 'tva_55') {
-                $tax_class = \sanitize_title('Taux réduit');
-            }
+            // Taxes
+            if (\get_option('woocommerce_calc_taxes') === 'yes') {
+                $product->set_tax_status(isset($args['tax_status']) ? $args['tax_status'] : 'taxable');
+                $tax_class = '';
+                if (!empty($args['tax_class'])) {
+                    $tax_class = is_array($args['tax_class']) ? $args['tax_class'][0] : $args['tax_class'];
+                }
 
-            $product->set_tax_class(isset($args['tax_class']) ? $tax_class : '');
+                if ($tax_class === 'tva_55') {
+                    $tax_class = \sanitize_title('Taux réduit');
+                }
+
+                $product->set_tax_class(isset($args['tax_class']) ? $tax_class : '');
+            }
         }
 
         // Featured (boolean)
@@ -356,19 +353,19 @@ trait CreatesProducts
         $product->set_sold_individually(isset($args['sold_individually']) ? $args['sold_individually'] : false);
 
         // SKU and Stock (Not a virtual product)
-        $virtual      = isset($args['virtual']) && !$args['virtual'];
+        $virtual = isset($args['virtual']) && !$args['virtual'];
         $manage_stock = isset($args['manage_stock']) ? $args['manage_stock'] : false;
-        $backorders   = isset($args['backorders']) ? $args['backorders'] : 'no';
+        $backorders = isset($args['backorders']) ? $args['backorders'] : 'no';
         $stock_status = isset($args['stock_status']) ? $args['stock_status'] : 'instock';
 
-        if (!$virtual) {
-            $product->set_sku(isset($args['sku']) ? $args['sku'] : '');
-            $product->set_manage_stock($manage_stock);
-            $product->set_stock_status($stock_status);
+        if (isset($args['sku'])) {
+            $product->set_sku($args['sku']);
         }
 
         if (!$virtual && $manage_stock) {
-            $product->set_stock_status($args['stock_qty']);
+            $product->set_manage_stock($manage_stock);
+            $product->set_stock_status($stock_status);
+            $product->set_stock_quantity($args['stock_qty']);
             $product->set_backorders($backorders); // 'yes', 'no' or 'notify'
         }
 
@@ -430,7 +427,6 @@ trait CreatesProducts
          * SAVE
          */
 
-
         /**
          * Sync the taxonomies. We don't use something like `$product->set_category_ids()`
          * on purpose to avoid getting terms translated by Polylang/WPML.
@@ -442,27 +438,25 @@ trait CreatesProducts
 
         $model = Post::with('taxonomies')->findOrFail($product_id);
 
-        # Get the post terms ids grouped by taxonomy
+        // Get the post terms ids grouped by taxonomy
         $model_terms = $model->taxonomies->groupBy('taxonomy')->map(function ($group) {
             return $group->map(function ($item) {
                 return $item->term->id;
             });
         })->toArray();
 
-
-        # Replace the product taxonomy terms by new ones
+        // Replace the product taxonomy terms by new ones
         foreach ($taxonomies as $taxonomy => $terms) {
             if (!empty($terms)) {
                 $model_terms[$taxonomy] = $terms;
             }
         }
 
-        # Sync all taxonomies pivots for this model
+        // Sync all taxonomies pivots for this model
         $model->taxonomies()->sync(array_flatten($model_terms));
 
-
         foreach ($args['metas'] as $meta_key => $meta_value) {
-            $meta_key   = apply_filters('ak/f/product/single/meta_key', $meta_key, $meta_value, $product_id);
+            $meta_key = apply_filters('ak/f/product/single/meta_key', $meta_key, $meta_value, $product_id);
             $meta_value = apply_filters('ak/f/product/single/meta_value', $meta_value, $product_id, $meta_key);
             update_post_meta($product_id, $meta_key, $meta_value);
         }
@@ -470,7 +464,7 @@ trait CreatesProducts
         // Upsell and Cross sell (IDs) after all product saved
 
         add_action('ak/a/products/after_import', function ($products) use ($product, $args, $locale) {
-            $upsells     = [];
+            $upsells = [];
             $cross_sells = [];
 
             foreach (['upsells', 'cross_sells'] as $association) {
@@ -491,12 +485,12 @@ trait CreatesProducts
             $product->save();
         });
 
-        # Actions
+        // Actions
         do_action('ak/a/product/single/external_gallery', $product_id, $args['external_gallery'] ?? [], $locale);
         do_action('ak/a/product/single/external_media', $product_id, $args['external_media'] ?? [], $locale);
         do_action('ak/a/product/single/after_save', $product_id, $args, $locale);
 
-        # Keep this for backwards compatibility
+        // Keep this for backwards compatibility
         do_action('ak/product/external_gallery', $product_id, $args['external_gallery'] ?? [], $locale);
         do_action('ak/product/external_media', $product_id, $args['external_media'] ?? [], $locale);
         do_action('ak/product/after_save', $product_id, $args, $locale);
@@ -504,22 +498,20 @@ trait CreatesProducts
         return $product_id;
     }
 
-
     /**
      * Build a variation for the given product, based on the model and the variation WP_Product.
      *
-     * @param  int           $model      The WC variable product id.
-     * @param  WP_Product    $product    The variant product comming from Akeneo API.
-     * @param  array         $atributes  The variation variable attributes, as Akeneo codes.
-     * @param  string        $locale     The current locale to save the variation in.
-     *
+     * @param int $model The WC variable product id.
+     * @param WP_Product $product The variant product comming from Akeneo API.
+     * @param array $atributes The variation variable attributes, as Akeneo codes.
+     * @param string $locale The current locale to save the variation in.
      * @return void
      */
     public function makeVariation(int $product_id, WP_Product $product, array $attributes, string $locale)
     {
-        $data       = static::$base_product;
+        $data = static::$base_product;
         $wc_product = wc_get_product($product_id);
-        $variation  = Fetcher::getProductVariationByAkeneoCode($product->getCode(), $locale);
+        $variation = Fetcher::getProductVariationByAkeneoCode($product->getCode(), $locale);
 
         if ($variation) {
             $variation_id = $variation->id;
@@ -536,20 +528,20 @@ trait CreatesProducts
             }
 
             $variation_id = \wp_insert_post([
-                'post_title'  => $name,
-                'post_name'   => 'product-'.$product_id.'-variation',
+                'post_title' => $name,
+                'post_name' => 'product-' . $product_id . '-variation',
                 'post_status' => 'publish',
                 'post_parent' => $product_id,
-                'post_type'   => 'product_variation',
-                'guid'        => $guid,
-                'meta_input'  => [
+                'post_type' => 'product_variation',
+                'guid' => $guid,
+                'meta_input' => [
                     '_akeneo_code' => $product->getCode(),
                     '_akeneo_lang' => $locale,
                 ],
             ]);
         }
 
-        # Get an instance of the WC_Product_Variation object
+        // Get an instance of the WC_Product_Variation object
         $variation = new \WC_Product_Variation($variation_id);
 
         $values = $product->getValues();
@@ -557,73 +549,80 @@ trait CreatesProducts
         $this->formatAttributes($data, $values, $locale);
 
         foreach ($attributes as $attribute) {
-            $val      = $values[$attribute][0]['data'] ?? '';
+            $val = $values[$attribute][0]['data'] ?? '';
             $taxonomy = strtolower('pa_' . $attribute);
-            $term_id  = Fetcher::getTermIdByAkeneoCode($val, $taxonomy, $locale);
+            $term_id = Fetcher::getTermIdByAkeneoCode($val, $taxonomy, $locale);
 
             if (!$term_id) {
-                return; # Missing attribute term, skip this variation.
+                return; // Missing attribute term, skip this variation.
             }
 
             $term = get_term($term_id);
 
             $post_attr_terms = wp_get_post_terms($product_id, $taxonomy);
 
-            # Make sure the term is present in the variable product variant attribute term list
+            // Make sure the term is present in the variable product variant attribute term list
             if (!in_array($term, $post_attr_terms)) {
                 wp_set_post_terms($product_id, [$term->term_id], $taxonomy, true);
             }
 
-            # Save variation meta
-            update_post_meta($variation_id, 'attribute_'.$taxonomy, $term->slug);
+            // Save variation meta
+            update_post_meta($variation_id, 'attribute_' . $taxonomy, $term->slug);
         }
 
-        # Sku
+        // Sku
         $variation->set_sku($product->getCode());
 
-        # Prices
-        $regular = isset($data['regular_price'][0]) ? collect($data['regular_price'][0])->get('amount', '') : ($data['regular_price'] ?? '');
-        $sale    = isset($data['sale_price'][0]) ? collect($data['sale_price'][0])->get('amount', '') : ($data['sale_price'] ?? '');
-        $variation->set_regular_price($regular);
-        $variation->set_sale_price($sale ?: '');
-        $variation->set_price($sale ?: $regular);
+        // Prices
 
-        # Stock (Not a virtual product)
-        $virtual      = isset($data['virtual']) && !$data['virtual'];
-        $manage_stock = isset($data['manage_stock']) ? $data['manage_stock'] : false;
-        $backorders   = isset($data['backorders']) ? $data['backorders'] : 'no';
-        $stock_status = isset($data['stock_status']) ? $data['stock_status'] : 'instock';
+        if (apply_filters('ak/a/product/variable/manage_price', true, $data)) {
+            $regular = isset($data['regular_price'][0]) ? collect($data['regular_price'][0])->get('amount', '') : ($data['regular_price'] ?? '');
+            $sale = isset($data['sale_price'][0]) ? collect($data['sale_price'][0])->get('amount', '') : ($data['sale_price'] ?? '');
 
-        if (!$virtual) {
-            $variation->set_manage_stock($manage_stock);
-            $variation->set_stock_status($stock_status);
+            if (isset($data['sale_price'])) {
+                $sale_from = Carbon::parse($data['sale_from']);
+                $sale_to = Carbon::parse($data['sale_to']);
+                $variation->set_date_on_sale_from($sale_from->isValid() ? $sale_from->startOfDay()->toIso8601String() : '');
+                $variation->set_date_on_sale_to($sale_to->isValid() ? $sale_to->endOfDay()->toIso8601String() : '');
+            }
+
+            $variation->set_regular_price($regular);
+            $variation->set_sale_price($sale ?: '');
+            $variation->set_price($sale ?: $regular);
         }
 
+        // Stock (Not a virtual product)
+        $virtual = isset($data['virtual']) && !$data['virtual'];
+        $manage_stock = isset($data['manage_stock']) ? $data['manage_stock'] : false;
+        $backorders = isset($data['backorders']) ? $data['backorders'] : 'no';
+        $stock_status = isset($data['stock_status']) ? $data['stock_status'] : 'instock';
+
         if (!$virtual && $manage_stock) {
+            $variation->set_manage_stock($manage_stock);
+            $variation->set_stock_status($stock_status);
             $variation->set_stock_status($data['stock_qty']);
             $variation->set_backorders($backorders); // 'yes', 'no' or 'notify'
         }
 
-        # Save the variation
+        // Save the variation
         $variation->save();
 
-        # Publish the product which was in draft waiting for a variation
+        // Publish the product which was in draft waiting for a variation
         $wc_product->set_status('publish');
         $wc_product->save();
 
         do_action('ak/a/product/variable/after_save', $variation, $wc_product, $data, $attributes, $locale);
     }
 
-
     /**
      * Create product attributes if needed.
      *
-     * @param   array  $attributes  Product attributes
+     * @param array $attributes Product attributes
      * @return  array  Final attributes array
      *
      * @since 1.0
+     *
      * @version 1.13.0
-     * @access public
      */
     public function prepareProductAttributes(array $attributes): array
     {
@@ -631,7 +630,7 @@ trait CreatesProducts
         $position = 0;
 
         foreach ($attributes as $taxonomy => $values) {
-            # Get an instance of the WC_Product_Attribute Object
+            // Get an instance of the WC_Product_Attribute Object
             $attribute = new \WC_Product_Attribute();
             $taxonomy_id = 0;
             $options = [];
@@ -645,7 +644,7 @@ trait CreatesProducts
 
                 $taxonomy_id = \wc_attribute_taxonomy_id_by_name($taxonomy); // Get taxonomy ID
                 $options = $values['term_ids'];
-            } else if (!empty($values['value'])) {
+            } elseif (!empty($values['value'])) {
                 $options = $values['value'];
             }
 
