@@ -319,10 +319,14 @@ trait CreatesProducts
         $product->set_price($sale ?: $regular);
 
         if (isset($args['sale_price'])) {
-            $sale_from = Carbon::parse($args['sale_from']);
-            $sale_to = Carbon::parse($args['sale_to']);
-            $product->set_date_on_sale_from($sale_from->isValid() ? $sale_from->startOfDay()->toIso8601String() : '');
-            $product->set_date_on_sale_to($sale_to->isValid() ? $sale_to->endOfDay()->toIso8601String() : '');
+            if (isset($args['sale_from'])) {
+                $sale_from = Carbon::parse($args['sale_from']);
+                $product->set_date_on_sale_from($sale_from->isValid() ? $sale_from->startOfDay()->toIso8601String() : '');
+            }
+            if (isset($args['sale_to'])) {
+                $sale_to = Carbon::parse($args['sale_to']);
+                $product->set_date_on_sale_to($sale_to->isValid() ? $sale_to->endOfDay()->toIso8601String() : '');
+            }
         }
 
         // Taxes
