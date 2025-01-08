@@ -611,6 +611,9 @@ trait CreatesProducts
         $wc_product->set_status('publish');
         $wc_product->save();
 
+        do_action('ak/a/product/variable/external_gallery', $variation_id, $data['external_gallery'] ?? [], $locale);
+        do_action('ak/a/product/variable/external_media', $variation_id, $data['external_media'] ?? [], $locale);
+
         do_action('ak/a/product/variable/after_save', $variation, $wc_product, $data, $attributes, $locale);
     }
 
