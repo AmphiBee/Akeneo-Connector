@@ -15,7 +15,7 @@ Plugin Name: Akeneo Connector
 Plugin URI: https://amphibee.fr
 Description: Connect Akeneo with WooCommerce. The plugin uses the Akeneo api to import Akeneo PIM data (attributes, products, variations..).
 Author: AmphiBee (hello@amphibee.fr)
-Version: 1.20.0
+Version: 1.21
 Author URI: https://amphibee.fr
 Text Domain: akeneo_connector
 Domain Path: /languages
