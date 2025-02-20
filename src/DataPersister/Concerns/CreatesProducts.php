@@ -300,7 +300,7 @@ trait CreatesProducts
         }
 
         // Prices
-        if (apply_filters('ak/a/product/variable/manage_price', true, $data)) {
+        if (apply_filters('ak/a/product/variable/manage_price', true, $args)) {
             $regular = isset($args['regular_price'][0]) ? collect($args['regular_price'][0])->get('amount', '') : ($args['regular_price'] ?? '');
             $sale = isset($args['sale_price'][0]) ? collect($args['sale_price'][0])->get('amount', '') : ($args['sale_price'] ?? '');
             $product->set_regular_price($regular);
@@ -579,14 +579,9 @@ trait CreatesProducts
             $regular = isset($data['regular_price'][0]) ? collect($data['regular_price'][0])->get('amount', '') : ($data['regular_price'] ?? '');
             $sale = isset($data['sale_price'][0]) ? collect($data['sale_price'][0])->get('amount', '') : ($data['sale_price'] ?? '');
 
-    if (isset($data['sale_price'])) {
-                $sale_from = Carbon::parse($data['sale_from']);
-                $sale_to = Carbon::parse($data['sale_to']);
-                $variation->set_date_on_sale_from($sale_from->isValid() ? $sale_from->startOfDay()->toIso8601String() : '');
-                $variation->set_date_on_sale_to($sale_to->isValid() ? $sale_to->endOfDay()->toIso8601String() : '');
-            }        $variation->set_regular_price($regular);
+            $variation->set_regular_price($regular);
             $variation->set_sale_price($sale ?: '');
-            $variation->set_price($sale ?: $regular);}
+            $variation->set_price($sale ?: $regular);
 
             if (isset($data['sale_price'])) {
                 if (isset($data['sale_from'])) {
@@ -603,7 +598,7 @@ trait CreatesProducts
         # Stock (Not a virtual product)
         $virtual      = isset($data['virtual']) && !$data['virtual'];
         $manage_stock = isset($data['manage_stock']) ? $data['manage_stock'] : false;
-        $backorders = isset($data['backorders']) ? $data['backorders'] : 'no';
+        $backorders   = isset($data['backorders']) ? $data['backorders'] : 'no';
         $stock_status = isset($data['stock_status']) ? $data['stock_status'] : 'instock';
 
         if (!$virtual && $manage_stock) {
