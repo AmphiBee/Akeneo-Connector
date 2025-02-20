@@ -57,7 +57,7 @@ Feature: Create shortcuts to specific WordPress installs
     When I run `wp @foo option get home`
     Then STDOUT should be:
       """
-      http://example.com
+      https://example.com
       """
 
     When I try `wp @foo option get home --path=foo`
@@ -111,7 +111,7 @@ Feature: Create shortcuts to specific WordPress installs
     When I run `wp @foo option get home`
     Then STDOUT should be:
       """
-      http://example.com
+      https://example.com
       """
     And STDERR should be empty
 
@@ -172,6 +172,36 @@ Feature: Create shortcuts to specific WordPress installs
     Then STDERR should be:
       """
       Error: No alias found with key '@someotherfoo'.
+      """
+
+  Scenario: Adds proxyjump to ssh command
+    Given a WP installation in 'foo'
+    And a wp-cli.yml file:
+      """
+      @foo:
+        ssh: user@host:/path/to/wordpress
+        proxyjump: proxyhost
+      """
+
+    When I try `wp @foo --debug --version`
+    Then STDERR should contain:
+      """
+      Running SSH command: ssh -J 'proxyhost' -T -vvv
+      """
+
+  Scenario: Adds key to ssh command
+    Given a WP installation in 'foo'
+    And a wp-cli.yml file:
+      """
+      @foo:
+        ssh: user@host:/path/to/wordpress
+        key: identityfile.key
+      """
+
+    When I try `wp @foo --debug --version`
+    Then STDERR should contain:
+      """
+      Running SSH command: ssh -i 'identityfile.key' -T -vvv
       """
 
   Scenario: Add an alias
@@ -335,7 +365,7 @@ Feature: Create shortcuts to specific WordPress installs
     When I run `WP_CLI_CONFIG_PATH=config.yml wp @foo option get home`
     Then STDOUT should be:
       """
-      http://example.com
+      https://example.com
       """
 
     Given a wp-cli.yml file:
@@ -473,9 +503,9 @@ Feature: Create shortcuts to specific WordPress installs
     Given a WP multisite subdomain installation
     And a wp-cli.yml file:
       """
-      url: example.com
+      url: https://example.com
       @subsite:
-        url: subsite.example.com
+        url: https://subsite.example.com
       """
 
     When I run `wp site create --slug=subsite`
@@ -484,9 +514,10 @@ Feature: Create shortcuts to specific WordPress installs
     When I run `wp option get siteurl`
     Then STDOUT should be:
       """
-      http://example.com
+      https://example.com
       """
 
+    # TODO: The HTTPS default is currently not forwarded to subsite creation.
     When I run `wp @subsite option get siteurl`
     Then STDOUT should be:
       """
@@ -579,3 +610,57 @@ Feature: Create shortcuts to specific WordPress installs
       | func       |
       | proc_open  |
       | proc_close |
+
+  Scenario: An alias is a group of aliases
+    Given a WP install
+    And a wp-cli.yml file:
+      """
+      @foo:
+        path: foo
+      @bar:
+        path: bar
+      @both:
+       - @foo
+       - @bar
+      """
+
+    When I try `wp cli alias is-group @both`
+    Then the return code should be 0
+
+  Scenario: An alias is not a group of aliases
+    Given a WP install
+    And a wp-cli.yml file:
+      """
+      @foo:
+        path: foo
+      """
+
+    When I try `wp cli alias is-group @foo`
+    Then the return code should be 1
+
+  Scenario: Automatically add "@" prefix to an alias
+    Given a WP install
+    And a wp-cli.yml file:
+      """
+      @foo:
+        path: foo
+      """
+
+    When I run `wp cli alias add hello --set-path=/path/to/wordpress`
+    Then STDOUT should be:
+      """
+      Success: Added '@hello' alias.
+      """
+
+    When I run `wp eval --skip-wordpress 'echo realpath( getenv( "RUN_DIR" ) );'`
+    Then save STDOUT as {TEST_DIR}
+
+    When I run `wp cli alias list`
+    Then STDOUT should be YAML containing:
+      """
+      @all: Run command against every registered alias.
+      @hello:
+        path: /path/to/wordpress
+      @foo:
+        path: {TEST_DIR}/foo
+      """

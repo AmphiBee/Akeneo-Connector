@@ -43,10 +43,11 @@
 namespace PDepend\Metrics\Analyzer;
 
 use PDepend\Metrics\AbstractAnalyzer;
+use PDepend\Metrics\Analyzer\CodeRankAnalyzer\CodeRankStrategyI;
 use PDepend\Metrics\Analyzer\CodeRankAnalyzer\StrategyFactory;
 use PDepend\Metrics\AnalyzerNodeAware;
 use PDepend\Source\AST\ASTArtifact;
-use PDepend\Source\AST\ASTArtifactList;
+use PDepend\Source\AST\ASTNamespace;
 
 /**
  * Calculates the code rank metric for classes and namespaces.
@@ -80,14 +81,14 @@ class CodeRankAnalyzer extends AbstractAnalyzer implements AnalyzerNodeAware
     /**
      * All found nodes.
      *
-     * @var array<string, array>
+     * @var array<string, array<string, array<int, string>>>
      */
     private $nodes = array();
 
     /**
      * List of node collect strategies.
      *
-     * @var \PDepend\Metrics\Analyzer\CodeRankAnalyzer\CodeRankStrategyI[]
+     * @var CodeRankStrategyI[]
      */
     private $strategies = array();
 
@@ -109,14 +110,13 @@ class CodeRankAnalyzer extends AbstractAnalyzer implements AnalyzerNodeAware
      * )
      * </code>
      *
-     * @var array<string, array>
+     * @var array<string, array<string, int>>
      */
     private $nodeMetrics = null;
 
     /**
-     * Processes all {@link \PDepend\Source\AST\ASTNamespace} code nodes.
+     * Processes all {@link ASTNamespace} code nodes.
      *
-     * @param \PDepend\Source\AST\ASTNamespace[] $namespaces
      * @return void
      */
     public function analyze($namespaces)
@@ -168,7 +168,6 @@ class CodeRankAnalyzer extends AbstractAnalyzer implements AnalyzerNodeAware
      * for the given <b>$node</b>. If there are no metrics for the requested
      * node, this method will return an empty <b>array</b>.
      *
-     * @param  \PDepend\Source\AST\ASTArtifact $artifact
      * @return array<string, mixed>
      */
     public function getNodeMetrics(ASTArtifact $artifact)

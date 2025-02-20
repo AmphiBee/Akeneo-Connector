@@ -19,9 +19,9 @@ use cli\Arguments;
  */
 class HelpScreen {
 	protected $_flags = array();
-	protected $_maxFlag = 0;
+	protected $_flagMax = 0;
 	protected $_options = array();
-	protected $_maxOption = 0;
+	protected $_optionMax = 0;
 
 	public function __construct(Arguments $arguments) {
 		$this->setArguments($arguments);
@@ -91,7 +91,7 @@ class HelpScreen {
 
 			$pad = str_repeat(' ', $max + 3);
 			while ($desc = array_shift($description)) {
-				$formatted .= "\n${pad}${desc}";
+				$formatted .= "\n{$pad}{$desc}";
 			}
 
 			array_push($help, $formatted);

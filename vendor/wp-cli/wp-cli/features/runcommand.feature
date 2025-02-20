@@ -50,7 +50,7 @@ Feature: Run a WP-CLI command
     When I run `wp <flag> run 'option get home'`
     Then STDOUT should be:
       """
-      http://example.com
+      https://example.com
       returned: NULL
       """
     And STDERR should be empty
@@ -85,7 +85,7 @@ Feature: Run a WP-CLI command
     When I run `wp run <flag> --return 'option get home'`
     Then STDOUT should be:
       """
-      returned: 'http://example.com'
+      returned: 'https://example.com'
       """
     And STDERR should be empty
     And the return code should be 0
@@ -276,7 +276,7 @@ Feature: Run a WP-CLI command
     When I run `wp <flag> run 'term url category 1'`
     Then STDOUT should be:
       """
-      http://example.com/?cat=1
+      https://example.com/?cat=1
       returned: NULL
       """
     And STDERR should be empty
@@ -301,3 +301,40 @@ Feature: Run a WP-CLI command
       | func       |
       | proc_open  |
       | proc_close |
+
+  Scenario: Check that command_args provided to runcommand are used in command
+    Given a WP installation
+    And a custom-cmd.php file:
+      """
+      <?php
+      class Custom_Command extends WP_CLI_Command {
+
+        /**
+         * Custom command to test passing command_args via runcommand options
+         *
+         * @when after_wp_load
+         */
+        public function echo_test( $args ) {
+          $cli_opts = array( 'command_args' => array( '--exec="echo \'test\' . PHP_EOL;"' ) );
+          WP_CLI::runcommand( 'option get home', $cli_opts);
+        }
+        public function bad_path( $args ) {
+          $cli_opts = array( 'command_args' => array('--path=/bad/path' ) );
+          WP_CLI::runcommand( 'option get home', $cli_opts);
+        }
+      }
+      WP_CLI::add_command( 'custom-command', 'Custom_Command' );
+      """
+
+    When I run `wp --require=custom-cmd.php custom-command echo_test`
+    Then STDOUT should be:
+      """
+      test
+      https://example.com
+      """
+
+    When I try `wp --require=custom-cmd.php custom-command bad_path`
+    Then STDERR should contain:
+      """
+      The used path is: /bad/path/
+      """

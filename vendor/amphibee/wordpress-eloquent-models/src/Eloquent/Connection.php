@@ -168,6 +168,7 @@ class Connection implements ConnectionInterface
         $result = $this->db->get_row($query);
 
         if ($result === false || $this->db->last_error) {
+            error_log($this->db->last_error);
             throw new QueryException($query, $bindings, new \Exception($this->db->last_error));
         }
 
@@ -191,7 +192,7 @@ class Connection implements ConnectionInterface
         $result = $this->db->get_results($query);
 
         if ($result === false || $this->db->last_error) {
-            dd($query);
+            error_log($this->db->last_error);
             throw new QueryException($query, $bindings, new \Exception($this->db->last_error));
         }
 
@@ -365,6 +366,7 @@ class Connection implements ConnectionInterface
         $result = $this->db->query($new_query);
 
         if ($result === false || $this->db->last_error) {
+            error_log($this->db->last_error);
             throw new QueryException($new_query, $bindings, new \Exception($this->db->last_error));
         }
 
@@ -440,6 +442,7 @@ class Connection implements ConnectionInterface
         $result = $this->db->query($new_query);
 
         if ($result === false || $this->db->last_error) {
+            error_log($this->db->last_error);
             throw new QueryException($new_query, $bindings, new \Exception($this->db->last_error));
         }
 

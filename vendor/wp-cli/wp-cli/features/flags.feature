@@ -33,9 +33,9 @@ Feature: Global flags
     And I run `wp site create --slug=foo`
 
     When I run `wp --url=example.com/foo option get home`
-    Then STDOUT should be:
+    Then STDOUT should contain:
       """
-      http://example.com/foo
+      example.com/foo
       """
 
   @require-wp-3.9
@@ -87,29 +87,78 @@ Feature: Global flags
   Scenario: Setting the WP user
     Given a WP installation
 
-    When I run `wp eval 'echo (int) is_user_logged_in();'`
+    When I run `wp eval 'var_export( is_user_logged_in() );'`
     Then STDOUT should be:
       """
-      0
+      false
       """
+    And STDERR should be empty
 
     When I run `wp --user=admin eval 'echo wp_get_current_user()->user_login;'`
     Then STDOUT should be:
       """
       admin
       """
+    And STDERR should be empty
 
     When I run `wp --user=admin@example.com eval 'echo wp_get_current_user()->user_login;'`
     Then STDOUT should be:
       """
       admin
       """
+    And STDERR should be empty
 
     When I try `wp --user=non-existing-user eval 'echo wp_get_current_user()->user_login;'`
     Then the return code should be 1
     And STDERR should be:
       """
       Error: Invalid user ID, email or login: 'non-existing-user'
+      """
+
+  Scenario: Warn when provided user is ambiguous
+    Given a WP installation
+
+    When I run `wp --user=1 eval 'echo wp_get_current_user()->user_email;'`
+    Then STDOUT should be:
+      """
+      admin@example.com
+      """
+    And STDERR should be empty
+
+    When I run `wp user create 1 user1@example.com`
+    Then STDOUT should contain:
+      """
+      Success:
+      """
+
+    When I try `wp --user=1 eval 'echo wp_get_current_user()->user_email;'`
+    Then STDOUT should be:
+      """
+      admin@example.com
+      """
+    And STDERR should be:
+      """
+      Warning: Ambiguous user match detected (both ID and user_login exist for identifier '1'). WP-CLI will default to the ID, but you can force user_login instead with WP_CLI_FORCE_USER_LOGIN=1.
+      """
+
+    When I run `WP_CLI_FORCE_USER_LOGIN=1 wp --user=1 eval 'echo wp_get_current_user()->user_email;'`
+    Then STDOUT should be:
+      """
+      user1@example.com
+      """
+    And STDERR should be empty
+
+    When I run `wp --user=user1@example.com eval 'echo wp_get_current_user()->user_email;'`
+    Then STDOUT should be:
+      """
+      user1@example.com
+      """
+    And STDERR should be empty
+
+    When I try `WP_CLI_FORCE_USER_LOGIN=1 wp --user=user1@example.com eval 'echo wp_get_current_user()->user_email;'`
+    Then STDERR should be:
+      """
+      Error: Invalid user login: 'user1@example.com'
       """
 
   Scenario: Using a custom logger
@@ -231,7 +280,7 @@ Feature: Global flags
       """
 
     When I try `wp --color non-existent-command`
-    Then STDERR should contain:
+    Then STDERR should strictly contain:
       """
       [31;1mError:
       """
@@ -295,14 +344,14 @@ Feature: Global flags
     When I try `WP_CLI_STRICT_ARGS_MODE=1 wp --debug --ssh=/ --version`
     Then STDERR should contain:
       """
-      Running SSH command: ssh -q -T '' 'WP_CLI_STRICT_ARGS_MODE=1 wp
+      Running SSH command: ssh -T -vvv '' 'WP_CLI_STRICT_ARGS_MODE=1 wp
       """
 
   Scenario: SSH flag should support changing directories
     When I try `wp --debug --ssh=wordpress:/my/path --version`
     Then STDERR should contain:
       """
-      Running SSH command: ssh -q -T 'wordpress' 'cd '\''/my/path'\''; wp
+      Running SSH command: ssh -T -vvv 'wordpress' 'cd '\''/my/path'\''; wp
       """
 
   Scenario: SSH flag should support Docker
@@ -310,4 +359,28 @@ Feature: Global flags
     Then STDERR should contain:
       """
       Running SSH command: docker exec --user 'user' 'wordpress' sh -c
+      """
+
+  Scenario: Customize config-spec with WP_CLI_CONFIG_SPEC_FILTER_CALLBACK
+    Given a WP installation
+    And a wp-cli-early-require.php file:
+      """
+      <?php
+      function wp_cli_remove_user_arg( $spec ) {
+        unset( $spec['user'] );
+        return $spec;
+      }
+      define( 'WP_CLI_CONFIG_SPEC_FILTER_CALLBACK', 'wp_cli_remove_user_arg' );
+      """
+
+    When I run `WP_CLI_EARLY_REQUIRE=wp-cli-early-require.php wp help`
+    Then STDOUT should not contain:
+      """
+      --user=<id|login|email>
+      """
+
+    When I run `wp help`
+    Then STDOUT should contain:
+      """
+      --user=<id|login|email>
       """

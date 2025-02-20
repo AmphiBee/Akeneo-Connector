@@ -51,20 +51,13 @@ namespace PDepend\Input;
 class ExcludePathFilter implements Filter
 {
     /**
-     * Regular expression that should not match against the relative file paths.
+     * Regular expression that should not match against the absolute file paths or a chunk of a relative path.
      *
-     * @var   string
+     * @var string
+     *
      * @since 0.10.0
      */
-    protected $relative = '';
-
-    /**
-     * Regular expression that should not match against the absolute file paths.
-     *
-     * @var   string
-     * @since 0.10.0
-     */
-    protected $absolute = '';
+    protected $pattern = '';
 
     /**
      * Constructs a new exclude path filter instance and accepts an array of
@@ -75,9 +68,12 @@ class ExcludePathFilter implements Filter
     public function __construct(array $patterns)
     {
         $quoted = array_map('preg_quote', $patterns);
+        $pattern = strtr(implode('|', $quoted), array(
+            '\\*' => '.*',
+            '\\\\' => '/',
+        ));
 
-        $this->relative = '(' . str_replace('\*', '.*', join('|', $quoted)) . ')i';
-        $this->absolute = '(^(' . str_replace('\*', '.*', join('|', $quoted)) .'))i';
+        $this->pattern = '(^(' . $pattern . '))i';
     }
 
     /**
@@ -86,11 +82,11 @@ class ExcludePathFilter implements Filter
      * @param string $relative The relative path to the specified root.
      * @param string $absolute The absolute path to a source file.
      *
-     * @return boolean
+     * @return bool
      */
     public function accept($relative, $absolute)
     {
-        return ($this->notRelative($relative) && $this->notAbsolute($absolute));
+        return $this->notRelative($relative) && $this->notAbsolute($absolute);
     }
 
     /**
@@ -99,12 +95,13 @@ class ExcludePathFilter implements Filter
      *
      * @param string $path The absolute path to a source file.
      *
-     * @return boolean
+     * @return bool
+     *
      * @since  0.10.0
      */
     protected function notAbsolute($path)
     {
-        return (preg_match($this->absolute, $path) === 0);
+        return !preg_match($this->pattern, str_replace('\\', '/', $path));
     }
 
     /**
@@ -113,11 +110,28 @@ class ExcludePathFilter implements Filter
      *
      * @param string $path The relative path to a source file.
      *
-     * @return boolean
+     * @return bool
+     *
      * @since  0.10.0
      */
     protected function notRelative($path)
     {
-        return (preg_match($this->relative, $path) === 0);
+        $subPath = str_replace('\\', '/', $path);
+
+        while (true) {
+            $slashPosition = strpos($subPath, '/');
+
+            if ($slashPosition === false) {
+                break;
+            }
+
+            $subPath = substr($subPath, $slashPosition + 1);
+
+            if (preg_match($this->pattern, $subPath) || preg_match($this->pattern, "/$subPath")) {
+                return false;
+            }
+        }
+
+        return !preg_match($this->pattern, $subPath);
     }
 }

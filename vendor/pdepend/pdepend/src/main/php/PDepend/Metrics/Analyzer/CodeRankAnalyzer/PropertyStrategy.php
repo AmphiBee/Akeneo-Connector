@@ -57,14 +57,14 @@ class PropertyStrategy extends AbstractASTVisitor implements CodeRankStrategyI
     /**
      * All found nodes.
      *
-     * @var array<string, array>
+     * @var array<string, array<string, array<int, string>>>
      */
     private $nodes = array();
 
     /**
      * Returns the collected nodes.
      *
-     * @return array<string, array>
+     * @return array<string, array<string, array<int, string>>>
      */
     public function getCollectedNodes()
     {
@@ -74,7 +74,6 @@ class PropertyStrategy extends AbstractASTVisitor implements CodeRankStrategyI
     /**
      * Visits a property node.
      *
-     * @param  \PDepend\Source\AST\ASTProperty $property
      * @return void
      */
     public function visitProperty(ASTProperty $property)
@@ -113,7 +112,6 @@ class PropertyStrategy extends AbstractASTVisitor implements CodeRankStrategyI
     /**
      * Initializes the temporary node container for the given <b>$node</b>.
      *
-     * @param  \PDepend\Source\AST\AbstractASTArtifact $node
      * @return void
      */
     protected function initNode(AbstractASTArtifact $node)

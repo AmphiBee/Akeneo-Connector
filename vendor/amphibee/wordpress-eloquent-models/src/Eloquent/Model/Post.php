@@ -469,7 +469,7 @@ class Post extends Model implements WpEloquentPost
                     ? (int) $meta->meta_value
                     : 0;
     }
-    
+
     /**
      * Get the post thumbnail alt or the post title if not set.
      * If the post has no thubnail, return empty string.
@@ -521,7 +521,7 @@ class Post extends Model implements WpEloquentPost
     {
         return get_permalink($this->id, $leavename);
     }
-    
+
     /**
      * Get the ThumbnailMeta associated with this post.
      *

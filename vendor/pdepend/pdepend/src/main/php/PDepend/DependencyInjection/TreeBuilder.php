@@ -52,7 +52,7 @@ use Symfony\Component\Config\Definition\Builder\TreeBuilder as BaseTreeBuilder;
 class TreeBuilder
 {
     /**
-     * @var NodeDefinition|ArrayNodeDefinition
+     * @var ArrayNodeDefinition|NodeDefinition
      */
     protected $rootNode;
 
@@ -65,21 +65,23 @@ class TreeBuilder
      * TreeBuilder constructor.
      *
      * @param string $name
-     *
-     * @return void
      */
     public function __construct($name = 'pdepend')
     {
         $this->treeBuilder = new BaseTreeBuilder($name);
 
-        if (!method_exists('Symfony\\Component\\Config\\Definition\\Builder\\TreeBuilder', 'getRootNode')) {
-            // Symfony < 4.2
-            $this->rootNode = $this->treeBuilder->root($name);
+        if (method_exists($this->treeBuilder, 'getRootNode')) {
+            $this->rootNode = $this->treeBuilder->getRootNode();
 
             return;
         }
 
-        $this->rootNode = $this->treeBuilder->getRootNode();
+        // @codeCoverageIgnoreStart
+        if (method_exists($this->treeBuilder, 'root')) {
+            // Symfony < 4.2
+            $this->rootNode = $this->treeBuilder->root($name);
+        }
+        // @codeCoverageIgnoreEnd
     }
 
     /**

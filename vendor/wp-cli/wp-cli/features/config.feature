@@ -32,8 +32,12 @@ Feature: Have a config file
     When I run `wp core is-installed`
     Then STDOUT should be empty
 
-    When I run `wp` from 'wp-content'
-    Then STDOUT should not be empty
+    # TODO: Throwing deprecations with PHP 8.1+ and WP < 5.9
+    When I try `wp` from 'wp-content'
+    Then STDOUT should contain:
+      """
+      wp <command>
+      """
 
   Scenario: WP in a subdirectory
     Given a WP installation in 'foo'
@@ -102,25 +106,28 @@ Feature: Have a config file
         - core multisite-convert
       """
 
-    When I run `WP_CLI_CONFIG_PATH=config.yml wp`
+    # TODO: Throwing deprecations with PHP 8.1+ and WP < 5.9
+    When I try `WP_CLI_CONFIG_PATH=config.yml wp`
     Then STDOUT should not contain:
       """
       eval-file
       """
 
     When I try `WP_CLI_CONFIG_PATH=config.yml wp help eval-file`
-    Then STDERR should be:
+    Then STDERR should contain:
       """
       Error: The 'eval-file' command has been disabled from the config file.
       """
 
-    When I run `WP_CLI_CONFIG_PATH=config.yml wp core`
+    # TODO: Throwing deprecations with PHP 8.1+ and WP < 5.9
+    When I try `WP_CLI_CONFIG_PATH=config.yml wp core`
     Then STDOUT should not contain:
       """
       or: wp core multisite-convert
       """
 
-    When I run `WP_CLI_CONFIG_PATH=config.yml wp help core`
+    # TODO: Throwing deprecations with PHP 8.1+ and WP < 5.9
+    When I try `WP_CLI_CONFIG_PATH=config.yml wp help core`
     Then STDOUT should not contain:
       """
       multisite-convert
@@ -469,6 +476,57 @@ Feature: Have a config file
       {"bar":"burrito","apple":"apple"}
       """
 
+  Scenario: Config inheritance in nested folders
+    Given an empty directory
+    And a wp-cli.local.yml file:
+      """
+      @dev:
+        ssh: vagrant@example.test/srv/www/example.com/current
+        path: web/wp
+      """
+    And a site/wp-cli.yml file:
+      """
+      _:
+        inherit: ../wp-cli.local.yml
+      @otherdev:
+        ssh: vagrant@otherexample.test/srv/www/otherexample.com/current
+      """
+    And a site/public/index.php file:
+      """
+      <?php
+      """
+
+    When I run `wp cli alias list`
+    Then STDOUT should contain:
+      """
+      @all: Run command against every registered alias.
+      @dev:
+        path: web/wp
+        ssh: vagrant@example.test/srv/www/example.com/current
+      """
+
+    When I run `cd site && wp cli alias list`
+    Then STDOUT should contain:
+      """
+      @all: Run command against every registered alias.
+      @dev:
+        path: web/wp
+        ssh: vagrant@example.test/srv/www/example.com/current
+      @otherdev:
+        ssh: vagrant@otherexample.test/srv/www/otherexample.com/current
+      """
+
+    When I run `cd site/public && wp cli alias list`
+    Then STDOUT should contain:
+      """
+      @all: Run command against every registered alias.
+      @dev:
+        path: web/wp
+        ssh: vagrant@example.test/srv/www/example.com/current
+      @otherdev:
+        ssh: vagrant@otherexample.test/srv/www/otherexample.com/current
+      """
+
   @require-wp-3.9
   Scenario: WordPress installation with local dev DOMAIN_CURRENT_SITE
     Given a WP multisite installation
@@ -479,51 +537,51 @@ Feature: Have a config file
       """
     And a wp-config.php file:
       """
-<?php
-if ( file_exists( __DIR__ . '/local-dev.php' ) ) {
-  require_once __DIR__ . '/local-dev.php';
-}
+      <?php
+      if ( file_exists( __DIR__ . '/local-dev.php' ) ) {
+        require_once __DIR__ . '/local-dev.php';
+      }
 
-// ** MySQL settings ** //
-/** The name of the database for WordPress */
-define('DB_NAME', 'wp_cli_test');
+      // ** MySQL settings ** //
+      /** The name of the database for WordPress */
+      define('DB_NAME', '{DB_NAME}');
 
-/** MySQL database username */
-define('DB_USER', '{DB_USER}');
+      /** MySQL database username */
+      define('DB_USER', '{DB_USER}');
 
-/** MySQL database password */
-define('DB_PASSWORD', '{DB_PASSWORD}');
+      /** MySQL database password */
+      define('DB_PASSWORD', '{DB_PASSWORD}');
 
-/** MySQL hostname */
-define('DB_HOST', '{DB_HOST}');
+      /** MySQL hostname */
+      define('DB_HOST', '{DB_HOST}');
 
-/** Database Charset to use in creating database tables. */
-define('DB_CHARSET', 'utf8');
+      /** Database Charset to use in creating database tables. */
+      define('DB_CHARSET', 'utf8');
 
-/** The Database Collate type. Don't change this if in doubt. */
-define('DB_COLLATE', '');
+      /** The Database Collate type. Don't change this if in doubt. */
+      define('DB_COLLATE', '');
 
-$table_prefix = 'wp_';
+      $table_prefix = 'wp_';
 
-define( 'WP_ALLOW_MULTISITE', true );
-define('MULTISITE', true);
-define('SUBDOMAIN_INSTALL', false);
-$base = '/';
-if ( ! defined( 'DOMAIN_CURRENT_SITE' ) ) {
-  define('DOMAIN_CURRENT_SITE', 'example.com');
-}
-define('PATH_CURRENT_SITE', '/');
-define('SITE_ID_CURRENT_SITE', 1);
-define('BLOG_ID_CURRENT_SITE', 1);
+      define( 'WP_ALLOW_MULTISITE', true );
+      define('MULTISITE', true);
+      define('SUBDOMAIN_INSTALL', false);
+      $base = '/';
+      if ( ! defined( 'DOMAIN_CURRENT_SITE' ) ) {
+        define('DOMAIN_CURRENT_SITE', 'example.com');
+      }
+      define('PATH_CURRENT_SITE', '/');
+      define('SITE_ID_CURRENT_SITE', 1);
+      define('BLOG_ID_CURRENT_SITE', 1);
 
-/* That's all, stop editing! Happy publishing. */
+      /* That's all, stop editing! Happy publishing. */
 
-/** Absolute path to the WordPress directory. */
-if ( !defined('ABSPATH') )
-  define('ABSPATH', dirname(__FILE__) . '/');
+      /** Absolute path to the WordPress directory. */
+      if ( !defined('ABSPATH') )
+        define('ABSPATH', dirname(__FILE__) . '/');
 
-/** Sets up WordPress vars and included files. */
-require_once(ABSPATH . 'wp-settings.php');
+      /** Sets up WordPress vars and included files. */
+      require_once(ABSPATH . 'wp-settings.php');
       """
 
     When I try `wp option get home`
@@ -535,5 +593,143 @@ require_once(ABSPATH . 'wp-settings.php');
     When I run `wp option get home --url=example.com`
     Then STDOUT should be:
       """
-      http://example.com
+      https://example.com
+      """
+
+  Scenario: BOM found in wp-config.php file
+    Given a WP installation
+    And a wp-config.php file:
+      """
+      <?php
+      define('DB_NAME', '{DB_NAME}');
+      define('DB_USER', '{DB_USER}');
+      define('DB_PASSWORD', '{DB_PASSWORD}');
+      define('DB_HOST', '{DB_HOST}');
+      define('DB_CHARSET', 'utf8');
+      define('DB_COLLATE', '');
+      $table_prefix = 'wp_';
+
+      /* That's all, stop editing! Happy publishing. */
+
+      /** Sets up WordPress vars and included files. */
+      require_once(ABSPATH . 'wp-settings.php');
+      """
+    And I run `awk 'BEGIN {print "\xef\xbb\xbf"} {print}' wp-config.php > wp-config.php`
+
+    When I try `wp core is-installed`
+    Then STDERR should not contain:
+      """
+      PHP Parse error: syntax error, unexpected '?'
+      """
+    And STDERR should contain:
+      """
+      Warning: UTF-8 byte-order mark (BOM) detected in wp-config.php file, stripping it for parsing.
+      """
+
+  Scenario: Strange wp-config.php file with missing wp-settings.php call
+    Given a WP installation
+    And a wp-config.php file:
+      """
+      <?php
+      define('DB_NAME', '{DB_NAME}');
+      define('DB_USER', '{DB_USER}');
+      define('DB_PASSWORD', '{DB_PASSWORD}');
+      define('DB_HOST', '{DB_HOST}');
+      define('DB_CHARSET', 'utf8');
+      define('DB_COLLATE', '');
+      $table_prefix = 'wp_';
+
+      /* That's all, stop editing! Happy publishing. */
+      """
+
+    When I try `wp core is-installed`
+    Then STDERR should contain:
+      """
+      Error: Strange wp-config.php file: wp-settings.php is not loaded directly.
+      """
+
+  Scenario: Strange wp-config.php file with multi-line wp-settings.php call
+    Given a WP installation
+    And a wp-config.php file:
+      """
+      <?php
+      if ( 1 === 1 ) {
+        require_once ABSPATH . 'some-other-file.php';
+      }
+
+      define('DB_NAME', '{DB_NAME}');
+      define('DB_USER', '{DB_USER}');
+      define('DB_PASSWORD', '{DB_PASSWORD}');
+      define('DB_HOST', '{DB_HOST}');
+      define('DB_CHARSET', 'utf8');
+      define('DB_COLLATE', '');
+      $table_prefix = 'wp_';
+
+      /* That's all, stop editing! Happy publishing. */
+
+      /** Sets up WordPress vars and included files. */
+      require_once
+        ABSPATH . 'wp-settings.php'
+      ;
+      """
+
+    When I try `wp core is-installed`
+    Then STDERR should not contain:
+      """
+      Error: Strange wp-config.php file: wp-settings.php is not loaded directly.
+      """
+
+  Scenario: Code after wp-settings.php call should be loaded
+    Given a WP installation
+    And a wp-config.php file:
+      """
+      <?php
+      if ( 1 === 1 ) {
+        require_once ABSPATH . 'some-other-file.php';
+      }
+
+      define('DB_NAME', '{DB_NAME}');
+      define('DB_USER', '{DB_USER}');
+      define('DB_PASSWORD', '{DB_PASSWORD}');
+      define('DB_HOST', '{DB_HOST}');
+      define('DB_CHARSET', 'utf8');
+      define('DB_COLLATE', '');
+      $table_prefix = 'wp_';
+
+      /* That's all, stop editing! Happy publishing. */
+
+      /** Sets up WordPress vars and included files. */
+      require_once
+        ABSPATH . 'wp-settings.php'
+      ;
+
+      require_once ABSPATH . 'includes-file.php';
+      """
+    And a includes-file.php file:
+      """
+      <?php
+      define( 'MY_CONSTANT', true );
+      """
+    And a some-other-file.php file:
+      """
+      <?php
+      define( 'MY_OTHER_CONSTANT', true );
+      """
+
+    When I try `wp core is-installed`
+    Then STDERR should not contain:
+      """
+      Error: Strange wp-config.php file: wp-settings.php is not loaded directly.
+      """
+
+    When I run `wp eval 'var_export( defined("MY_CONSTANT") );'`
+    Then STDOUT should be:
+      """
+      true
+      """
+
+    When I run `wp eval 'var_export( defined("MY_OTHER_CONSTANT") );'`
+    Then STDOUT should be:
+      """
+      true
       """

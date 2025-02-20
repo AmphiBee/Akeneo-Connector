@@ -38,6 +38,7 @@
  *
  * @copyright 2008-2017 Manuel Pichler. All rights reserved.
  * @license http://www.opensource.org/licenses/bsd-license.php BSD License
+ *
  * @since 2.3
  */
 
@@ -47,15 +48,17 @@ use PDepend\Source\AST\ASTArguments;
 use PDepend\Source\AST\ASTCallable;
 use PDepend\Source\AST\ASTCatchStatement;
 use PDepend\Source\AST\ASTConstant;
-use PDepend\Source\AST\ASTIdentifier;
 use PDepend\Source\AST\ASTFormalParameter;
+use PDepend\Source\AST\ASTIdentifier;
 use PDepend\Source\AST\ASTMethod;
 use PDepend\Source\AST\ASTNode;
 use PDepend\Source\AST\ASTScalarType;
 use PDepend\Source\AST\ASTType;
+use PDepend\Source\AST\ASTUnionType;
 use PDepend\Source\AST\State;
 use PDepend\Source\Parser\ParserException;
 use PDepend\Source\Parser\UnexpectedTokenException;
+use PDepend\Source\Tokenizer\Token;
 use PDepend\Source\Tokenizer\Tokens;
 
 /**
@@ -63,6 +66,7 @@ use PDepend\Source\Tokenizer\Tokens;
  *
  * @copyright 2008-2017 Manuel Pichler. All rights reserved.
  * @license http://www.opensource.org/licenses/bsd-license.php BSD License
+ *
  * @since 2.9
  */
 abstract class PHPParserVersion80 extends PHPParserVersion74
@@ -82,9 +86,9 @@ abstract class PHPParserVersion80 extends PHPParserVersion74
      * Will return <b>true</b> if the given <b>$tokenType</b> is a valid class
      * name part.
      *
-     * @param integer $tokenType The type of a parsed token.
+     * @param int $tokenType The type of a parsed token.
      *
-     * @return boolean
+     * @return bool
      */
     protected function isClassName($tokenType)
     {
@@ -127,8 +131,9 @@ abstract class PHPParserVersion80 extends PHPParserVersion74
      * in the base version. In this method you can implement version specific
      * expressions.
      *
-     * @return ASTNode
      * @throws UnexpectedTokenException
+     *
+     * @return ASTNode
      */
     protected function parseOptionalExpressionForVersion()
     {
@@ -139,7 +144,7 @@ abstract class PHPParserVersion80 extends PHPParserVersion74
     /**
      * In this method we implement parsing of PHP 8.0 specific expressions.
      *
-     * @return ASTNode
+     * @return ?ASTNode
      */
     protected function parseExpressionVersion80()
     {
@@ -205,7 +210,9 @@ abstract class PHPParserVersion80 extends PHPParserVersion74
 
         if (isset($states[$token])) {
             $modifier |= $states[$token];
-            $this->tokenizer->next();
+            $next = $this->tokenizer->next();
+            assert($next instanceof Token);
+            $this->tokenStack->add($next);
         }
 
         return $modifier;
@@ -228,13 +235,12 @@ abstract class PHPParserVersion80 extends PHPParserVersion74
         return parent::parseArgumentExpression();
     }
 
-    /**
-     * @return ASTConstant
-     */
     protected function parseConstantArgument(ASTConstant $constant, ASTArguments $arguments)
     {
         if ($this->tokenizer->peek() === Tokens::T_COLON) {
-            $this->tokenizer->next();
+            $token = $this->tokenizer->next();
+            assert($token instanceof Token);
+            $this->tokenStack->add($token);
 
             return $this->builder->buildAstNamedArgument(
                 $constant->getImage(),
@@ -245,21 +251,6 @@ abstract class PHPParserVersion80 extends PHPParserVersion74
         return $constant;
     }
 
-    /**
-     * This method parses a function postfix expression. An object of type
-     * {@link ASTFunctionPostfix} represents any valid php
-     * function call.
-     *
-     * This method will delegate the call to another method that returns a
-     * member primary prefix object when the function postfix expression is
-     * followed by an object operator.
-     *
-     * @param  ASTNode $node This node represents the function
-     *        identifier. An identifier can be a static string, a variable, a
-     *        compound variable or any other valid php function identifier.
-     * @return ASTNode
-     * @throws ParserException
-     */
     protected function parseFunctionPostfix(ASTNode $node)
     {
         if (!($node instanceof ASTIdentifier) || $node->getImageWithoutNamespace() !== 'match') {
@@ -312,6 +303,9 @@ abstract class PHPParserVersion80 extends PHPParserVersion74
         return $this->parseTypeHint();
     }
 
+    /**
+     * @return ASTType
+     */
     protected function parseSingleTypeHint()
     {
         $this->consumeComments();
@@ -331,11 +325,15 @@ abstract class PHPParserVersion80 extends PHPParserVersion74
                 break;
             case Tokens::T_NULL:
                 $type = new ASTScalarType('null');
-                $this->tokenizer->next();
+                $token = $this->tokenizer->next();
+                assert($token instanceof Token);
+                $this->tokenStack->add($token);
                 break;
             case Tokens::T_FALSE:
                 $type = new ASTScalarType('false');
-                $this->tokenizer->next();
+                $token = $this->tokenizer->next();
+                assert($token instanceof Token);
+                $this->tokenStack->add($token);
                 break;
             default:
                 $type = parent::parseTypeHint();
@@ -347,44 +345,23 @@ abstract class PHPParserVersion80 extends PHPParserVersion74
         return $type;
     }
 
-    protected function parseUnionTypeHint()
+    /**
+     * @param ASTType $firstType
+     *
+     * @return ASTUnionType
+     */
+    protected function parseUnionTypeHint($firstType)
     {
-        $types = array($this->parseSingleTypeHint());
+        $types = array($firstType);
 
         while ($this->tokenizer->peek() === Tokens::T_BITWISE_OR) {
-            $this->tokenizer->next();
+            $token = $this->tokenizer->next();
+            assert($token instanceof Token);
+            $this->tokenStack->add($token);
             $types[] = $this->parseSingleTypeHint();
         }
 
-        return $types;
-    }
-
-    /**
-     * Parses a type hint that is valid in the supported PHP version.
-     *
-     * @return \PDepend\Source\AST\ASTNode
-     */
-    protected function parseTypeHint()
-    {
-        $this->consumeComments();
-        $token = $this->tokenizer->currentToken();
-
-        $types = $this->parseUnionTypeHint();
-
-        if (count($types) === 1) {
-            if ($types[0] instanceof ASTScalarType && ($types[0]->isFalse() || $types[0]->isNull())) {
-                throw new ParserException(
-                    $types[0]->getImage() . ' can not be used as a standalone type',
-                    0,
-                    $this->getUnexpectedTokenException($token)
-                );
-            }
-
-            return $types[0];
-        }
-
         $unionType = $this->builder->buildAstUnionType();
-
         foreach ($types as $type) {
             $unionType->addChild($type);
         }
@@ -393,9 +370,56 @@ abstract class PHPParserVersion80 extends PHPParserVersion74
     }
 
     /**
+     * @param ASTType $type
+     *
+     * @return ASTType
+     */
+    protected function parseTypeHintCombination($type)
+    {
+        if ($this->tokenizer->peek() === Tokens::T_BITWISE_OR) {
+            return $this->parseUnionTypeHint($type);
+        }
+
+        return $type;
+    }
+
+    /**
+     * @param ASTNode $type
+     *
+     * @return bool
+     */
+    protected function canNotBeStandAloneType($type)
+    {
+        return $type instanceof ASTScalarType && ($type->isFalse() || $type->isNull());
+    }
+
+    /**
+     * @return ASTType
+     */
+    protected function parseTypeHint()
+    {
+        $this->consumeComments();
+        $token = $this->tokenizer->currentToken();
+        $type = $this->parseSingleTypeHint();
+
+        $type = $this->parseTypeHintCombination($type);
+
+        if ($this->canNotBeStandAloneType($type)) {
+            throw new ParserException(
+                $type->getImage() . ' can not be used as a standalone type',
+                0,
+                $this->getUnexpectedTokenException($token)
+            );
+        }
+
+        return $type;
+    }
+
+    /**
      * This method parses assigned variable in catch statement.
      *
-     * @param \PDepend\Source\AST\ASTCatchStatement $stmt The owning catch statement.
+     * @param ASTCatchStatement $stmt The owning catch statement.
+     *
      * @return void
      */
     protected function parseCatchVariable(ASTCatchStatement $stmt)
@@ -405,10 +429,6 @@ abstract class PHPParserVersion80 extends PHPParserVersion74
         }
     }
 
-    /**
-     * Trailing commas is allowed in closure use list from PHP 8.0
-     * @return false
-     */
     protected function allowTrailingCommaInClosureUseList()
     {
         return true;
@@ -417,12 +437,17 @@ abstract class PHPParserVersion80 extends PHPParserVersion74
     /**
      * use of trailing comma in formal parameters list is allowed since PHP 8.0
      * example function foo(string $bar, int $baz,)
+     *
+     * @return bool
      */
     protected function allowTrailingCommaInFormalParametersList()
     {
         return true;
     }
 
+    /**
+     * @return bool
+     */
     protected function isNextTokenObjectOperator()
     {
         return in_array($this->tokenizer->peek(), array(
@@ -433,9 +458,10 @@ abstract class PHPParserVersion80 extends PHPParserVersion74
 
     protected function consumeObjectOperatorToken()
     {
-        return $this->consumeToken($this->tokenizer->peek() === Tokens::T_NULLSAFE_OBJECT_OPERATOR
-            ? Tokens::T_NULLSAFE_OBJECT_OPERATOR
-            : Tokens::T_OBJECT_OPERATOR
+        return $this->consumeToken(
+            $this->tokenizer->peek() === Tokens::T_NULLSAFE_OBJECT_OPERATOR
+                ? Tokens::T_NULLSAFE_OBJECT_OPERATOR
+                : Tokens::T_OBJECT_OPERATOR
         );
     }
 
@@ -446,10 +472,11 @@ abstract class PHPParserVersion80 extends PHPParserVersion74
                 Tokens::T_SEMICOLON,
                 Tokens::T_COMMA,
                 Tokens::T_COLON,
-                Tokens::T_PARENTHESIS_CLOSE
+                Tokens::T_PARENTHESIS_CLOSE,
+                Tokens::T_SQUARED_BRACKET_CLOSE
             ));
         }
 
-        $this->throwUnexpectedTokenException();
+        throw $this->getUnexpectedNextTokenException();
     }
 }

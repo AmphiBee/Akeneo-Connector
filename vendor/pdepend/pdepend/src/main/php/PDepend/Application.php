@@ -42,10 +42,17 @@
 
 namespace PDepend;
 
+use InvalidArgumentException;
+use PDepend\DependencyInjection\PdependExtension;
+use PDepend\Metrics\AnalyzerFactory;
+use PDepend\Report\ReportGeneratorFactory;
+use PDepend\TextUI\Runner;
+use PDepend\Util\Configuration;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
+use Symfony\Component\DependencyInjection\TaggedContainerInterface;
 
 /**
  * PDepend Application
@@ -56,7 +63,7 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
 class Application
 {
     /**
-     * @var \Symfony\Component\DependencyInjection\ContainerInterface|null
+     * @var TaggedContainerInterface|null
      **/
     private $container;
 
@@ -67,12 +74,13 @@ class Application
 
     /**
      * @param string $configurationFile
+     *
      * @return void
      */
     public function setConfigurationFile($configurationFile)
     {
         if (!file_exists($configurationFile)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf('The configuration file "%s" doesn\'t exist.', $configurationFile)
             );
         }
@@ -81,47 +89,62 @@ class Application
     }
 
     /**
-     * @return \PDepend\Util\Configuration
+     * @return Configuration
      */
     public function getConfiguration()
     {
-        return $this->getContainer()->get('pdepend.configuration');
+        $obj = $this->getContainer()->get('pdepend.configuration');
+        assert($obj instanceof Configuration);
+
+        return $obj;
     }
 
     /**
-     * @return \PDepend\Engine
+     * @return Engine
      */
     public function getEngine()
     {
-        return $this->getContainer()->get('pdepend.engine');
+        $obj = $this->getContainer()->get('pdepend.engine');
+        assert($obj instanceof Engine);
+
+        return $obj;
     }
 
     /**
-     * @return \PDepend\TextUI\Runner
+     * @return Runner
      */
     public function getRunner()
     {
-        return $this->getContainer()->get('pdepend.textui.runner'); // TODO: Use standard name? textui is detail.
+        $obj = $this->getContainer()->get('pdepend.textui.runner'); // TODO: Use standard name? textui is detail.
+        assert($obj instanceof Runner);
+
+        return $obj;
     }
 
     /**
-     * @return \PDepend\Report\ReportGeneratorFactory
+     * @return ReportGeneratorFactory
      */
     public function getReportGeneratorFactory()
     {
-        return $this->getContainer()->get('pdepend.report_generator_factory');
+        $obj = $this->getContainer()->get('pdepend.report_generator_factory');
+        assert($obj instanceof ReportGeneratorFactory);
+
+        return $obj;
     }
 
     /**
-     * @return \PDepend\Metrics\AnalyzerFactory
+     * @return AnalyzerFactory
      */
     public function getAnalyzerFactory()
     {
-        return $this->getContainer()->get('pdepend.analyzer_factory');
+        $obj = $this->getContainer()->get('pdepend.analyzer_factory');
+        assert($obj instanceof AnalyzerFactory);
+
+        return $obj;
     }
 
     /**
-     * @return \Symfony\Component\DependencyInjection\ContainerInterface
+     * @return TaggedContainerInterface
      */
     private function getContainer()
     {
@@ -133,11 +156,11 @@ class Application
     }
 
     /**
-     * @return \Symfony\Component\DependencyInjection\ContainerInterface
+     * @return TaggedContainerInterface
      */
     private function createContainer()
     {
-        $extensions = array(new DependencyInjection\PdependExtension());
+        $extensions = array(new PdependExtension());
 
         $container = new ContainerBuilder(new ParameterBag(array()));
         $container->prependExtensionConfig('pdepend', array());
@@ -161,7 +184,7 @@ class Application
     /**
      * Returns available logger options and documentation messages.
      *
-     * @return array<string, array>
+     * @return array<string, array<string, string>>
      */
     public function getAvailableLoggerOptions()
     {
@@ -171,7 +194,7 @@ class Application
     /**
      * Returns available analyzer options and documentation messages.
      *
-     * @return array<string, array>
+     * @return array<string, array<string, string>>
      */
     public function getAvailableAnalyzerOptions()
     {
@@ -180,6 +203,7 @@ class Application
 
     /**
      * @param string $serviceTag
+     *
      * @return array<string, array<string, string>>
      */
     private function getAvailableOptionsFor($serviceTag)
@@ -192,10 +216,10 @@ class Application
 
         foreach ($loggerServices as $loggerServiceTags) {
             foreach ($loggerServiceTags as $loggerServiceTag) {
-                if (isset($loggerServiceTag['option']) && isset($loggerServiceTag['message'])) {
+                if (isset($loggerServiceTag['option'], $loggerServiceTag['message']) && is_string($loggerServiceTag['option']) && is_string($loggerServiceTag['message'])) {
                     $options[$loggerServiceTag['option']] = array(
                         'message' => $loggerServiceTag['message'],
-                        'value' => isset($loggerServiceTag['value']) ? $loggerServiceTag['value'] : 'file'
+                        'value' => isset($loggerServiceTag['value']) && is_string($loggerServiceTag['value']) ? $loggerServiceTag['value'] : 'file'
                     );
                 }
             }

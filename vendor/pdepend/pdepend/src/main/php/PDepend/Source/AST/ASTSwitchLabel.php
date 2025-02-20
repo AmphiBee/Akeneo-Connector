@@ -38,16 +38,20 @@
  *
  * @copyright 2008-2017 Manuel Pichler. All rights reserved.
  * @license http://www.opensource.org/licenses/bsd-license.php BSD License
+ *
  * @since 0.9.8
  */
 
 namespace PDepend\Source\AST;
+
+use PDepend\Source\ASTVisitor\ASTVisitor;
 
 /**
  * This node class represents a switch-label.
  *
  * @copyright 2008-2017 Manuel Pichler. All rights reserved.
  * @license http://www.opensource.org/licenses/bsd-license.php BSD License
+ *
  * @since 0.9.8
  */
 class ASTSwitchLabel extends AbstractASTNode
@@ -55,14 +59,14 @@ class ASTSwitchLabel extends AbstractASTNode
     /**
      * Is this switch label the default label?
      *
-     * @var boolean
+     * @var bool
      */
     protected $default = false;
 
     /**
      * Returns <b>true</b> when this node is the default label.
      *
-     * @return boolean
+     * @return bool
      */
     public function isDefault()
     {
@@ -80,26 +84,12 @@ class ASTSwitchLabel extends AbstractASTNode
     }
 
     /**
-     * Accept method of the visitor design pattern. This method will be called
-     * by a visitor during tree traversal.
-     *
-     * @param \PDepend\Source\ASTVisitor\ASTVisitor $visitor The calling visitor instance.
-     * @param mixed                                 $data
-     *
-     * @return mixed
-     * @since  0.9.12
-     */
-    public function accept(\PDepend\Source\ASTVisitor\ASTVisitor $visitor, $data = null)
-    {
-        return $visitor->visitSwitchLabel($this, $data);
-    }
-
-    /**
      * The magic sleep method will be called by PHP's runtime environment right
      * before an instance of this class gets serialized. It should return an
      * array with those property names that should be serialized for this class.
      *
      * @return array<string>
+     *
      * @since  0.10.0
      */
     public function __sleep()

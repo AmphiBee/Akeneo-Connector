@@ -16,7 +16,7 @@ return [
 	'ssh'               => [
 		'runtime' => '=[<scheme>:][<user>@]<host|container>[:<port>][<path>]',
 		'file'    => '[<scheme>:][<user>@]<host|container>[:<port>][<path>]',
-		'desc'    => 'Perform operation against a remote server over SSH (or a container using scheme of "docker", "docker-compose", "vagrant").',
+		'desc'    => 'Perform operation against a remote server over SSH (or a container using scheme of "docker", "docker-compose", "docker-compose-run", "vagrant").',
 	],
 
 	'http'              => [
@@ -71,6 +71,13 @@ return [
 		'desc'     => 'Execute PHP code before running the command (may be used more than once).',
 		'multiple' => true,
 		'default'  => [],
+	],
+
+	'context'           => [
+		'runtime' => '=<context>',
+		'file'    => '<context>',
+		'default' => 'cli',
+		'desc'    => 'Load WordPress in a given context.',
 	],
 
 	'disabled_commands' => [

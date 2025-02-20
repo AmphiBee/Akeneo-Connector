@@ -3,6 +3,10 @@
 namespace WP_CLI;
 
 use Mustangostang\Spyc;
+use SplFileInfo;
+
+use function WP_CLI\Utils\is_path_absolute;
+use function WP_CLI\Utils\normalize_path;
 
 /**
  * Handles file- and runtime-based configuration values.
@@ -57,13 +61,15 @@ class Configurator {
 		'path',
 		'ssh',
 		'http',
+		'proxyjump',
+		'key',
 	];
 
 	/**
 	 * @param string $path Path to config spec file.
 	 */
 	public function __construct( $path ) {
-		$this->spec = include $path;
+		$this->load_config_spec( $path );
 
 		$defaults = [
 			'runtime'  => false,
@@ -78,6 +84,22 @@ class Configurator {
 
 			$this->config[ $key ] = $details['default'];
 		}
+	}
+
+	/**
+	 * Loads the config spec file.
+	 *
+	 * @param string $path Path to the config spec file.
+	 */
+	private function load_config_spec( $path ) {
+		$config_spec = include $path;
+		// A way for platforms to modify $config_spec.
+		// Use with caution!
+		$config_spec_filter_callback = defined( 'WP_CLI_CONFIG_SPEC_FILTER_CALLBACK' ) ? constant( 'WP_CLI_CONFIG_SPEC_FILTER_CALLBACK' ) : false;
+		if ( $config_spec_filter_callback && is_callable( $config_spec_filter_callback ) ) {
+			$config_spec = $config_spec_filter_callback( $config_spec );
+		}
+		$this->spec = $config_spec;
 	}
 
 	/**
@@ -126,8 +148,8 @@ class Configurator {
 	/**
 	 * Splits a list of arguments into positional, associative and config.
 	 *
-	 * @param array(string) $arguments
-	 * @return array(array)
+	 * @param array<string> $arguments
+	 * @return array<array<string>>
 	 */
 	public function parse_args( $arguments ) {
 		list( $positional_args, $mixed_args, $global_assoc, $local_assoc ) = self::extract_assoc( $arguments );
@@ -138,8 +160,8 @@ class Configurator {
 	/**
 	 * Splits positional args from associative args.
 	 *
-	 * @param array $arguments
-	 * @return array(array)
+	 * @param array<string> $arguments
+	 * @return array{0: array<string>, 1: array<array{0: string, 1: string|bool}>, 2: array<array{0: string, 1: string|bool}>, 3: array<array{0: string, 1: string|bool}>}
 	 */
 	public static function extract_assoc( $arguments ) {
 		$positional_args = [];
@@ -148,8 +170,8 @@ class Configurator {
 		$local_assoc     = [];
 
 		foreach ( $arguments as $arg ) {
-			$positional_arg = null;
-			$assoc_arg      = null;
+			$positional = null;
+			$assoc_arg  = null;
 
 			if ( preg_match( '|^--no-([^=]+)$|', $arg, $matches ) ) {
 				$assoc_arg = [ $matches[1], false ];
@@ -235,7 +257,13 @@ class Configurator {
 	public function merge_yml( $path, $current_alias = null ) {
 		$yaml = self::load_yml( $path );
 		if ( ! empty( $yaml['_']['inherit'] ) ) {
-			$this->merge_yml( $yaml['_']['inherit'], $current_alias );
+			// Refactor with the WP-CLI `Path` class, once it's available.
+			// See: https://github.com/wp-cli/wp-cli/issues/5007
+			$inherit_path = is_path_absolute( $yaml['_']['inherit'] )
+				? $yaml['_']['inherit']
+				: ( new SplFileInfo( normalize_path( dirname( $path ) . '/' . $yaml['_']['inherit'] ) ) )->getRealPath();
+
+			$this->merge_yml( $inherit_path, $current_alias );
 		}
 		// Prepare the base path for absolutized alias paths.
 		$yml_file_dir = $path ? dirname( $path ) : false;
@@ -375,5 +403,4 @@ class Configurator {
 			$path = $base . DIRECTORY_SEPARATOR . $path;
 		}
 	}
-
 }

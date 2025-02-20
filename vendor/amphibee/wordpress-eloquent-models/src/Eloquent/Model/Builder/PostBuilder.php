@@ -64,7 +64,7 @@ class PostBuilder extends Builder
     {
         return $this->where('post_name', $slug);
     }
-    
+
     /**
      * @param string $postParentId
      * @return PostBuilder
@@ -76,17 +76,31 @@ class PostBuilder extends Builder
 
     /**
      * @param string $taxonomy
+     * @param array|string|int $terms
+     * @param string $column
+     * @return PostBuilder
+     */
+    public function taxonomy(string $taxonomy, $terms, $column = 'slug')
+    {
+        return $this->whereHas(
+            'taxonomies',
+            fn ($query) => $query
+                ->where('taxonomy', $taxonomy)
+                ->whereHas(
+                    'term',
+                    fn ($query) => $query->whereIn($column, (array) $terms)
+                )
+        );
+    }
+
+    /**
+     * @param string $taxonomy
      * @param mixed $terms
      * @return PostBuilder
      */
-    public function taxonomy($taxonomy, $terms)
+    public function taxonomyId($taxonomy, $ids)
     {
-        return $this->whereHas('taxonomies', function ($query) use ($taxonomy, $terms) {
-            $query->where('taxonomy', $taxonomy)
-                ->whereHas('term', function ($query) use ($terms) {
-                    $query->whereIn('slug', is_array($terms) ? $terms : [$terms]);
-                });
-        });
+        return $this->taxonomy($taxonomy, $ids, 'term_id');
     }
 
     /**
@@ -152,7 +166,7 @@ class PostBuilder extends Builder
 
     /**
      * Filter the query to include the given post ids, in the given order.
-     * 
+     *
      * @param array   $ids
      */
     public function whereIds(array $ids)
@@ -162,10 +176,10 @@ class PostBuilder extends Builder
                 : $this->whereIn('ID', $ids)
                     ->orderByRaw(sprintf('FIELD(ID, %s)', implode(',', $ids)));
     }
-    
+
     /**
      * Filter the query to include the given post ids, in the given order.
-     * 
+     *
      * @deprecated Use whereIds() instead.
      */
     public function ids(array $ids)

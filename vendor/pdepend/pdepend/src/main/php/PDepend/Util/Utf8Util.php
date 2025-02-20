@@ -43,35 +43,28 @@
 namespace PDepend\Util;
 
 /**
- * This is a simply utility class that will perform mathematical operations with
- * bcmath when the extension exists, otherwise it will use default math operations.
+ * This is a simply utility class that will ensure the encoding of a raw string
+ * into a UTF-8 encoded string. It will try using "mbstring" extension if
+ * available, or symfony polyfill if not.
  *
  * @copyright 2008-2017 Manuel Pichler. All rights reserved.
  * @license http://www.opensource.org/licenses/bsd-license.php BSD License
+ *
  * @since 2.2.x
  */
 final class Utf8Util
 {
     /**
      * @param string $raw
+     *
      * @return string
      */
     public static function ensureEncoding($raw)
     {
-        $encoding = 'UTF8';
-        if (function_exists('mb_detect_encoding')) {
-            $encoding = mb_detect_encoding($raw) ?: $encoding;
+        if (mb_check_encoding($raw, 'UTF-8')) {
+            return $raw;
         }
 
-        $text = '';
-        if (function_exists('iconv')) {
-            $text = @iconv($encoding, 'UTF8//IGNORE', $raw) ?: '';
-        }
-
-        if ($text === '') {
-            $text = utf8_encode($raw);
-        }
-
-        return $text;
+        return mb_convert_encoding($raw, 'UTF-8', mb_list_encodings());
     }
 }

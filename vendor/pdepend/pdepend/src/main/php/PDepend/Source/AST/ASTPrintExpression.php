@@ -49,6 +49,7 @@ use PDepend\Source\ASTVisitor\ASTVisitor;
  *
  * @copyright 2008-2017 Manuel Pichler. All rights reserved.
  * @license http://www.opensource.org/licenses/bsd-license.php BSD License
+ *
  * @since 2.3
  */
 class ASTPrintExpression extends ASTExpression
@@ -59,18 +60,5 @@ class ASTPrintExpression extends ASTExpression
     public function __construct()
     {
         parent::__construct('print');
-    }
-
-    /**
-     * Accept method of the visitor design pattern. This method will be called
-     * by a visitor during tree traversal.
-     *
-     * @param \PDepend\Source\ASTVisitor\ASTVisitor $visitor
-     * @param mixed $data
-     * @return mixed
-     */
-    public function accept(ASTVisitor $visitor, $data = null)
-    {
-        return $visitor->visitPrintExpression($this, $data);
     }
 }

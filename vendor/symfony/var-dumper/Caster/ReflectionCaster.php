@@ -42,7 +42,7 @@ class ReflectionCaster
 
         $a = static::castFunctionAbstract($c, $a, $stub, $isNested, $filter);
 
-        if (!str_contains($c->name, '{closure}')) {
+        if (!str_contains($c->name, '{closure')) {
             $stub->class = isset($a[$prefix.'class']) ? $a[$prefix.'class']->value.'::'.$c->name : $c->name;
             unset($a[$prefix.'class']);
         }
@@ -83,20 +83,20 @@ class ReflectionCaster
         // Cannot create ReflectionGenerator based on a terminated Generator
         try {
             $reflectionGenerator = new \ReflectionGenerator($c);
+
+            return self::castReflectionGenerator($reflectionGenerator, $a, $stub, $isNested);
         } catch (\Exception $e) {
             $a[Caster::PREFIX_VIRTUAL.'closed'] = true;
 
             return $a;
         }
-
-        return self::castReflectionGenerator($reflectionGenerator, $a, $stub, $isNested);
     }
 
     public static function castType(\ReflectionType $c, array $a, Stub $stub, bool $isNested)
     {
         $prefix = Caster::PREFIX_VIRTUAL;
 
-        if ($c instanceof \ReflectionNamedType) {
+        if ($c instanceof \ReflectionNamedType || \PHP_VERSION_ID < 80000) {
             $a += [
                 $prefix.'name' => $c instanceof \ReflectionNamedType ? $c->getName() : (string) $c,
                 $prefix.'allowsNull' => $c->allowsNull(),
@@ -116,10 +116,16 @@ class ReflectionCaster
 
     public static function castAttribute(\ReflectionAttribute $c, array $a, Stub $stub, bool $isNested)
     {
-        self::addMap($a, $c, [
+        $map = [
             'name' => 'getName',
             'arguments' => 'getArguments',
-        ]);
+        ];
+
+        if (\PHP_VERSION_ID >= 80400) {
+            unset($map['name']);
+        }
+
+        self::addMap($a, $c, $map);
 
         return $a;
     }
@@ -292,7 +298,7 @@ class ReflectionCaster
         if ($c->isOptional()) {
             try {
                 $a[$prefix.'default'] = $v = $c->getDefaultValue();
-                if ($c->isDefaultValueConstant()) {
+                if ($c->isDefaultValueConstant() && !\is_object($v)) {
                     $a[$prefix.'default'] = new ConstStub($c->getDefaultValueConstantName(), $v);
                 }
                 if (null === $v) {
@@ -362,7 +368,7 @@ class ReflectionCaster
                     if (!$type instanceof \ReflectionNamedType) {
                         $signature .= $type.' ';
                     } else {
-                        if (!$param->isOptional() && $param->allowsNull() && 'mixed' !== $type->getName()) {
+                        if ($param->allowsNull() && 'mixed' !== $type->getName()) {
                             $signature .= '?';
                         }
                         $signature .= substr(strrchr('\\'.$type->getName(), '\\'), 1).' ';
@@ -421,7 +427,7 @@ class ReflectionCaster
     private static function addMap(array &$a, object $c, array $map, string $prefix = Caster::PREFIX_VIRTUAL)
     {
         foreach ($map as $k => $m) {
-            if ('isDisabled' === $k) {
+            if (\PHP_VERSION_ID >= 80000 && 'isDisabled' === $k) {
                 continue;
             }
 
@@ -433,8 +439,10 @@ class ReflectionCaster
 
     private static function addAttributes(array &$a, \Reflector $c, string $prefix = Caster::PREFIX_VIRTUAL): void
     {
-        foreach ($c->getAttributes() as $n) {
-            $a[$prefix.'attributes'][] = $n;
+        if (\PHP_VERSION_ID >= 80000) {
+            foreach ($c->getAttributes() as $n) {
+                $a[$prefix.'attributes'][] = $n;
+            }
         }
     }
 }

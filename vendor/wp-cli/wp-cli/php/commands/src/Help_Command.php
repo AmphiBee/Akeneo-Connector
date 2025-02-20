@@ -118,7 +118,7 @@ class Help_Command extends WP_CLI_Command {
 
 		$pager = getenv( 'PAGER' );
 		if ( false === $pager ) {
-			$pager = Utils\is_windows() ? 'more' : 'less -r';
+			$pager = Utils\is_windows() ? 'more' : 'less -R';
 		}
 
 		// For Windows 7 need to set code page to something other than Unicode (65001) to get around "Not enough memory." error with `more.com` on PHP 7.1+.
@@ -156,6 +156,15 @@ class Help_Command extends WP_CLI_Command {
 		$alias = $command->get_alias();
 		if ( $alias ) {
 			$binding['alias'] = $alias;
+		}
+		$hook_name        = $command->get_hook();
+		$hook_description = $hook_name ? Utils\get_hook_description( $hook_name ) : null;
+		if ( $hook_description && 'after_wp_load' !== $hook_name ) {
+			if ( $command->can_have_subcommands() ) {
+				$binding['shortdesc'] .= "\n\nUnless overridden, these commands run on the '$hook_name' hook, $hook_description";
+			} else {
+				$binding['shortdesc'] .= "\n\nThis command runs on the '$hook_name' hook, $hook_description";
+			}
 		}
 
 		if ( $command->can_have_subcommands() ) {
@@ -219,7 +228,7 @@ class Help_Command extends WP_CLI_Command {
 			$pattern = '/\[.+?\]\((https?:\/\/.+?)\)/';
 			$newdesc = preg_replace_callback(
 				$pattern,
-				function( $matches ) use ( &$links ) {
+				function ( $matches ) use ( &$links ) {
 					static $count = 0;
 					$count++;
 					$links[] = $matches[1];

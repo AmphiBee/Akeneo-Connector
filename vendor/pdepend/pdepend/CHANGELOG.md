@@ -1,3 +1,111 @@
+pdepend-2.16.2 (2023/12/17)
+==========================
+
+- Fixed [#705](https://github.com/pdepend/pdepend/pull/705): Fix throw-expression parsing inside array access
+
+pdepend-2.16.1 (2023/12/10)
+==========================
+
+- Fixed [#699](https://github.com/pdepend/pdepend/pull/699): Fix Symfony 7 compatibility
+
+pdepend-2.16.0 (2023/11/29)
+==========================
+
+- Added [#692](https://github.com/pdepend/pdepend/pull/692) PHP 8.3 Syntax
+- Added [#686](https://github.com/pdepend/pdepend/pull/686) Allow Symfony 7
+- Fixed [#691](https://github.com/pdepend/pdepend/pull/691) Float parsing for number starting with 0.
+- Fixed [#689](https://github.com/pdepend/pdepend/pull/689) Handle conversion to/detection of UTF-8 encoding using either mbstring PHP extension or the polyfill provided by Symfony
+- Fixed [phpmd/phpmd#914](https://github.com/pdepend/pdepend/pull/687) Parsing the correct comment for method doc-block (Allow correct SuppressWarnings annotation handling on PHPMD)
+- Fixed [phpmd/phpmd#804](https://github.com/pdepend/pdepend/pull/694) Handle yield termination depending on context
+
+
+pdepend-2.15.1 (2023/09/28)
+==========================
+
+- Fixed [\#684](https://github.com/pdepend/pdepend/pull/684): Fix [\#682](https://github.com/pdepend/pdepend/issues/682) Re-allow empty compilation unit
+- Changed [\#684](https://github.com/pdepend/pdepend/pull/684): Show error full stack trace when debug is on
+
+
+pdepend-2.15.0 (2023/09/23)
+==========================
+
+- Fixed [\#669](https://github.com/pdepend/pdepend/pull/669): Fix Halstead formula.
+- Fixed [\#673](https://github.com/pdepend/pdepend/pull/673): Fix [\#665](https://github.com/pdepend/pdepend/issues/665) Allow readonly before public/protected/private.
+- Changed [\#670](https://github.com/pdepend/pdepend/pull/670): Upgrade the GitHub Actions from V2 to V3.
+- Changed [\#671](https://github.com/pdepend/pdepend/pull/671): Update PHPStan to 1.10.25.
+- Changed [\#672](https://github.com/pdepend/pdepend/pull/672) and [\#676](https://github.com/pdepend/pdepend/pull/676): Resolve edge cases cought by PHPStan level 7.
+- Changed [\#675](https://github.com/pdepend/pdepend/pull/675): Run the codecoverage with PHP 8.2 and use xDebug 3.
+- Changed [\#677](https://github.com/pdepend/pdepend/pull/677) and [\#678](https://github.com/pdepend/pdepend/pull/678): Add more tests.
+
+
+pdepend-2.14.0 (2023/05/26)
+==========================
+
+
+- Added [\#663](https://github.com/pdepend/pdepend/pull/663): Added, sign the phar files.
+- Added [\#657](https://github.com/pdepend/pdepend/pull/657): Added keywords to composer.json.
+- Fixed [\#656](https://github.com/pdepend/pdepend/pull/656): Fix [\#635](https://github.com/pdepend/pdepend/issues/635), [\#650](https://github.com/pdepend/pdepend/issues/650) Base enum label validity on constant name rule.
+- Fixed [\#661](https://github.com/pdepend/pdepend/pull/661): Fix [\#639](https://github.com/pdepend/pdepend/issues/639) Handle extra parenthis for functions.
+
+
+pdepend-2.13.0 (2023/02/28)
+==========================
+
+- Added [\#636](https://github.com/pdepend/pdepend/pull/636): Add support for NULL, DEFAULT and NEW as enum case.
+- Added [\#651](https://github.com/pdepend/pdepend/pull/651): Add a follow on mastodon link to the footer on the website.
+- Fixed [\#633](https://github.com/pdepend/pdepend/pull/633): Fix parsing for new with parentheses.
+- Fixed [\#641](https://github.com/pdepend/pdepend/pull/641): Improve UTF-8 encoding process.
+- Fixed [\#637](https://github.com/pdepend/pdepend/pull/637): Prevent the use of a not set id value in the AbstractASTType and AbstractASTCallable.
+- Fixed [\#642](https://github.com/pdepend/pdepend/pull/642): Fix [\#638](https://github.com/pdepend/pdepend/issue/638) Unexpected Token with double class modifiers.
+- Changed [\#644](https://github.com/pdepend/pdepend/pull/644): Correct collection of Enum and Intersection type information during analysis.
+- Changed [\#646](https://github.com/pdepend/pdepend/pull/646): Numeric-strings.
+- Changed [\#647](https://github.com/pdepend/pdepend/pull/647): Phpstan corrections.
+- Changed [\#648](https://github.com/pdepend/pdepend/pull/648): Correct type signatures.
+- Changed [\#645](https://github.com/pdepend/pdepend/pull/645): Correct name space collection types (bump to PHPStan level 5).
+- Changed [\#649](https://github.com/pdepend/pdepend/pull/649): Add missing type information.
+- Changed [\#654](https://github.com/pdepend/pdepend/pull/654): Increase PHPStan to level 6.
+
+
+pdepend-2.12.1 (2022/09/08)
+==========================
+
+- Fixed [\#631](https://github.com/pdepend/pdepend/pull/631): Fix enum visit
+
+pdepend-2.12.0 (2022/09/07)
+==========================
+
+- Added [\#618](https://github.com/pdepend/pdepend/pull/618): Implement support for PHP 8.2 null/false stand-alone type
+- Added [\#620](https://github.com/pdepend/pdepend/pull/620): Implement support for PHP 8.2 true type
+- Added [\#625](https://github.com/pdepend/pdepend/pull/625): Implement support for PHP 8.2 Readonly Classes
+- Added [\#626](https://github.com/pdepend/pdepend/pull/626): Implement support for PHP 8.2 Disjunctive Normal Form Types
+- Fixed [\#630](https://github.com/pdepend/pdepend/pull/630): Fix parsing of by-reference vararg parameters
+
+pdepend-2.11.1 (2022/09/01)
+==========================
+
+- Fixed [\#622](https://github.com/pdepend/pdepend/pull/622): Fix ASTEnum serialization
+
+pdepend-2.11.0 (2022/08/29)
+==========================
+
+- Added [\#600](https://github.com/pdepend/pdepend/pull/600): Support integer non-decimal notations
+- Added [\#598](https://github.com/pdepend/pdepend/pull/598): Support PHP 8.1 in-initializers
+- Added [\#610](https://github.com/pdepend/pdepend/pull/610): Support PHP 8.1 support pure intersection types
+- Added [\#613](https://github.com/pdepend/pdepend/pull/613): Support PHP 8.1 first class callable syntax
+- Added [\#608](https://github.com/pdepend/pdepend/pull/608): Support PHP 8.1 enums
+- Fixed [\#593](https://github.com/pdepend/pdepend/pull/593): Fix cache for STDIN usage
+- Fixed [\#603](https://github.com/pdepend/pdepend/pull/603): Allow coma-separated variables in short-tags
+- Fixed [\#604](https://github.com/pdepend/pdepend/pull/604): Support key variable in list unpacking
+
+pdepend-2.10.3 (2022/02/23)
+==========================
+
+- Added [\#574](https://github.com/pdepend/pdepend/pull/574): Support symfony 6
+- Fixed [\#583](https://github.com/pdepend/pdepend/pull/583), [\#578](https://github.com/pdepend/pdepend/pull/578), [\#577](https://github.com/pdepend/pdepend/pull/577), [\#576](https://github.com/pdepend/pdepend/pull/576) : Add declare ReturnTypeWillChange to fix deprecation warnings.
+- Fixed [\#575](https://github.com/pdepend/pdepend/pull/575): Fix deprecation warning in AbstractPHPParser::parseVarAnnotation.
+- Fixed [\#579](https://github.com/pdepend/pdepend/pull/579): Fix deprecation messages in AbstractPHPParser::prepareCallable
+- Changed [\#589](https://github.com/pdepend/pdepend/pull/589), [\#588](https://github.com/pdepend/pdepend/pull/588), [\#587](https://github.com/pdepend/pdepend/pull/587), [\#586](https://github.com/pdepend/pdepend/pull/586), [\#585](https://github.com/pdepend/pdepend/pull/585), [\#582](https://github.com/pdepend/pdepend/pull/582), [\#581](https://github.com/pdepend/pdepend/pull/581), [\#580](https://github.com/pdepend/pdepend/pull/580) : Internal code cleanup and PHPStan fixes.
+
 pdepend-2.10.2 (2021/11/16)
 ==========================
 

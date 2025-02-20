@@ -20,11 +20,11 @@ class Subcommand extends CompositeCommand {
 	private $when_invoked;
 
 	public function __construct( $parent, $name, $docparser, $when_invoked ) {
+		$this->alias = $docparser->get_tag( 'alias' );
+
 		parent::__construct( $parent, $name, $docparser );
 
 		$this->when_invoked = $when_invoked;
-
-		$this->alias = $docparser->get_tag( 'alias' );
 
 		$this->synopsis = $docparser->get_synopsis();
 		if ( ! $this->synopsis && $this->longdesc ) {
@@ -153,7 +153,7 @@ class Subcommand extends CompositeCommand {
 
 		$spec = array_filter(
 			SynopsisParser::parse( $synopsis ),
-			function( $spec_arg ) use ( $args, $assoc_args, &$arg_index ) {
+			function ( $spec_arg ) use ( $args, $assoc_args, &$arg_index ) {
 				switch ( $spec_arg['type'] ) {
 					case 'positional':
 						// Only prompt for the positional arguments that are not
@@ -338,16 +338,13 @@ class Subcommand extends CompositeCommand {
 							if ( isset( $args[ $i ] ) && ! in_array( $args[ $i ], $spec_args['options'] ) ) {
 								\WP_CLI::error( 'Invalid value specified for positional arg.' );
 							}
-							$i++;
+							++$i;
 						} while ( isset( $args[ $i ] ) );
-					} else {
-						// phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict -- This is a loose comparison by design.
-						if ( isset( $args[ $i ] ) && ! in_array( $args[ $i ], $spec_args['options'] ) ) {
-							\WP_CLI::error( 'Invalid value specified for positional arg.' );
-						}
+					} elseif ( isset( $args[ $i ] ) && ! in_array( $args[ $i ], $spec_args['options'] ) ) { // phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict -- This is a loose comparison by design.
+						\WP_CLI::error( 'Invalid value specified for positional arg.' );
 					}
 				}
-				$i++;
+				++$i;
 			} elseif ( 'assoc' === $spec['type'] ) {
 				$spec_args = $docparser->get_param_args( $spec['name'] );
 				if ( ! isset( $assoc_args[ $spec['name'] ] ) && ! isset( $extra_args[ $spec['name'] ] ) ) {
@@ -464,10 +461,10 @@ class Subcommand extends CompositeCommand {
 		$parent = implode( ' ', array_slice( $path, 1 ) );
 		$cmd    = $this->name;
 		if ( $parent ) {
-			WP_CLI::do_hook( "before_invoke:{$parent}" );
+			WP_CLI::do_hook( "before_invoke:{$parent}", $parent );
 			$cmd = $parent . ' ' . $cmd;
 		}
-		WP_CLI::do_hook( "before_invoke:{$cmd}" );
+		WP_CLI::do_hook( "before_invoke:{$cmd}", $cmd );
 
 		// Check if `--prompt` arg passed or not.
 		if ( $prompted_once ) {
@@ -483,7 +480,16 @@ class Subcommand extends CompositeCommand {
 				sprintf(
 					'wp %s %s',
 					$cmd,
-					ltrim( Utils\assoc_args_to_str( $actual_args ), ' ' )
+					ltrim(
+						implode(
+							' ',
+							[
+								ltrim( Utils\args_to_str( $args ), ' ' ),
+								ltrim( Utils\assoc_args_to_str( $actual_args ), ' ' ),
+							]
+						),
+						' '
+					)
 				)
 			);
 		}
@@ -491,16 +497,16 @@ class Subcommand extends CompositeCommand {
 		call_user_func( $this->when_invoked, $args, array_merge( $extra_args, $assoc_args ) );
 
 		if ( $parent ) {
-			WP_CLI::do_hook( "after_invoke:{$parent}" );
+			WP_CLI::do_hook( "after_invoke:{$parent}", $parent );
 		}
-		WP_CLI::do_hook( "after_invoke:{$cmd}" );
+		WP_CLI::do_hook( "after_invoke:{$cmd}", $cmd );
 	}
 
 	/**
 	 * Get an array of parameter names, by merging the command-specific and the
 	 * global parameters.
 	 *
-	 * @param array  $spec Optional. Specification of the current command.
+	 * @param array $spec Optional. Specification of the current command.
 	 *
 	 * @return array Array of parameter names
 	 */

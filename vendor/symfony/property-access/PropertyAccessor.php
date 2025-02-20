@@ -94,7 +94,7 @@ class PropertyAccessor implements PropertyAccessorInterface
      * @param PropertyReadInfoExtractorInterface  $readInfoExtractor
      * @param PropertyWriteInfoExtractorInterface $writeInfoExtractor
      */
-    public function __construct($magicMethods = self::MAGIC_GET | self::MAGIC_SET, $throw = self::THROW_ON_INVALID_PROPERTY_PATH, CacheItemPoolInterface $cacheItemPool = null, $readInfoExtractor = null, $writeInfoExtractor = null)
+    public function __construct($magicMethods = self::MAGIC_GET | self::MAGIC_SET, $throw = self::THROW_ON_INVALID_PROPERTY_PATH, ?CacheItemPoolInterface $cacheItemPool = null, $readInfoExtractor = null, $writeInfoExtractor = null)
     {
         if (\is_bool($magicMethods)) {
             trigger_deprecation('symfony/property-access', '5.2', 'Passing a boolean as the first argument to "%s()" is deprecated. Pass a combination of bitwise flags instead (i.e an integer).', __METHOD__);
@@ -150,7 +150,7 @@ class PropertyAccessor implements PropertyAccessorInterface
             self::VALUE => $objectOrArray,
         ];
 
-        if (\is_object($objectOrArray) && false === strpbrk((string) $propertyPath, '.[')) {
+        if (\is_object($objectOrArray) && (false === strpbrk((string) $propertyPath, '.[') || $objectOrArray instanceof \stdClass && property_exists($objectOrArray, $propertyPath))) {
             return $this->readProperty($zval, $propertyPath, $this->ignoreInvalidProperty)[self::VALUE];
         }
 
@@ -166,7 +166,7 @@ class PropertyAccessor implements PropertyAccessorInterface
      */
     public function setValue(&$objectOrArray, $propertyPath, $value)
     {
-        if (\is_object($objectOrArray) && false === strpbrk((string) $propertyPath, '.[')) {
+        if (\is_object($objectOrArray) && (false === strpbrk((string) $propertyPath, '.[') || $objectOrArray instanceof \stdClass && property_exists($objectOrArray, $propertyPath))) {
             $zval = [
                 self::VALUE => $objectOrArray,
             ];
@@ -242,7 +242,7 @@ class PropertyAccessor implements PropertyAccessorInterface
         }
     }
 
-    private static function throwInvalidArgumentException(string $message, array $trace, int $i, string $propertyPath, \Throwable $previous = null): void
+    private static function throwInvalidArgumentException(string $message, array $trace, int $i, string $propertyPath, ?\Throwable $previous = null): void
     {
         if (!isset($trace[$i]['file']) || __FILE__ !== $trace[$i]['file']) {
             return;
@@ -293,7 +293,13 @@ class PropertyAccessor implements PropertyAccessorInterface
             $zval = [
                 self::VALUE => $objectOrArray,
             ];
-            $this->readPropertiesUntil($zval, $propertyPath, $propertyPath->getLength(), $this->ignoreInvalidIndices);
+
+            // handle stdClass with properties with a dot in the name
+            if ($objectOrArray instanceof \stdClass && str_contains($propertyPath, '.')  && property_exists($objectOrArray, $propertyPath)) {
+                $this->readProperty($zval, $propertyPath, $this->ignoreInvalidProperty);
+            } else {
+                $this->readPropertiesUntil($zval, $propertyPath, $propertyPath->getLength(), $this->ignoreInvalidIndices);
+            }
 
             return true;
         } catch (AccessException $e) {
@@ -314,6 +320,14 @@ class PropertyAccessor implements PropertyAccessorInterface
             $zval = [
                 self::VALUE => $objectOrArray,
             ];
+
+            // handle stdClass with properties with a dot in the name
+            if ($objectOrArray instanceof \stdClass && str_contains($propertyPath, '.') && property_exists($objectOrArray, $propertyPath)) {
+                $this->readProperty($zval, $propertyPath, $this->ignoreInvalidProperty);
+
+                return true;
+            }
+
             $propertyValues = $this->readPropertiesUntil($zval, $propertyPath, $propertyPath->getLength() - 1);
 
             for ($i = \count($propertyValues) - 1; 0 <= $i; --$i) {
@@ -726,7 +740,7 @@ class PropertyAccessor implements PropertyAccessorInterface
      *
      * @throws \LogicException When the Cache Component isn't available
      */
-    public static function createCache(string $namespace, int $defaultLifetime, string $version, LoggerInterface $logger = null)
+    public static function createCache(string $namespace, int $defaultLifetime, string $version, ?LoggerInterface $logger = null)
     {
         if (!class_exists(ApcuAdapter::class)) {
             throw new \LogicException(sprintf('The Symfony Cache component must be installed to use "%s()".', __METHOD__));

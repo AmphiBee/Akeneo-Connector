@@ -38,10 +38,19 @@ class WP_CLI {
 	/**
 	 * Set the logger instance.
 	 *
-	 * @param object $logger
+	 * @param object $logger Logger instance to set.
 	 */
 	public static function set_logger( $logger ) {
 		self::$logger = $logger;
+	}
+
+	/**
+	 * Get the logger instance.
+	 *
+	 * @return object $logger Logger instance.
+	 */
+	public static function get_logger() {
+		return self::$logger;
 	}
 
 	/**
@@ -86,11 +95,11 @@ class WP_CLI {
 		static $cache;
 
 		if ( ! $cache ) {
-			$home = Utils\get_home_dir();
-			$dir  = getenv( 'WP_CLI_CACHE_DIR' ) ? : "$home/.wp-cli/cache";
-
+			$dir      = Utils\get_cache_dir();
+			$ttl      = getenv( 'WP_CLI_CACHE_EXPIRY' ) ? : 15552000;
+			$max_size = getenv( 'WP_CLI_CACHE_MAX_SIZE' ) ? : 314572800;
 			// 6 months, 300mb
-			$cache = new FileCache( $dir, 15552000, 314572800 );
+			$cache = new FileCache( $dir, $ttl, $max_size );
 
 			// Clean older files on shutdown with 1/50 probability.
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand -- no crypto and WP not loaded.
@@ -116,7 +125,7 @@ class WP_CLI {
 	}
 
 	private static function set_url_params( $url_parts ) {
-		$f = function( $key ) use ( $url_parts ) {
+		$f = function ( $key ) use ( $url_parts ) {
 			return Utils\get_flag_value( $url_parts, $key, '' );
 		};
 
@@ -218,14 +227,19 @@ class WP_CLI {
 	 *
 	 * * `before_add_command:<command>` - Before the command is added.
 	 * * `after_add_command:<command>` - After the command was added.
-	 * * `before_invoke:<command>` - Just before a command is invoked.
-	 * * `after_invoke:<command>` - Just after a command is invoked.
+	 * * `before_invoke:<command>` (1) - Just before a command is invoked.
+	 * * `after_invoke:<command>` (1) - Just after a command is invoked.
 	 * * `find_command_to_run_pre` - Just before WP-CLI finds the command to run.
+	 * * `before_registering_contexts` (1) - Before the contexts are registered.
 	 * * `before_wp_load` - Just before the WP load process begins.
 	 * * `before_wp_config_load` - After wp-config.php has been located.
 	 * * `after_wp_config_load` - After wp-config.php has been loaded into scope.
 	 * * `after_wp_load` - Just after the WP load process has completed.
-	 * * `before_run_command` - Just before the command is executed.
+	 * * `before_run_command` (3) - Just before the command is executed.
+	 *
+	 * The parentheses behind the hook name denote the number of arguments
+	 * being passed into the hook. For such hooks, the callback should return
+	 * the first argument again, making them work like a WP filter.
 	 *
 	 * WP-CLI commands can create their own hooks with `WP_CLI::do_hook()`.
 	 *
@@ -235,7 +249,7 @@ class WP_CLI {
 	 * ```
 	 * # `wp network meta` confirms command is executing in multisite context.
 	 * WP_CLI::add_command( 'network meta', 'Network_Meta_Command', array(
-	 *    'before_invoke' => function () {
+	 *    'before_invoke' => function ( $name ) {
 	 *        if ( !is_multisite() ) {
 	 *            WP_CLI::error( 'This is not a multisite installation.' );
 	 *        }
@@ -248,7 +262,7 @@ class WP_CLI {
 	 *
 	 * @param string $when Identifier for the hook.
 	 * @param mixed $callback Callback to execute when hook is called.
-	 * @return null
+	 * @return void
 	 */
 	public static function add_hook( $when, $callback ) {
 		if ( array_key_exists( $when, self::$hooks_passed ) ) {
@@ -275,21 +289,23 @@ class WP_CLI {
 	 * @access public
 	 * @category Registration
 	 *
-	 * @param string $when Identifier for the hook.
-	 * @param mixed ... Optional. Arguments that will be passed onto the
-	 *                  callback provided by `WP_CLI::add_hook()`.
-	 * @return null
+	 * @param string $when    Identifier for the hook.
+	 * @param mixed  ...$args Optional. Arguments that will be passed onto the
+	 *                        callback provided by `WP_CLI::add_hook()`.
+	 * @return null|mixed Returns the first optional argument if optional
+	 *                    arguments were passed, otherwise returns null.
 	 */
-	public static function do_hook( $when ) {
-
-		$args = func_num_args() > 1
-			? array_slice( func_get_args(), 1 )
-			: [];
-
+	public static function do_hook( $when, ...$args ) {
 		self::$hooks_passed[ $when ] = $args;
 
+		$has_args = count( $args ) > 0;
+
 		if ( ! isset( self::$hooks[ $when ] ) ) {
-			return;
+			if ( $has_args ) {
+				return $args[0];
+			}
+
+			return null;
 		}
 
 		self::debug(
@@ -310,8 +326,22 @@ class WP_CLI {
 				),
 				'hooks'
 			);
-			call_user_func_array( $callback, $args );
+
+			if ( $has_args ) {
+				$return_value = $callback( ...$args );
+				if ( isset( $return_value ) ) {
+					$args[0] = $return_value;
+				}
+			} else {
+				$callback();
+			}
 		}
+
+		if ( $has_args ) {
+			return $args[0];
+		}
+
+		return null;
 	}
 
 	/**
@@ -363,14 +393,14 @@ class WP_CLI {
 		}
 
 		if ( is_object( $function ) ) {
-			// Closures are currently implemented as objects
+			// Closures are currently implemented as objects.
 			$function = [ $function, '' ];
 		} else {
 			$function = (array) $function;
 		}
 
 		if ( is_object( $function[0] ) ) {
-			// Object Class Calling
+			// Object Class Calling.
 			if ( function_exists( 'spl_object_hash' ) ) {
 				return spl_object_hash( $function[0] ) . $function[1];
 			}
@@ -391,7 +421,7 @@ class WP_CLI {
 		}
 
 		if ( is_string( $function[0] ) ) {
-			// Static Calling
+			// Static Calling.
 			return $function[0] . '::' . $function[1];
 		}
 	}
@@ -433,7 +463,7 @@ class WP_CLI {
 	 * @category Registration
 	 *
 	 * @param string   $name Name for the command (e.g. "post list" or "site empty").
-	 * @param callable $callable Command implementation as a class, function or closure.
+	 * @param callable|object|string $callable Command implementation as a class, function or closure.
 	 * @param array    $args {
 	 *    Optional. An associative array with additional registration parameters.
 	 *
@@ -540,15 +570,14 @@ class WP_CLI {
 		// Reattach commands attached to namespace to real command.
 		$subcommand_name  = (array) $leaf_name;
 		$existing_command = $command->find_subcommand( $subcommand_name );
-		if ( false !== $existing_command ) {
-			$subcommands = $existing_command->get_subcommands();
-			if ( ! empty( $subcommands )
-				&& ( $leaf_command instanceof CompositeCommand
-					|| $leaf_command->can_have_subcommands ) ) {
-				foreach ( $subcommands as $subname => $subcommand ) {
-					$leaf_command->add_subcommand( $subname, $subcommand );
-				}
+		if ( $existing_command instanceof CompositeCommand && $existing_command->can_have_subcommands() ) {
+			if ( $leaf_command instanceof CommandNamespace || ! $leaf_command->can_have_subcommands() ) {
+				$command_to_keep = $existing_command;
+			} else {
+				$command_to_keep = $leaf_command;
 			}
+
+			self::merge_sub_commands( $command_to_keep, $existing_command, $leaf_command );
 		}
 
 		/** @var Dispatcher\Subcommand|Dispatcher\CompositeCommand|Dispatcher\CommandNamespace $leaf_command */
@@ -557,10 +586,12 @@ class WP_CLI {
 			throw new Exception(
 				sprintf(
 					"'%s' can't have subcommands.",
-					implode( ' ', get_path( $command ) )
+					implode( ' ', Dispatcher\get_path( $command ) )
 				)
 			);
 		}
+
+		/** @var Dispatcher\Subcommand $leaf_command */
 
 		if ( isset( $args['shortdesc'] ) ) {
 			$leaf_command->set_shortdesc( $args['shortdesc'] );
@@ -621,6 +652,28 @@ class WP_CLI {
 
 		self::do_hook( "after_add_command:{$name}" );
 		return true;
+	}
+
+	/**
+	 * Merge the sub-commands of two commands into a single command to keep.
+	 *
+	 * @param CompositeCommand $command_to_keep Command to merge the sub commands into. This is typically one of the
+	 *                                          two others.
+	 * @param CompositeCommand $old_command     Command that was already registered.
+	 * @param CompositeCommand $new_command     New command that is being added.
+	 */
+	private static function merge_sub_commands(
+		CompositeCommand $command_to_keep,
+		CompositeCommand $old_command,
+		CompositeCommand $new_command
+	) {
+		foreach ( $old_command->get_subcommands() as $subname => $subcommand ) {
+			$command_to_keep->add_subcommand( $subname, $subcommand, false );
+		}
+
+		foreach ( $new_command->get_subcommands() as $subname => $subcommand ) {
+			$command_to_keep->add_subcommand( $subname, $subcommand, true );
+		}
 	}
 
 	/**
@@ -687,7 +740,7 @@ class WP_CLI {
 	 * @category Output
 	 *
 	 * @param string $message Message to display to the end user.
-	 * @return null
+	 * @return void
 	 */
 	public static function line( $message = '' ) {
 		echo $message . "\n";
@@ -719,7 +772,7 @@ class WP_CLI {
 	/**
 	 * Display success message prefixed with "Success: ".
 	 *
-	 * Success message is written to STDOUT.
+	 * Success message is written to STDOUT, or discarded when `--quiet` flag is supplied.
 	 *
 	 * Typically recommended to inform user of successful script conclusion.
 	 *
@@ -737,7 +790,7 @@ class WP_CLI {
 	 * @category Output
 	 *
 	 * @param string $message Message to write to STDOUT.
-	 * @return null
+	 * @return void
 	 */
 	public static function success( $message ) {
 		if ( null === self::$logger ) {
@@ -775,7 +828,7 @@ class WP_CLI {
 	 * @param string|WP_Error|Exception|Throwable $message Message to write to STDERR.
 	 * @param string|bool $group Organize debug message to a specific group.
 	 * Use `false` to not group the message.
-	 * @return null
+	 * @return void
 	 */
 	public static function debug( $message, $group = false ) {
 		static $storage = [];
@@ -785,7 +838,7 @@ class WP_CLI {
 			return;
 		}
 
-		if ( ! empty( $storage ) && self::$logger ) {
+		if ( ! empty( $storage ) ) {
 			foreach ( $storage as $entry ) {
 				list( $stored_message, $stored_group ) = $entry;
 				self::$logger->debug( self::error_to_string( $stored_message ), $stored_group );
@@ -799,7 +852,7 @@ class WP_CLI {
 	/**
 	 * Display warning message prefixed with "Warning: ".
 	 *
-	 * Warning message is written to STDERR.
+	 * Warning message is written to STDERR, or discarded when `--quiet` flag is supplied.
 	 *
 	 * Use instead of `WP_CLI::debug()` when script execution should be permitted
 	 * to continue.
@@ -818,7 +871,7 @@ class WP_CLI {
 	 * @category Output
 	 *
 	 * @param string|WP_Error|Exception|Throwable $message Message to write to STDERR.
-	 * @return null
+	 * @return void
 	 */
 	public static function warning( $message ) {
 		if ( null === self::$logger ) {
@@ -865,7 +918,7 @@ class WP_CLI {
 
 		if ( $return_code ) {
 			if ( self::$capture_exit ) {
-				throw new ExitException( null, $return_code );
+				throw new ExitException( '', $return_code );
 			}
 			exit( $return_code );
 		}
@@ -880,10 +933,11 @@ class WP_CLI {
 	 * @category Output
 	 *
 	 * @param integer $return_code
+	 * @return never
 	 */
 	public static function halt( $return_code ) {
 		if ( self::$capture_exit ) {
-			throw new ExitException( null, $return_code );
+			throw new ExitException( '', $return_code );
 		}
 		exit( $return_code );
 	}
@@ -953,8 +1007,11 @@ class WP_CLI {
 			// We don't use file_get_contents() here because it doesn't handle
 			// Ctrl-D properly, when typing in the value interactively.
 			$raw_value = '';
-			while ( false !== ( $line = fgets( STDIN ) ) ) {
+			$line      = fgets( STDIN );
+
+			while ( false !== $line ) {
 				$raw_value .= $line;
+				$line       = fgets( STDIN );
 			}
 		}
 
@@ -1014,8 +1071,8 @@ class WP_CLI {
 			return $errors;
 		}
 
-		// Only json_encode() the data when it needs it
-		$render_data = function( $data ) {
+		// Only json_encode() the data when it needs it.
+		$render_data = function ( $data ) {
 			if ( is_array( $data ) || is_object( $data ) ) {
 				return json_encode( $data );
 			}
@@ -1035,7 +1092,7 @@ class WP_CLI {
 
 		// PHP 7+: internal and user exceptions must implement Throwable interface.
 		// PHP 5: internal and user exceptions must extend Exception class.
-		if ( interface_exists( 'Throwable' ) && ( $errors instanceof Throwable ) || ( $errors instanceof Exception ) ) {
+		if ( ( interface_exists( 'Throwable' ) && ( $errors instanceof Throwable ) ) || ( $errors instanceof Exception ) ) {
 			return get_class( $errors ) . ': ' . $errors->getMessage();
 		}
 
@@ -1182,7 +1239,7 @@ class WP_CLI {
 	 * Get values of global configuration parameters.
 	 *
 	 * Provides access to `--path=<path>`, `--url=<url>`, and other values of
-	 * the [global configuration parameters](https://wp-cli.org/config/).
+	 * the [global configuration parameters](https://make.wordpress.org/cli/handbook/references/config/).
 	 *
 	 * ```
 	 * WP_CLI::log( 'The --url=<url> value is: ' . WP_CLI::get_config( 'url' ) );
@@ -1199,7 +1256,7 @@ class WP_CLI {
 			return self::get_runner()->config;
 		}
 
-		if ( ! isset( self::get_runner()->config[ $key ] ) ) {
+		if ( ! self::has_config( $key ) ) {
 			self::warning( "Unknown config option '$key'." );
 			return null;
 		}
@@ -1217,13 +1274,15 @@ class WP_CLI {
 	 * * Prevent halting script execution on error.
 	 * * Capture and return STDOUT, or full details about command execution.
 	 * * Parse JSON output if the command rendered it.
+	 * * Include additional arguments that are passed to the command.
 	 *
 	 * ```
 	 * $options = array(
-	 *   'return'     => true,   // Return 'STDOUT'; use 'all' for full object.
-	 *   'parse'      => 'json', // Parse captured STDOUT to JSON array.
-	 *   'launch'     => false,  // Reuse the current process.
-	 *   'exit_error' => true,   // Halt script execution on error.
+	 *   'return'       => true,                // Return 'STDOUT'; use 'all' for full object.
+	 *   'parse'        => 'json',              // Parse captured STDOUT to JSON array.
+	 *   'launch'       => false,               // Reuse the current process.
+	 *   'exit_error'   => true,                // Halt script execution on error.
+	 *   'command_args' => [ '--skip-themes' ], // Additional arguments to be passed to the $command.
 	 * );
 	 * $plugins = WP_CLI::runcommand( 'plugin list --format=json', $options );
 	 * ```
@@ -1236,18 +1295,25 @@ class WP_CLI {
 	 * @return mixed
 	 */
 	public static function runcommand( $command, $options = [] ) {
-		$defaults   = [
-			'launch'     => true, // Launch a new process, or reuse the existing.
-			'exit_error' => true, // Exit on error by default.
-			'return'     => false, // Capture and return output, or render in realtime.
-			'parse'      => false, // Parse returned output as a particular format.
+		$defaults     = [
+			'launch'       => true,  // Launch a new process, or reuse the existing.
+			'exit_error'   => true,  // Exit on error by default.
+			'return'       => false, // Capture and return output, or render in realtime.
+			'parse'        => false, // Parse returned output as a particular format.
+			'command_args' => [],    // Include optional command arguments.
 		];
-		$options    = array_merge( $defaults, $options );
-		$launch     = $options['launch'];
-		$exit_error = $options['exit_error'];
-		$return     = $options['return'];
-		$parse      = $options['parse'];
-		$retval     = null;
+		$options      = array_merge( $defaults, $options );
+		$launch       = $options['launch'];
+		$exit_error   = $options['exit_error'];
+		$return       = $options['return'];
+		$parse        = $options['parse'];
+		$command_args = $options['command_args'];
+
+		if ( ! empty( $command_args ) ) {
+			$command .= ' ' . implode( ' ', $command_args );
+		}
+
+		$retval = null;
 		if ( $launch ) {
 			Utils\check_proc_available( 'launch option' );
 
@@ -1284,6 +1350,9 @@ class WP_CLI {
 
 			$pipes = [];
 			$proc  = Utils\proc_open_compat( $runcommand, $descriptors, $pipes, getcwd() );
+
+			$stdout = '';
+			$stderr = '';
 
 			if ( $return ) {
 				$stdout = stream_get_contents( $pipes[1] );
@@ -1393,18 +1462,18 @@ class WP_CLI {
 
 
 
-	// DEPRECATED STUFF
+	// DEPRECATED STUFF.
 
 	public static function add_man_dir() {
 		trigger_error( 'WP_CLI::add_man_dir() is deprecated. Add docs inline.', E_USER_WARNING );
 	}
 
-	// back-compat
+	// back-compat.
 	public static function out( $str ) {
 		fwrite( STDOUT, $str );
 	}
 
-	// back-compat
+	// back-compat.
 	// phpcs:ignore WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid -- Deprecated method.
 	public static function addCommand( $name, $class ) {
 		trigger_error(

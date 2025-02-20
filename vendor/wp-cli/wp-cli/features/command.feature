@@ -141,7 +141,7 @@ Feature: WP-CLI Commands
       """
       <?php
       class Foo_Class extends WP_CLI_Command {
-
+        private $prefix;
         public function __construct( $prefix ) {
           $this->prefix = $prefix;
         }
@@ -236,7 +236,7 @@ Feature: WP-CLI Commands
       """
       <?php
       class Foo_Class {
-
+        private $message;
         public function __construct( $message ) {
           $this->message = $message;
         }
@@ -948,7 +948,7 @@ Feature: WP-CLI Commands
       """
       <?php
       class Foo_Class {
-
+        private $message;
         public function __construct( $message ) {
           $this->message = $message;
         }
@@ -1111,33 +1111,31 @@ Feature: WP-CLI Commands
       """
     And I run `wp plugin activate test-cli`
 
-    When I run `wp`
+    # TODO: Throwing deprecations with PHP 8.1+ and WP < 5.9
+    When I try `wp`
     Then STDOUT should contain:
       """
       test-command
       """
-    And STDERR should be empty
 
-    When I run `wp help test-command`
+    # TODO: Throwing deprecations with PHP 8.1+ and WP < 5.9
+    When I try `wp help test-command`
     Then STDOUT should contain:
       """
       sub-command
       """
-    And STDERR should be empty
 
     When I run `wp test-command sub-command`
     Then STDOUT should contain:
       """
       Success: test-command sub-command
       """
-    And STDERR should be empty
 
     When I run `wp unknown-parent child-command`
     Then STDOUT should contain:
       """
       Success: unknown-parent child-command
       """
-    And STDERR should be empty
 
   Scenario: Command additions should work as must-use plugins
     Given a WP installation
@@ -1160,33 +1158,31 @@ Feature: WP-CLI Commands
       WP_CLI::add_command( 'test-command', 'TestCommand' );
       """
 
-    When I run `wp`
+    # TODO: Throwing deprecations with PHP 8.1+ and WP < 5.9
+    When I try `wp`
     Then STDOUT should contain:
       """
       test-command
       """
-    And STDERR should be empty
 
-    When I run `wp help test-command`
+    # TODO: Throwing deprecations with PHP 8.1+ and WP < 5.9
+    When I try `wp help test-command`
     Then STDOUT should contain:
       """
       sub-command
       """
-    And STDERR should be empty
 
     When I run `wp test-command sub-command`
     Then STDOUT should contain:
       """
       Success: test-command sub-command
       """
-    And STDERR should be empty
 
     When I run `wp unknown-parent child-command`
     Then STDOUT should contain:
       """
       Success: unknown-parent child-command
       """
-    And STDERR should be empty
 
   Scenario: Command additions should work when registered on after_wp_load
     Given a WP installation
@@ -1211,33 +1207,31 @@ Feature: WP-CLI Commands
       });
       """
 
-    When I run `wp`
+    # TODO: Throwing deprecations with PHP 8.1+ and WP < 5.9
+    When I try `wp`
     Then STDOUT should contain:
       """
       test-command
       """
-    And STDERR should be empty
 
-    When I run `wp help test-command`
+    # TODO: Throwing deprecations with PHP 8.1+ and WP < 5.9
+    When I try `wp help test-command`
     Then STDOUT should contain:
       """
       sub-command
       """
-    And STDERR should be empty
 
     When I run `wp test-command sub-command`
     Then STDOUT should contain:
       """
       Success: test-command sub-command
       """
-    And STDERR should be empty
 
     When I run `wp unknown-parent child-command`
     Then STDOUT should contain:
       """
       Success: unknown-parent child-command
       """
-    And STDERR should be empty
 
   Scenario: The command should fire on `after_wp_load`
     Given a WP installation
@@ -1484,13 +1478,15 @@ Feature: WP-CLI Commands
         - test-cmd.php
       """
 
-    When I run `wp help core`
+    # TODO: Throwing deprecations with PHP 8.1+ and WP < 5.9
+    When I try `wp help core`
     Then STDOUT should contain:
       """
       custom-subcommand
       """
 
-    When I run `wp core`
+    # TODO: Throwing deprecations with PHP 8.1+ and WP < 5.9
+    When I try `wp core`
     Then STDOUT should contain:
       """
       usage:
@@ -1516,8 +1512,43 @@ Feature: WP-CLI Commands
       } );
       """
     And I run `wp plugin activate custom-command`
-    When I run `wp custom --help`
+    # TODO: Throwing deprecations with PHP 8.1+ and WP < 5.9
+    When I try `wp custom --help`
     Then STDOUT should contain:
     """
     wp custom
     """
+
+  Scenario: subcommand alias should respect @when definition
+    Given an empty directory
+    And a custom-cmd.php file:
+      """
+      <?php
+      class Test_Command {
+        /**
+         * test
+         *
+         * @alias bar
+         *
+         * @when before_wp_load
+         *
+         */
+        public function foo( $args, $assoc_args ) {
+          echo 'Hello' . PHP_EOL;
+        }
+      }
+
+      WP_CLI::add_command( 'test', Test_Command::class );
+      """
+
+    When I run `wp --require=custom-cmd.php test foo`
+    Then STDOUT should contain:
+      """
+      Hello
+      """
+
+    When I run `wp --require=custom-cmd.php test bar`
+    Then STDOUT should contain:
+      """
+      Hello
+      """

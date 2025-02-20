@@ -38,16 +38,19 @@
  *
  * @copyright 2008-2017 Manuel Pichler. All rights reserved.
  * @license http://www.opensource.org/licenses/bsd-license.php BSD License
+ *
  * @since 2.3
  */
 
 namespace PDepend\Source\Language\PHP;
 
 use PDepend\Source\AST\ASTCatchStatement;
+use PDepend\Source\AST\ASTExpression;
+use PDepend\Source\AST\ASTFormalParameter;
 use PDepend\Source\AST\ASTInterface;
+use PDepend\Source\AST\ASTType;
 use PDepend\Source\AST\State;
 use PDepend\Source\Parser\InvalidStateException;
-use PDepend\Source\Parser\UnexpectedTokenException;
 use PDepend\Source\Tokenizer\Tokens;
 
 /**
@@ -55,6 +58,7 @@ use PDepend\Source\Tokenizer\Tokens;
  *
  * @copyright 2008-2017 Manuel Pichler. All rights reserved.
  * @license http://www.opensource.org/licenses/bsd-license.php BSD License
+ *
  * @since 2.4
  */
 abstract class PHPParserVersion71 extends PHPParserVersion70
@@ -73,7 +77,9 @@ abstract class PHPParserVersion71 extends PHPParserVersion70
      * This methods return true if the token matches a list opening in the current PHP version level.
      *
      * @param int $tokenType
+     *
      * @return bool
+     *
      * @since 2.6.0
      */
     protected function isListUnpacking($tokenType = null)
@@ -82,7 +88,7 @@ abstract class PHPParserVersion71 extends PHPParserVersion70
     }
 
     /**
-     * @return \PDepend\Source\AST\ASTType
+     * @return ASTType
      */
     protected function parseReturnTypeHint()
     {
@@ -109,7 +115,7 @@ abstract class PHPParserVersion71 extends PHPParserVersion70
      * //                ---
      * </code>
      *
-     * @return \PDepend\Source\AST\ASTFormalParameter
+     * @return ASTFormalParameter
      */
     protected function parseFormalParameterOrTypeHintOrByReference()
     {
@@ -119,11 +125,6 @@ abstract class PHPParserVersion71 extends PHPParserVersion70
         return parent::parseFormalParameterOrTypeHintOrByReference();
     }
 
-    /**
-     * Parses a type hint that is valid in the supported PHP version.
-     *
-     * @return \PDepend\Source\AST\ASTNode
-     */
     protected function parseTypeHint()
     {
         $this->consumeQuestionMark();
@@ -131,13 +132,6 @@ abstract class PHPParserVersion71 extends PHPParserVersion70
         return parent::parseTypeHint();
     }
 
-    /**
-     * Override this in later PHPParserVersions as necessary
-     * @param integer $tokenType
-     * @param integer $modifiers
-     * @return \PDepend\Source\AST\ASTConstantDefinition;
-     * @throws UnexpectedTokenException
-     */
     protected function parseUnknownDeclaration($tokenType, $modifiers)
     {
         if ($tokenType == Tokens::T_CONST) {
@@ -150,29 +144,11 @@ abstract class PHPParserVersion71 extends PHPParserVersion70
 
         return parent::parseUnknownDeclaration($tokenType, $modifiers);
     }
-    
-    /**
-     * Tests if the given image is a PHP 7 type hint.
-     *
-     * @param string $image
-     * @return boolean
-     */
-    protected function isScalarOrCallableTypeHint($image)
-    {
-        switch (strtolower($image)) {
-            case 'iterable':
-            case 'void':
-                return true;
-        }
-
-        return parent::isScalarOrCallableTypeHint($image);
-    }
 
     /**
      * Parses a scalar type hint or a callable type hint.
      *
      * @param string $image
-     * @return \PDepend\Source\AST\ASTType
      */
     protected function parseScalarOrCallableTypeHint($image)
     {
@@ -189,7 +165,8 @@ abstract class PHPParserVersion71 extends PHPParserVersion70
     /**
      * This method parses class references in catch statement.
      *
-     * @param \PDepend\Source\AST\ASTCatchStatement $stmt The owning catch statement.
+     * @param ASTCatchStatement $stmt The owning catch statement.
+     *
      * @return void
      */
     protected function parseCatchExceptionClass(ASTCatchStatement $stmt)
@@ -226,9 +203,10 @@ abstract class PHPParserVersion71 extends PHPParserVersion70
     }
 
     /**
-     * @param integer $tokenType
-     * @param integer $modifiers
-     * @return integer
+     * @param int $tokenType
+     * @param int $modifiers
+     *
+     * @return int
      */
     private function getModifiersForConstantDefinition($tokenType, $modifiers)
     {
@@ -237,7 +215,7 @@ abstract class PHPParserVersion71 extends PHPParserVersion70
 
         if ($this->classOrInterface instanceof ASTInterface && ($modifiers & (State::IS_PROTECTED | State::IS_PRIVATE)) !== 0) {
             throw new InvalidStateException(
-                $this->tokenizer->next()->startLine,
+                $this->requireNextToken()->startLine,
                 (string) $this->compilationUnit,
                 sprintf(
                     'Constant can\'t be declared private or protected in interface "%s".',
@@ -247,5 +225,18 @@ abstract class PHPParserVersion71 extends PHPParserVersion70
         }
 
         return $modifiers;
+    }
+
+    /**
+     * Return true if the current node can be used as a list key.
+     *
+     * @param ASTExpression|null $node
+     *
+     * @return bool
+     */
+    protected function canBeListKey($node)
+    {
+        // Starting with PHP 7.1, any expression can be used as list key
+        return true;
     }
 }

@@ -56,64 +56,61 @@ Feature: Skipping themes
 
   Scenario: Skip parent and child themes
     Given a WP installation
-    And I run `wp theme install stargazer buntu`
+    And I run `wp theme install moina moina-blog`
 
-    When I run `wp theme activate stargazer`
-    # Expect a warning for this theme on PHP 8+.
-    When I try `wp eval 'var_export( class_exists( "Stargazer_Theme" ) );'`
+    When I run `wp theme activate moina`
+    When I run `wp eval 'var_export( function_exists( "moina_setup" ) );'`
     Then STDOUT should be:
       """
       true
       """
 
-    When I run `wp --skip-themes=stargazer eval 'var_export( class_exists( "Stargazer_Theme" ) );'`
+    When I run `wp --skip-themes=moina eval 'var_export( function_exists( "moina_setup" ) );'`
     Then STDOUT should be:
       """
       false
       """
     And STDERR should be empty
 
-    # Expect a warning for this theme on PHP 8+.
-    When I try `wp theme activate buntu`
-    # Expect a warning for this theme on PHP 8+.
-    When I try `wp eval 'var_export( class_exists( "Stargazer_Theme" ) );'`
+
+    When I run `wp theme activate moina-blog`
+    When I run `wp eval 'var_export( function_exists( "moina_setup" ) );'`
     Then STDOUT should be:
       """
       true
       """
 
-    # Expect a warning for this theme on PHP 8+.
-    When I try `wp eval 'var_export( function_exists( "buntu_theme_setup" ) );'`
+    When I run `wp eval 'var_export( function_exists( "moina_blog_scripts" ) );'`
     Then STDOUT should be:
       """
       true
       """
 
-    When I run `wp --skip-themes=buntu eval 'var_export( class_exists( "Stargazer_Theme" ) );'`
+    When I run `wp --skip-themes=moina-blog eval 'var_export( function_exists( "moina_setup" ) );'`
     Then STDOUT should be:
       """
       false
       """
     And STDERR should be empty
 
-    When I run `wp --skip-themes=buntu eval 'var_export( function_exists( "buntu_theme_setup" ) );'`
+    When I run `wp --skip-themes=moina-blog eval 'var_export( function_exists( "moina_blog_scripts" ) );'`
     Then STDOUT should be:
       """
       false
       """
     And STDERR should be empty
 
-    When I run `wp --skip-themes=buntu eval 'echo get_template_directory();'`
+    When I run `wp --skip-themes=moina-blog eval 'echo get_template_directory();'`
     Then STDOUT should contain:
       """
-      wp-content/themes/stargazer
+      wp-content/themes/moina
       """
     And STDERR should be empty
 
-    When I run `wp --skip-themes=buntu eval 'echo get_stylesheet_directory();'`
+    When I run `wp --skip-themes=moina-blog eval 'echo get_stylesheet_directory();'`
     Then STDOUT should contain:
       """
-      wp-content/themes/buntu
+      wp-content/themes/moina-blog
       """
     And STDERR should be empty
 
@@ -153,3 +150,53 @@ Feature: Skipping themes
       false
       """
     And STDERR should be empty
+
+  @require-wp-6.1
+  Scenario: Skip a theme using block patterns
+    Given a WP installation
+    And I run `wp theme install blockline --activate`
+
+    When I run `wp eval 'var_dump( function_exists( "blockline_support" ) );'`
+    Then STDOUT should be:
+      """
+      bool(true)
+      """
+
+    When I run `wp --skip-themes=blockline eval 'var_dump( function_exists( "blockline_support" ) );'`
+    Then STDOUT should be:
+      """
+      bool(false)
+      """
+
+  @require-wp-6.1 @require-php-7.2
+  Scenario: Skip a theme using block patterns with Gutenberg active
+    Given a WP installation
+    And I run `wp plugin install gutenberg --activate`
+    And I run `wp theme install blockline --activate`
+
+    When I run `wp eval 'var_dump( function_exists( "blockline_support" ) );'`
+    Then STDOUT should be:
+      """
+      bool(true)
+      """
+
+    When I run `wp --skip-themes=blockline eval 'var_dump( function_exists( "blockline_support" ) );'`
+    Then STDOUT should be:
+      """
+      bool(false)
+      """
+
+  @require-wp-5.2
+  Scenario: Display a custom error message when themes/functions.php causes the fatal
+    Given a WP installation
+    And a wp-content/themes/functions.php file:
+      """
+      <?php
+      wp_cli_function_doesnt_exist_5240();
+      """
+
+    When I try `wp --skip-themes plugin list`
+    Then STDERR should contain:
+      """
+      Error: An unexpected functions.php file in the themes directory may have caused this internal server error.
+      """

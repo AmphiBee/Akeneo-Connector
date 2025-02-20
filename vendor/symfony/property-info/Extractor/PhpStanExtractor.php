@@ -21,6 +21,7 @@ use PHPStan\PhpDocParser\Parser\ConstExprParser;
 use PHPStan\PhpDocParser\Parser\PhpDocParser;
 use PHPStan\PhpDocParser\Parser\TokenIterator;
 use PHPStan\PhpDocParser\Parser\TypeParser;
+use PHPStan\PhpDocParser\ParserConfig;
 use Symfony\Component\PropertyInfo\PhpStan\NameScopeFactory;
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
 use Symfony\Component\PropertyInfo\Type;
@@ -58,7 +59,7 @@ final class PhpStanExtractor implements PropertyTypeExtractorInterface, Construc
      * @param list<string>|null $accessorPrefixes
      * @param list<string>|null $arrayMutatorPrefixes
      */
-    public function __construct(array $mutatorPrefixes = null, array $accessorPrefixes = null, array $arrayMutatorPrefixes = null)
+    public function __construct(?array $mutatorPrefixes = null, ?array $accessorPrefixes = null, ?array $arrayMutatorPrefixes = null)
     {
         if (!class_exists(ContextFactory::class)) {
             throw new \LogicException(sprintf('Unable to use the "%s" class as the "phpdocumentor/type-resolver" package is not installed. Try running composer require "phpdocumentor/type-resolver".', __CLASS__));
@@ -73,8 +74,14 @@ final class PhpStanExtractor implements PropertyTypeExtractorInterface, Construc
         $this->accessorPrefixes = $accessorPrefixes ?? ReflectionExtractor::$defaultAccessorPrefixes;
         $this->arrayMutatorPrefixes = $arrayMutatorPrefixes ?? ReflectionExtractor::$defaultArrayMutatorPrefixes;
 
-        $this->phpDocParser = new PhpDocParser(new TypeParser(new ConstExprParser()), new ConstExprParser());
-        $this->lexer = new Lexer();
+        if (class_exists(ParserConfig::class)) {
+            $parserConfig = new ParserConfig([]);
+            $this->phpDocParser = new PhpDocParser($parserConfig, new TypeParser($parserConfig, new ConstExprParser($parserConfig)), new ConstExprParser($parserConfig));
+            $this->lexer = new Lexer($parserConfig);
+        } else {
+            $this->phpDocParser = new PhpDocParser(new TypeParser(new ConstExprParser()), new ConstExprParser());
+            $this->lexer = new Lexer();
+        }
         $this->nameScopeFactory = new NameScopeFactory();
     }
 
@@ -231,6 +238,14 @@ final class PhpStanExtractor implements PropertyTypeExtractorInterface, Construc
             $reflectionProperty = new \ReflectionProperty($class, $property);
         } catch (\ReflectionException $e) {
             return null;
+        }
+
+        $reflector = $reflectionProperty->getDeclaringClass();
+
+        foreach ($reflector->getTraits() as $trait) {
+            if ($trait->hasProperty($property)) {
+                return $this->getDocBlockFromProperty($trait->getName(), $property);
+            }
         }
 
         if (null === $rawDocNode = $reflectionProperty->getDocComment() ?: null) {

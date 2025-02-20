@@ -286,10 +286,8 @@ class Formatter {
 
 			default:
 				WP_CLI::error( 'Invalid format: ' . $format );
-				break;
 
 		}
-
 	}
 
 	/**
@@ -302,7 +300,7 @@ class Formatter {
 	private static function show_table( $items, $fields, $ascii_pre_colorized = false ) {
 		$table = new Table();
 
-		$enabled = Colors::shouldColorize();
+		$enabled = WP_CLI::get_runner()->in_color();
 		if ( $enabled ) {
 			Colors::disable( true );
 		}
@@ -367,5 +365,4 @@ class Formatter {
 		}
 		return $item;
 	}
-
 }

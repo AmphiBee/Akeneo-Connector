@@ -42,12 +42,15 @@
 
 namespace PDepend\Source\ASTVisitor;
 
+use PDepend\Source\AST\ASTArtifact;
 use PDepend\Source\AST\ASTClass;
 use PDepend\Source\AST\ASTCompilationUnit;
+use PDepend\Source\AST\ASTEnum;
 use PDepend\Source\AST\ASTFunction;
 use PDepend\Source\AST\ASTInterface;
 use PDepend\Source\AST\ASTMethod;
 use PDepend\Source\AST\ASTNamespace;
+use PDepend\Source\AST\ASTNode;
 use PDepend\Source\AST\ASTParameter;
 use PDepend\Source\AST\ASTProperty;
 use PDepend\Source\AST\ASTTrait;
@@ -62,7 +65,7 @@ interface ASTVisitor
 {
     /**
      * Adds a new listener to this node visitor.
-     * @param \PDepend\Source\ASTVisitor\ASTVisitListener $listener
+     *
      * @return void
      */
     public function addVisitListener(ASTVisitListener $listener);
@@ -70,16 +73,22 @@ interface ASTVisitor
     /**
      * Visits a class node.
      *
-     * @param  \PDepend\Source\AST\ASTClass $class
      * @return void
      */
     public function visitClass(ASTClass $class);
 
     /**
+     * Visits an enum node.
+     *
+     * @return void
+     */
+    public function visitEnum(ASTEnum $enum);
+
+    /**
      * Visits a trait node.
      *
-     * @param  \PDepend\Source\AST\ASTTrait $trait
      * @return void
+     *
      * @since  1.0.0
      */
     public function visitTrait(ASTTrait $trait);
@@ -87,7 +96,6 @@ interface ASTVisitor
     /**
      * Visits a file node.
      *
-     * @param  \PDepend\Source\AST\ASTCompilationUnit $compilationUnit
      * @return void
      */
     public function visitCompilationUnit(ASTCompilationUnit $compilationUnit);
@@ -95,7 +103,6 @@ interface ASTVisitor
     /**
      * Visits a function node.
      *
-     * @param  \PDepend\Source\AST\ASTFunction $function
      * @return void
      */
     public function visitFunction(ASTFunction $function);
@@ -103,7 +110,6 @@ interface ASTVisitor
     /**
      * Visits a code interface object.
      *
-     * @param  \PDepend\Source\AST\ASTInterface $interface
      * @return void
      */
     public function visitInterface(ASTInterface $interface);
@@ -111,7 +117,6 @@ interface ASTVisitor
     /**
      * Visits a method node.
      *
-     * @param  \PDepend\Source\AST\ASTMethod $method
      * @return void
      */
     public function visitMethod(ASTMethod $method);
@@ -119,7 +124,6 @@ interface ASTVisitor
     /**
      * Visits a namespace node.
      *
-     * @param  \PDepend\Source\AST\ASTNamespace $namespace
      * @return void
      */
     public function visitNamespace(ASTNamespace $namespace);
@@ -127,7 +131,6 @@ interface ASTVisitor
     /**
      * Visits a parameter node.
      *
-     * @param  \PDepend\Source\AST\ASTParameter $parameter
      * @return void
      */
     public function visitParameter(ASTParameter $parameter);
@@ -135,7 +138,6 @@ interface ASTVisitor
     /**
      * Visits a property node.
      *
-     * @param  \PDepend\Source\AST\ASTProperty $property
      * @return void
      */
     public function visitProperty(ASTProperty $property);
@@ -157,11 +159,22 @@ interface ASTVisitor
      * The return value of this method is the second input argument, modified
      * by the concrete visit method.
      *
-     * @param string                $method Name of the called method.
-     * @param array<integer, mixed> $args   Array with method argument.
+     * @param string            $method Name of the called method.
+     * @param array<int, mixed> $args   Array with method argument.
      *
-     * @return mixed
+     * @return array<string, mixed>|numeric-string
+     *
      * @since  0.9.12
      */
     public function __call($method, $args);
+
+    /**
+     * @template T of array<string, mixed>|numeric-string
+     *
+     * @param ASTNode $node
+     * @param T $value
+     *
+     * @return T
+     */
+    public function visit($node, $value);
 }

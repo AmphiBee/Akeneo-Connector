@@ -24,7 +24,7 @@ final class UidNormalizer implements NormalizerInterface, DenormalizerInterface,
     public const NORMALIZATION_FORMAT_CANONICAL = 'canonical';
     public const NORMALIZATION_FORMAT_BASE58 = 'base58';
     public const NORMALIZATION_FORMAT_BASE32 = 'base32';
-    public const NORMALIZATION_FORMAT_RFC4122 = 'rfc4122';
+    public const NORMALIZATION_FORMAT_RFC4122 = 'rfc4122'; // RFC 9562 obsoleted RFC 4122 but the format is the same
 
     private $defaultContext = [
         self::NORMALIZATION_FORMAT_KEY => self::NORMALIZATION_FORMAT_CANONICAL,
@@ -40,7 +40,7 @@ final class UidNormalizer implements NormalizerInterface, DenormalizerInterface,
      *
      * @param AbstractUid $object
      */
-    public function normalize($object, string $format = null, array $context = [])
+    public function normalize($object, ?string $format = null, array $context = [])
     {
         switch ($context[self::NORMALIZATION_FORMAT_KEY] ?? $this->defaultContext[self::NORMALIZATION_FORMAT_KEY]) {
             case self::NORMALIZATION_FORMAT_CANONICAL:
@@ -59,7 +59,7 @@ final class UidNormalizer implements NormalizerInterface, DenormalizerInterface,
     /**
      * {@inheritdoc}
      */
-    public function supportsNormalization($data, string $format = null): bool
+    public function supportsNormalization($data, ?string $format = null): bool
     {
         return $data instanceof AbstractUid;
     }
@@ -67,7 +67,7 @@ final class UidNormalizer implements NormalizerInterface, DenormalizerInterface,
     /**
      * {@inheritdoc}
      */
-    public function denormalize($data, string $type, string $format = null, array $context = [])
+    public function denormalize($data, string $type, ?string $format = null, array $context = [])
     {
         try {
             return AbstractUid::class !== $type ? $type::fromString($data) : Uuid::fromString($data);
@@ -85,7 +85,7 @@ final class UidNormalizer implements NormalizerInterface, DenormalizerInterface,
     /**
      * {@inheritdoc}
      */
-    public function supportsDenormalization($data, string $type, string $format = null): bool
+    public function supportsDenormalization($data, string $type, ?string $format = null): bool
     {
         return is_a($type, AbstractUid::class, true);
     }

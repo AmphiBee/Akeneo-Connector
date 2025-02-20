@@ -38,6 +38,7 @@
  *
  * @copyright 2008-2017 Manuel Pichler. All rights reserved.
  * @license http://www.opensource.org/licenses/bsd-license.php BSD License
+ *
  * @since 0.9.6
  */
 
@@ -51,44 +52,24 @@ use PDepend\Source\ASTVisitor\ASTVisitor;
  *
  * @copyright 2008-2017 Manuel Pichler. All rights reserved.
  * @license http://www.opensource.org/licenses/bsd-license.php BSD License
+ *
  * @since 0.9.6
  */
-class ASTUnionType extends ASTType
+class ASTUnionType extends AbstractASTCombinationType
 {
     /**
-     * This method will return <b>true</b> when this type use union pipe tos specify multiple types.
+     * This method will return <b>true</b> when this type use union pipe to specify multiple types.
      * For this concrete implementation the return value will be always true.
      *
-     * @return boolean
+     * @return bool
      */
     public function isUnion()
     {
         return true;
     }
 
-    /**
-     * Accept method of the visitor design pattern. This method will be called
-     * by a visitor during tree traversal.
-     *
-     * @param ASTVisitor $visitor
-     * @param mixed      $data
-     * @return mixed
-     * @since  2.9.0
-     */
-    public function accept(ASTVisitor $visitor, $data = null)
+    protected function getSymbol()
     {
-        return $visitor->visitUnionType($this, $data);
-    }
-
-    /**
-     * Return concatenated allowed types string representation.
-     *
-     * @return string
-     */
-    public function getImage()
-    {
-        return implode('|', array_map(function ($type) {
-            return $type->getImage();
-        }, $this->getChildren()));
+        return '|';
     }
 }

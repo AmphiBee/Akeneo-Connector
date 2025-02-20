@@ -29,15 +29,15 @@ require ABSPATH . WPINC . '/plugin.php';
  * we're including version.php from another installation and don't want
  * these values to be overridden if already set.
  */
-global $wp_version, $wp_db_version, $tinymce_version, $required_php_version, $required_mysql_version, $wp_local_package;
+global $wp_version, $wp_db_version, $tinymce_version, $required_php_version, $required_mysql_version, $wp_local_package, $upgrading;
 require ABSPATH . WPINC . '/version.php';
 
 /**
  * If not already configured, `$blog_id` will default to 1 in a single site
  * configuration. In multisite, it will be overridden by default in ms-settings.php.
  *
- * @global int $blog_id
  * @since 2.0.0
+ * @global int $blog_id
  */
 global $blog_id;
 
@@ -57,9 +57,6 @@ ini_set( 'magic_quotes_sybase', 0 );
 // phpcs:ignore WordPress.DateTime.RestrictedFunctions.timezone_change_date_default_timezone_set
 date_default_timezone_set( 'UTC' );
 
-// Turn register_globals off.
-wp_unregister_GLOBALS();
-
 // Standardize $_SERVER variables across setups.
 wp_fix_server_vars();
 
@@ -78,7 +75,7 @@ wp_fix_server_vars();
  * @param bool $enable_checks Whether to enable maintenance mode. Default true.
  * @param int  $upgrading     The timestamp set in the .maintenance file.
  */
-if ( apply_filters( 'enable_maintenance_mode', true ) ) {
+if ( apply_filters( 'enable_maintenance_mode', true, $upgrading ) ) {
 	wp_maintenance();
 }
 
@@ -351,44 +348,44 @@ do_action( 'sanitize_comment_cookies' );
 
 /**
  * WordPress Query object
- * @global object $wp_the_query
  * @since 2.0.0
+ * @global object $wp_the_query
  */
 $GLOBALS['wp_the_query'] = new WP_Query();
 
 /**
  * Holds the reference to @see $wp_the_query
  * Use this global for WordPress queries
- * @global object $wp_query
  * @since 1.5.0
+ * @global object $wp_query
  */
 $GLOBALS['wp_query'] = $GLOBALS['wp_the_query'];
 
 /**
  * Holds the WordPress Rewrite object for creating pretty URLs
- * @global object $wp_rewrite
  * @since 1.5.0
+ * @global object $wp_rewrite
  */
 $GLOBALS['wp_rewrite'] = new WP_Rewrite();
 
 /**
  * WordPress Object
- * @global object $wp
  * @since 2.0.0
+ * @global object $wp
  */
 $GLOBALS['wp'] = new WP();
 
 /**
  * WordPress Widget Factory Object
- * @global object $wp_widget_factory
  * @since 2.8.0
+ * @global object $wp_widget_factory
  */
 $GLOBALS['wp_widget_factory'] = new WP_Widget_Factory();
 
 /**
  * WordPress User Roles
- * @global object $wp_roles
  * @since 2.0.0
+ * @global object $wp_roles
  */
 $GLOBALS['wp_roles'] = new WP_Roles();
 
@@ -412,8 +409,8 @@ require_once ABSPATH . WPINC . '/locale.php';
 
 /**
  * WordPress Locale object for loading locale domain date and various strings.
- * @global object $wp_locale
  * @since 2.1.0
+ * @global object $wp_locale
  */
 $GLOBALS['wp_locale'] = new WP_Locale();
 
@@ -444,7 +441,7 @@ $GLOBALS['wp']->init();
  */
 do_action( 'init' );
 
-// Check site status
+// Check site status.
 # if ( is_multisite() ) {  // WP-CLI
 if ( is_multisite() && ! defined( 'WP_INSTALLING' ) ) {
 	$file = ms_site_check();
@@ -461,7 +458,7 @@ if ( is_multisite() && ! defined( 'WP_INSTALLING' ) ) {
  * AJAX requests should use wp-admin/admin-ajax.php. admin-ajax.php can handle requests for
  * users not logged in.
  *
- * @link https://codex.wordpress.org/AJAX_in_Plugins
+ * @link https://developer.wordpress.org/plugins/javascript/ajax/
  *
  * @since 3.0.0
  */

@@ -48,7 +48,7 @@ class Extractor {
 			throw new Exception( "Could not create folder '{$dest}'." );
 		}
 
-		if ( ! file( $zipfile )
+		if ( ! file_exists( $zipfile )
 			|| ! is_readable( $zipfile )
 			|| filesize( $zipfile ) <= 0 ) {
 			throw new Exception( "Invalid zip file '{$zipfile}'." );
@@ -127,7 +127,7 @@ class Extractor {
 			$tarball = "./{$tarball}";
 		}
 
-		if ( ! file( $tarball )
+		if ( ! file_exists( $tarball )
 			|| ! is_readable( $tarball )
 			|| filesize( $tarball ) <= 0 ) {
 			throw new Exception( "Invalid zip file '{$tarball}'." );
@@ -142,7 +142,7 @@ class Extractor {
 
 		$process_run = WP_CLI::launch(
 			$cmd,
-			false /*exit_on_error*/,
+			false, /*exit_on_error*/
 			true /*return_detailed*/
 		);
 
@@ -187,15 +187,13 @@ class Extractor {
 				if ( ! is_dir( $dest_path ) ) {
 					mkdir( $dest_path );
 				}
+			} elseif ( file_exists( $dest_path ) && is_writable( $dest_path ) ) {
+					copy( $item, $dest_path );
+			} elseif ( ! file_exists( $dest_path ) ) {
+				copy( $item, $dest_path );
 			} else {
-				if ( file_exists( $dest_path ) && is_writable( $dest_path ) ) {
-					copy( $item, $dest_path );
-				} elseif ( ! file_exists( $dest_path ) ) {
-					copy( $item, $dest_path );
-				} else {
-					$error = 1;
-					WP_CLI::warning( "Unable to copy '" . $iterator->getSubPathName() . "' to current directory." );
-				}
+				$error = 1;
+				WP_CLI::warning( "Unable to copy '" . $iterator->getSubPathName() . "' to current directory." );
 			}
 		}
 
@@ -282,7 +280,7 @@ class Extractor {
 	/**
 	 * Return formatted error message from ProcessRun of tar command.
 	 *
-	 * @param Processrun $process_run
+	 * @param ProcessRun $process_run
 	 * @return string|int The error message of the process, if available;
 	 *                    otherwise the return code.
 	 */
