@@ -24,6 +24,9 @@ class ProductAdapter
         $product->setValues($ak_product->getValues());
         $product->setCategories($ak_product->getCategories());
         $product->setAssociation($ak_product->getAssociations());
+        
+        // Générer et définir le hash du produit
+        $product->setHash($this->generateProductHash($ak_product));
 
         return $product;
     }
@@ -36,5 +39,27 @@ class ProductAdapter
     public function getWordpressProduct(AK_Product $ak_product): WP_Product
     {
         return $this->fromProduct($ak_product);
+    }
+    
+    /**
+     * Génère un hash unique basé sur les données du produit Akeneo
+     * 
+     * @param AK_Product $product Le produit Akeneo
+     * @return string Le hash généré
+     */
+    protected function generateProductHash(AK_Product $product): string
+    {
+        $hashData = [
+            'identifier' => $product->getIdentifier(),
+            'enabled' => $product->isEnabled(),
+            'family' => $product->getFamily(),
+            'parent' => $product->getParent(),
+            'categories' => $product->getCategories(),
+            'values' => $product->getValues(),
+            'associations' => $product->getAssociations()
+        ];
+        
+        // Convertir en JSON puis générer un hash MD5
+        return md5(json_encode($hashData));
     }
 }

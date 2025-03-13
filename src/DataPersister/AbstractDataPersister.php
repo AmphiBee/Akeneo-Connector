@@ -44,4 +44,14 @@ abstract class AbstractDataPersister
     {
         return $this->serializer;
     }
+
+    /**
+     * Récupère la locale par défaut
+     *
+     * @return string
+     */
+    public function getDefaultLocale(): string
+    {
+        return $this->translator->default;
+    }
 }

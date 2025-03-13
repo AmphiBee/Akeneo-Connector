@@ -14,24 +14,64 @@ use AmphiBee\AkeneoConnector\Admin\Settings;
 use AmphiBee\AkeneoConnector\Helpers\Fetcher;
 use AmphiBee\AkeneoConnector\Facade\LocaleStrings;
 use AmphiBee\AkeneoConnector\Service\LoggerService;
-use AmphiBee\AkeneoConnector\Entity\WooCommerce\Attribute;
+use AmphiBee\AkeneoConnector\Entity\WooCommerce\Attribute as WP_Attribute;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 
 class AttributeDataPersister extends AbstractDataPersister
 {
     /**
-     * @param Attribute $attribute
+     * @param WP_Attribute $attribute
+     * @return bool True si l'attribut a été importé, False s'il a été ignoré
      */
-    public function importBooleanAttributeOption($attr): void
+    public function importBooleanAttributeOption(WP_Attribute $attribute): bool
+    {
+        $taxonomy = sprintf('pa_%s', strtolower($attribute->getCode()));
+
+        // Vérifier si l'attribut existe déjà
+        $attribute_id = wc_attribute_taxonomy_id_by_name($taxonomy);
+
+        if ($attribute_id) {
+            // Vérifier si le hash a changé
+            $stored_hash = get_term_meta($attribute_id, '_akeneo_hash', true);
+            $current_hash = $attribute->getHash();
+
+            // Si le hash est identique, on peut sauter l'import
+            if ($stored_hash && $stored_hash === $current_hash) {
+                LoggerService::log(Logger::INFO, sprintf(
+                    'Skipping attribute import for code %s - No changes detected',
+                    $attribute->getCode()
+                ));
+                return false; // Attribut ignoré
+            }
+        }
+
+        // Continuer avec l'import normal
+        if ($attribute->getType() === 'pim_catalog_boolean') {
+            $this->createBooleanAttributeOption($attribute);
+        }
+
+        // Sauvegarder le hash de l'attribut
+        if ($attribute_id && $attribute->getHash()) {
+            update_term_meta($attribute_id, '_akeneo_hash', $attribute->getHash());
+        }
+        
+        return true; // Attribut importé
+    }
+
+    /**
+     * @param WP_Attribute $attribute
+     * @return bool True si l'attribut a été créé avec succès, False sinon
+     */
+    protected function createBooleanAttributeOption(WP_Attribute $attribute): bool
     {
         try {
-            $code     = $attr->getCode();
+            $code     = $attribute->getCode();
             $mapping  = Settings::getMappingValue($code);
             $lang     = $this->translator;
             $original = null;
 
-            if ($mapping !== 'private_global_attribute' || $mapping !== 'global_attribute' || $attr->getType() !== 'pim_catalog_boolean') {
-                return;
+            if ($mapping !== 'private_global_attribute' || $mapping !== 'global_attribute' || $attribute->getType() !== 'pim_catalog_boolean') {
+                return false;
             }
 
             $taxonomy = strtolower("pa_{$code}");
@@ -85,13 +125,21 @@ class AttributeDataPersister extends AbstractDataPersister
                     }
                 }
             }
+
+            // Après avoir créé l'attribut, récupérer son ID et sauvegarder le hash
+            $attribute_id = wc_attribute_taxonomy_id_by_name($taxonomy);
+            if ($attribute_id && $attribute->getHash()) {
+                update_term_meta($attribute_id, '_akeneo_hash', $attribute->getHash());
+            }
+            
+            return true; // Succès
         } catch (ExceptionInterface $e) {
             LoggerService::log(Logger::ERROR, sprintf(
                 'Cannot Normalize Attribute (Attr Code %s) %s',
-                print_r($attr, true),
+                print_r($attribute, true),
                 $e->getMessage()
             ));
-            return;
+            return false; // Échec
         }
     }
 

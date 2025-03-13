@@ -100,6 +100,11 @@ trait CreatesProducts
         $product_parsed['product_id'] = Fetcher::getProductIdBySku($product->getCode(), $locale);
         $product_parsed['metas']['_akeneo_lang'] = $locale;
         $product_parsed['metas']['_akeneo_code'] = $product->getCode();
+        
+        // Ajouter le hash aux données du produit
+        if (method_exists($product, 'getHash') && $product->getHash()) {
+            $product_parsed['hash'] = $product->getHash();
+        }
 
         if ($product_parsed['sku'] === '') {
             $product_parsed['sku'] = $product->getCode();
@@ -392,25 +397,6 @@ trait CreatesProducts
             $product->set_download_expiry(isset($args['download_expiry']) ? $args['download_expiry'] : '-1');
         }
 
-        // Images and Gallery
-        /*
-        if (isset($args['images']) && is_array($args['images'])) {
-            $image_id = self::assignRemoteAttachment($args['images'][0]);
-            $product->set_image_id($image_id ? $image_id : "");
-        }
-
-        $gallery_ids = [];
-
-        if (count($args['images']) > 1) {
-            array_shift($args['images']);
-            foreach ($args['images'] as $img) {
-                $gallery_ids[] = self::assignRemoteAttachment($img);
-            }
-        }
-
-        $product->set_gallery_image_ids($gallery_ids);
-        */
-
         // Attributes and default attributes
         if (isset($args['attributes'])) {
             $product->set_attributes($this->prepareProductAttributes($args['attributes']));
@@ -460,6 +446,11 @@ trait CreatesProducts
             $meta_key = apply_filters('ak/f/product/single/meta_key', $meta_key, $meta_value, $product_id);
             $meta_value = apply_filters('ak/f/product/single/meta_value', $meta_value, $product_id, $meta_key);
             update_post_meta($product_id, $meta_key, $meta_value);
+        }
+        
+        // Sauvegarder le hash du produit
+        if (isset($args['hash'])) {
+            update_post_meta($product_id, '_akeneo_hash', $args['hash']);
         }
 
         // Upsell and Cross sell (IDs) after all product saved
@@ -611,9 +602,11 @@ trait CreatesProducts
         // Save the variation
         $variation->save();
 
-        // Publish the product which was in draft waiting for a variation
-        $wc_product->set_status('publish');
-        $wc_product->save();
+        // Publier le produit uniquement s'il est en brouillon
+        if ($wc_product->get_status() === 'draft') {
+            $wc_product->set_status('publish');
+            $wc_product->save();
+        }
 
         do_action('ak/a/product/variable/external_gallery', $variation_id, $data['external_gallery'] ?? [], $locale);
         do_action('ak/a/product/variable/external_media', $variation_id, $data['external_media'] ?? [], $locale);
@@ -682,5 +675,27 @@ trait CreatesProducts
         }
 
         return $code;
+    }
+
+    /**
+     * Génère un hash unique basé sur les données du modèle
+     * 
+     * @param WP_Model|WP_Product $model Le modèle ou produit
+     * @return string Le hash généré
+     */
+    protected function generateModelHash($model): string
+    {
+        $hashData = [
+            'code' => $model->getCode(),
+            'family' => $model->getFamily(),
+            'familyVariant' => $model->getFamilyVariant(),
+            'parent' => $model->getParent(),
+            'categories' => $model->getCategories(),
+            'values' => $model->getValues(),
+            'associations' => $model->getAssociation()
+        ];
+        
+        // Convertir en JSON puis générer un hash MD5
+        return md5(json_encode($hashData));
     }
 }

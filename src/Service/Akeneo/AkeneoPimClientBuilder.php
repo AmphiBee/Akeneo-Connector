@@ -36,6 +36,7 @@ use Akeneo\Pim\ApiClient\FileSystem\FileSystemInterface;
 use Akeneo\Pim\ApiClient\Pagination\ResourceCursorFactory;
 use Akeneo\Pim\ApiClient\Stream\MultipartStreamBuilderFactory;
 use Akeneo\Pim\ApiClient\Stream\UpsertResourceListResponseFactory;
+use AmphiBee\AkeneoConnector\Service\Akeneo\RetryHttpClient;
 
 /**
  * Builder of the class AkeneoPimClient.
@@ -218,7 +219,8 @@ class AkeneoPimClientBuilder
     protected function getHttpClient(): ClientInterface
     {
         if (null === $this->httpClient) {
-            $this->httpClient = Psr18ClientDiscovery::find();
+            $baseHttpClient = Psr18ClientDiscovery::find();
+            $this->httpClient = new RetryHttpClient($baseHttpClient);
         }
 
         return $this->httpClient;

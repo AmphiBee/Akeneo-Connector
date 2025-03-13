@@ -7,27 +7,54 @@
 
 namespace AmphiBee\AkeneoConnector\Adapter;
 
-use AmphiBee\AkeneoConnector\Entity\Akeneo\Attribute as AK_Attribute;
+use AmphiBee\AkeneoConnector\Entity\Akeneo\Attribute;
 use AmphiBee\AkeneoConnector\Entity\Akeneo\CustomReferenceData as AK_CustomReferenceData;
 use AmphiBee\AkeneoConnector\Entity\WooCommerce\Attribute as WP_Attribute;
 
 class AttributeAdapter extends AbstractAdapter
 {
     /**
-     * Creates a WooCommerceAttribute from an AkeneoAttribute.
-     *
-     * @return WP_Attribute
+     * Génère un hash unique basé sur les données de l'attribut Akeneo
+     * 
+     * @param Attribute $attribute L'attribut Akeneo
+     * @return string Le hash généré
      */
-    public function fromAttribute(AK_Attribute $akeneoAttribute, $locale = 'en_US'): WP_Attribute
+    protected function generateAttributeHash(Attribute $attribute): string
     {
-        $attribute = new WP_Attribute($akeneoAttribute->getCode());
-
-        $attribute->setName($this->getLocalizedLabel($akeneoAttribute, $locale));
-        $attribute->setType($akeneoAttribute->getType());
-
-        return $attribute;
+        $hashData = [
+            'code' => $attribute->getCode(),
+            'type' => $attribute->getType(),
+            'group' => $attribute->getGroup(),
+            'localizable' => $attribute->isLocalizable(),
+            'labels' => $attribute->getLabels(),
+            'groupLabels' => $attribute->getGroupLabels(),
+            'metaDatas' => $attribute->getMetaDatas()
+        ];
+        
+        // Convertir en JSON puis générer un hash MD5
+        return md5(json_encode($hashData));
     }
 
+    /**
+     * Creates a WP Attribute from an Akeneo Attribute.
+     */
+    public function fromAttribute(Attribute $attribute, string $locale): WP_Attribute
+    {
+        $wp_attribute = new WP_Attribute();
+
+        $wp_attribute->setCode($attribute->getCode());
+        $wp_attribute->setType($attribute->getType());
+        $wp_attribute->setGroup($attribute->getGroup());
+        $wp_attribute->setLocalizable($attribute->isLocalizable());
+        $wp_attribute->setLabels($attribute->getLabels());
+        $wp_attribute->setGroupLabels($attribute->getGroupLabels());
+        $wp_attribute->setMetaDatas($attribute->getMetaDatas());
+        
+        // Générer et définir le hash de l'attribut
+        $wp_attribute->setHash($this->generateAttributeHash($attribute));
+
+        return $wp_attribute;
+    }
 
     /**
      * Creates a WooCommerceAttribute from an AkeneoAttribute.
@@ -43,7 +70,6 @@ class AttributeAdapter extends AbstractAdapter
 
         return $attribute;
     }
-
 
     /**
      * Creates a WooCommerceAttribute from an AkeneoAttribute.
@@ -61,11 +87,10 @@ class AttributeAdapter extends AbstractAdapter
         return $attribute;
     }
 
-
     /**
      * @deprecated use fromAttribute() instead
      */
-    public function getWordpressAttribute(AK_Attribute $akeneoAttribute, $locale = 'en_US'): WP_Attribute
+    public function getWordpressAttribute(Attribute $akeneoAttribute, $locale = 'en_US'): WP_Attribute
     {
         return $this->fromAttribute($akeneoAttribute, $locale);
     }

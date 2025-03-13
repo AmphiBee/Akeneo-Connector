@@ -14,6 +14,7 @@ class Product implements WooCommerceEntityInterface
     private array $categories;
     private array $values;
     private array $association;
+    private ?string $hash = null;
 
     /**
      * Category constructor.
@@ -142,6 +143,24 @@ class Product implements WooCommerceEntityInterface
     {
         $this->values = $values;
 
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getHash(): ?string
+    {
+        return $this->hash;
+    }
+
+    /**
+     * @param string $hash
+     * @return self
+     */
+    public function setHash(string $hash): self
+    {
+        $this->hash = $hash;
         return $this;
     }
 }

@@ -29,7 +29,8 @@ class CommandLoader
         ProductModelCommand::register();
         ProductCommand::register();
 
-        # Migration command
+        # Migration commands
         MigrateTranslationsCommand::register();
+        MigrateHashColumnCommand::register();
     }
 }

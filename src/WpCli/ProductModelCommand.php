@@ -49,16 +49,34 @@ class ProductModelCommand extends AbstractCommand
 
         $models = (array) apply_filters('ak/f/product_models/import_data', $models);
 
-        # Clear product models from database first.
-        ProductModel::truncate();
+        # Statistiques d'import
+        $stats = [
+            'total' => count($models),
+            'imported' => 0,
+            'skipped' => 0,
+            'errors' => 0
+        ];
 
         foreach ($models as $ak_model) {
             $this->print(sprintf('Running Product Model with code: %s', $ak_model->getCode()));
             try {
                 $wp_model = $adapter->fromModel($ak_model);
+
+                // Vérifier si le modèle a changé avant de l'importer
+                $currentHash = $persister->generateModelHash($wp_model);
+                $existingModel = ProductModel::where('model_code', $wp_model->getCode())->first();
+
+                if ($existingModel && $existingModel->hash === $currentHash) {
+                    $this->print(sprintf('Skipping model %s - No changes detected', $wp_model->getCode()), 'line');
+                    $stats['skipped']++;
+                    continue;
+                }
+
                 $persister->createOrUpdate($wp_model);
+                $stats['imported']++;
             } catch (\Exception $e) {
                 $this->error('An error occurred while creating the product : ' . $e->getMessage() . "(" . $e->getCode() . ")");
+                $stats['errors']++;
             }
         }
 
@@ -67,7 +85,13 @@ class ProductModelCommand extends AbstractCommand
 
         do_action('ak/a/product_models/after_import', $provider->getAll());
 
-        $this->print('Models imported successfully');
+        $this->print(sprintf(
+            'Import completed: %d models processed, %d imported, %d skipped, %d errors',
+            $stats['total'],
+            $stats['imported'],
+            $stats['skipped'],
+            $stats['errors']
+        ), 'success');
     }
 
 

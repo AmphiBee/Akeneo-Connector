@@ -33,6 +33,23 @@ class ProductDataPersister extends AbstractDataPersister
             if (!$product->isEnabled()) {
                 return;
             }
+            
+            // Vérifier si le produit existe déjà et si son hash a changé
+            $product_id = Fetcher::getProductIdBySku($product->getCode(), $this->translator->default);
+            
+            if ($product_id) {
+                $stored_hash = get_post_meta($product_id, '_akeneo_hash', true);
+                $current_hash = $product->getHash();
+                
+                // Si le hash est identique, on peut sauter l'import
+                if ($stored_hash && $stored_hash === $current_hash) {
+                    LoggerService::log(Logger::INFO, sprintf(
+                        'Skipping product import for code %s - No changes detected',
+                        $product->getCode()
+                    ));
+                    return;
+                }
+            }
 
             if ($product->getParent()) {
                 # Product with product model (variable product in WC)

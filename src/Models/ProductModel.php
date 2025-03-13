@@ -37,6 +37,7 @@ class ProductModel extends Model
         'model_code',
         'family_code',
         'variant_code',
+        'hash'
     ];
 
     /**
