@@ -122,4 +122,22 @@ return [
     'gql-fields' => [
         // App\Graphql\Fields\MediaGallery,
     ],
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Akeneo API Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for the Akeneo API client
+    |
+    */
+    'akeneo' => [
+        'retry' => [
+            'enabled' => true,
+            'max_retries' => 3,
+            'delay' => 2,
+            'status_codes' => [429, 500, 502, 503, 504],
+        ],
+    ],
 ];
