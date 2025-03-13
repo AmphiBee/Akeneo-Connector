@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'amphibee/akeneo-connector',
-        'pretty_version' => '1.20.0',
-        'version' => '1.20.0.0',
+        'pretty_version' => '1.21',
+        'version' => '1.21.0.0',
         'reference' => null,
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
@@ -29,8 +29,8 @@
             'dev_requirement' => false,
         ),
         'amphibee/akeneo-connector' => array(
-            'pretty_version' => '1.20.0',
-            'version' => '1.20.0.0',
+            'pretty_version' => '1.21',
+            'version' => '1.21.0.0',
             'reference' => null,
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
@@ -85,12 +85,14 @@
             'dev_requirement' => false,
         ),
         'composer/installers' => array(
-            'pretty_version' => 'v1.9.0',
-            'version' => '1.9.0.0',
-            'reference' => 'b93bcf0fa1fccb0b7d176b0967d969691cd74cca',
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '5b390889ecbb17bfa69ed5a030fa2e6075a19ba0',
             'type' => 'composer-plugin',
             'install_path' => __DIR__ . '/./installers',
-            'aliases' => array(),
+            'aliases' => array(
+                0 => '2.x-dev',
+            ),
             'dev_requirement' => false,
         ),
         'composer/pcre' => array(
@@ -420,15 +422,6 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
-        'mustache/mustache' => array(
-            'pretty_version' => 'v2.14.2',
-            'version' => '2.14.2.0',
-            'reference' => 'e62b7c3849d22ec55f3ec425507bf7968193a6cb',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../mustache/mustache',
-            'aliases' => array(),
-            'dev_requirement' => false,
-        ),
         'nesbot/carbon' => array(
             'pretty_version' => '2.x-dev',
             'version' => '2.9999999.9999999.9999999-dev',
@@ -694,12 +687,6 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
-        'roundcube/plugin-installer' => array(
-            'dev_requirement' => false,
-            'replaced' => array(
-                0 => '*',
-            ),
-        ),
         'sebastian/cli-parser' => array(
             'pretty_version' => '1.0.x-dev',
             'version' => '1.0.9999999.9999999-dev',
@@ -727,16 +714,10 @@
             'aliases' => array(),
             'dev_requirement' => true,
         ),
-        'shama/baton' => array(
-            'dev_requirement' => false,
-            'replaced' => array(
-                0 => '*',
-            ),
-        ),
         'squizlabs/php_codesniffer' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'f668a5b422c3ff24fb29fe92ca5825828a233e63',
+            'reference' => 'f1ab93f487a7f494fd4c815c3d1008bb33390826',
             'type' => 'library',
             'install_path' => __DIR__ . '/../squizlabs/php_codesniffer',
             'aliases' => array(
@@ -1093,35 +1074,6 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../voku/portable-ascii',
             'aliases' => array(),
-            'dev_requirement' => false,
-        ),
-        'wp-cli/mustangostang-spyc' => array(
-            'pretty_version' => '0.6.3',
-            'version' => '0.6.3.0',
-            'reference' => '6aa0b4da69ce9e9a2c8402dab8d43cf32c581cc7',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../wp-cli/mustangostang-spyc',
-            'aliases' => array(),
-            'dev_requirement' => false,
-        ),
-        'wp-cli/php-cli-tools' => array(
-            'pretty_version' => 'v0.12.1',
-            'version' => '0.12.1.0',
-            'reference' => 'd1fe500378f53fb5ae1072c0daa77095c384a082',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../wp-cli/php-cli-tools',
-            'aliases' => array(),
-            'dev_requirement' => false,
-        ),
-        'wp-cli/wp-cli' => array(
-            'pretty_version' => 'dev-main',
-            'version' => 'dev-main',
-            'reference' => '1a98480ee1c18d483ce794fbab45b8cb0725576b',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../wp-cli/wp-cli',
-            'aliases' => array(
-                0 => '2.12.x-dev',
-            ),
             'dev_requirement' => false,
         ),
     ),

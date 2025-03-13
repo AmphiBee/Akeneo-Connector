@@ -440,42 +440,42 @@
         },
         {
             "name": "composer/installers",
-            "version": "v1.9.0",
-            "version_normalized": "1.9.0.0",
+            "version": "dev-main",
+            "version_normalized": "dev-main",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/installers.git",
-                "reference": "b93bcf0fa1fccb0b7d176b0967d969691cd74cca"
+                "reference": "5b390889ecbb17bfa69ed5a030fa2e6075a19ba0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/installers/zipball/b93bcf0fa1fccb0b7d176b0967d969691cd74cca",
-                "reference": "b93bcf0fa1fccb0b7d176b0967d969691cd74cca",
+                "url": "https://api.github.com/repos/composer/installers/zipball/5b390889ecbb17bfa69ed5a030fa2e6075a19ba0",
+                "reference": "5b390889ecbb17bfa69ed5a030fa2e6075a19ba0",
                 "shasum": ""
             },
             "require": {
-                "composer-plugin-api": "^1.0 || ^2.0"
-            },
-            "replace": {
-                "roundcube/plugin-installer": "*",
-                "shama/baton": "*"
+                "composer-plugin-api": "^1.0 || ^2.0",
+                "php": "^7.2 || ^8.0"
             },
             "require-dev": {
-                "composer/composer": "1.6.* || 2.0.*@dev",
-                "composer/semver": "1.0.* || 2.0.*@dev",
-                "phpunit/phpunit": "^4.8.36",
-                "sebastian/comparator": "^1.2.4",
-                "symfony/process": "^2.3"
+                "composer/composer": "^1.10.27 || ^2.7.8",
+                "composer/semver": "^1.7.2 || ^3.4.2",
+                "phpstan/phpstan": "^1.11.11",
+                "phpstan/phpstan-phpunit": "^1.4",
+                "phpunit/phpunit": "^8.5.39 || ^9.6.20",
+                "symfony/process": "^5 || ^6 || ^7.1.3"
             },
-            "time": "2020-04-07T06:57:05+00:00",
+            "time": "2024-11-26T13:24:01+00:00",
+            "default-branch": true,
             "type": "composer-plugin",
             "extra": {
                 "class": "Composer\\Installers\\Plugin",
                 "branch-alias": {
-                    "dev-master": "1.0-dev"
-                }
+                    "dev-main": "2.x-dev"
+                },
+                "plugin-modifies-install-path": true
             },
-            "installation-source": "dist",
+            "installation-source": "source",
             "autoload": {
                 "psr-4": {
                     "Composer\\Installers\\": "src/Composer/Installers"
@@ -493,9 +493,7 @@
                 }
             ],
             "description": "A multi-framework Composer library installer",
-            "homepage": "https://composer.github.io/installers/",
             "keywords": [
-                "Craft",
                 "Dolibarr",
                 "Eliasis",
                 "Hurad",
@@ -511,11 +509,11 @@
                 "Porto",
                 "RadPHP",
                 "SMF",
+                "Starbug",
                 "Thelia",
                 "Whmcs",
                 "WolfCMS",
                 "agl",
-                "aimeos",
                 "annotatecms",
                 "attogram",
                 "bitrix",
@@ -524,6 +522,7 @@
                 "cockpit",
                 "codeigniter",
                 "concrete5",
+                "concreteCMS",
                 "croogo",
                 "dokuwiki",
                 "drupal",
@@ -534,7 +533,6 @@
                 "grav",
                 "installer",
                 "itop",
-                "joomla",
                 "known",
                 "kohana",
                 "laravel",
@@ -543,14 +541,18 @@
                 "magento",
                 "majima",
                 "mako",
+                "matomo",
                 "mediawiki",
+                "miaoxing",
                 "modulework",
                 "modx",
                 "moodle",
                 "osclass",
+                "pantheon",
                 "phpbb",
                 "piwik",
                 "ppi",
+                "processwire",
                 "puppet",
                 "pxcms",
                 "reindex",
@@ -559,8 +561,7 @@
                 "silverstripe",
                 "sydes",
                 "sylius",
-                "symfony",
-                "typo3",
+                "tastyigniter",
                 "wordpress",
                 "yawik",
                 "zend",
@@ -568,12 +569,16 @@
             ],
             "support": {
                 "issues": "https://github.com/composer/installers/issues",
-                "source": "https://github.com/composer/installers/tree/v1.9.0"
+                "source": "https://github.com/composer/installers/tree/main"
             },
             "funding": [
                 {
                     "url": "https://packagist.com",
                     "type": "custom"
+                },
+                {
+                    "url": "https://github.com/composer",
+                    "type": "github"
                 },
                 {
                     "url": "https://tidelift.com/funding/github/packagist/composer/composer",
@@ -3081,59 +3086,6 @@
             "install-path": "../monolog/monolog"
         },
         {
-            "name": "mustache/mustache",
-            "version": "v2.14.2",
-            "version_normalized": "2.14.2.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/bobthecow/mustache.php.git",
-                "reference": "e62b7c3849d22ec55f3ec425507bf7968193a6cb"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/bobthecow/mustache.php/zipball/e62b7c3849d22ec55f3ec425507bf7968193a6cb",
-                "reference": "e62b7c3849d22ec55f3ec425507bf7968193a6cb",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.2.4"
-            },
-            "require-dev": {
-                "friendsofphp/php-cs-fixer": "~1.11",
-                "phpunit/phpunit": "~3.7|~4.0|~5.0"
-            },
-            "time": "2022-08-23T13:07:01+00:00",
-            "type": "library",
-            "installation-source": "dist",
-            "autoload": {
-                "psr-0": {
-                    "Mustache": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Justin Hileman",
-                    "email": "justin@justinhileman.info",
-                    "homepage": "http://justinhileman.com"
-                }
-            ],
-            "description": "A Mustache implementation in PHP.",
-            "homepage": "https://github.com/bobthecow/mustache.php",
-            "keywords": [
-                "mustache",
-                "templating"
-            ],
-            "support": {
-                "issues": "https://github.com/bobthecow/mustache.php/issues",
-                "source": "https://github.com/bobthecow/mustache.php/tree/v2.14.2"
-            },
-            "install-path": "../mustache/mustache"
-        },
-        {
             "name": "nesbot/carbon",
             "version": "2.x-dev",
             "version_normalized": "2.9999999.9999999.9999999-dev",
@@ -4739,12 +4691,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPCSStandards/PHP_CodeSniffer.git",
-                "reference": "f668a5b422c3ff24fb29fe92ca5825828a233e63"
+                "reference": "f1ab93f487a7f494fd4c815c3d1008bb33390826"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPCSStandards/PHP_CodeSniffer/zipball/f668a5b422c3ff24fb29fe92ca5825828a233e63",
-                "reference": "f668a5b422c3ff24fb29fe92ca5825828a233e63",
+                "url": "https://api.github.com/repos/PHPCSStandards/PHP_CodeSniffer/zipball/f1ab93f487a7f494fd4c815c3d1008bb33390826",
+                "reference": "f1ab93f487a7f494fd4c815c3d1008bb33390826",
                 "shasum": ""
             },
             "require": {
@@ -4756,7 +4708,7 @@
             "require-dev": {
                 "phpunit/phpunit": "^4.0 || ^5.0 || ^6.0 || ^7.0 || ^8.0 || ^9.3.4"
             },
-            "time": "2025-02-20T15:01:18+00:00",
+            "time": "2025-03-13T05:23:03+00:00",
             "default-branch": true,
             "bin": [
                 "bin/phpcbf",
@@ -4814,7 +4766,7 @@
                     "type": "open_collective"
                 },
                 {
-                    "url": "https://thanks.dev/phpcsstandards",
+                    "url": "https://thanks.dev/u/gh/phpcsstandards",
                     "type": "thanks_dev"
                 }
             ],
@@ -7873,200 +7825,6 @@
                 }
             ],
             "install-path": "../voku/portable-ascii"
-        },
-        {
-            "name": "wp-cli/mustangostang-spyc",
-            "version": "0.6.3",
-            "version_normalized": "0.6.3.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/wp-cli/spyc.git",
-                "reference": "6aa0b4da69ce9e9a2c8402dab8d43cf32c581cc7"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/wp-cli/spyc/zipball/6aa0b4da69ce9e9a2c8402dab8d43cf32c581cc7",
-                "reference": "6aa0b4da69ce9e9a2c8402dab8d43cf32c581cc7",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.1"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "4.3.*@dev"
-            },
-            "time": "2017-04-25T11:26:20+00:00",
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "0.5.x-dev"
-                }
-            },
-            "installation-source": "dist",
-            "autoload": {
-                "psr-4": {
-                    "Mustangostang\\": "src/"
-                },
-                "files": [
-                    "includes/functions.php"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "mustangostang",
-                    "email": "vlad.andersen@gmail.com"
-                }
-            ],
-            "description": "A simple YAML loader/dumper class for PHP (WP-CLI fork)",
-            "homepage": "https://github.com/mustangostang/spyc/",
-            "support": {
-                "source": "https://github.com/wp-cli/spyc/tree/autoload"
-            },
-            "install-path": "../wp-cli/mustangostang-spyc"
-        },
-        {
-            "name": "wp-cli/php-cli-tools",
-            "version": "v0.12.1",
-            "version_normalized": "0.12.1.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/wp-cli/php-cli-tools.git",
-                "reference": "d1fe500378f53fb5ae1072c0daa77095c384a082"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/wp-cli/php-cli-tools/zipball/d1fe500378f53fb5ae1072c0daa77095c384a082",
-                "reference": "d1fe500378f53fb5ae1072c0daa77095c384a082",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">= 5.6.0"
-            },
-            "require-dev": {
-                "roave/security-advisories": "dev-latest",
-                "wp-cli/wp-cli-tests": "^4"
-            },
-            "time": "2024-10-01T11:13:49+00:00",
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "0.11.x-dev"
-                }
-            },
-            "installation-source": "dist",
-            "autoload": {
-                "files": [
-                    "lib/cli/cli.php"
-                ],
-                "psr-0": {
-                    "cli": "lib/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Daniel Bachhuber",
-                    "email": "daniel@handbuilt.co",
-                    "role": "Maintainer"
-                },
-                {
-                    "name": "James Logsdon",
-                    "email": "jlogsdon@php.net",
-                    "role": "Developer"
-                }
-            ],
-            "description": "Console utilities for PHP",
-            "homepage": "http://github.com/wp-cli/php-cli-tools",
-            "keywords": [
-                "cli",
-                "console"
-            ],
-            "support": {
-                "issues": "https://github.com/wp-cli/php-cli-tools/issues",
-                "source": "https://github.com/wp-cli/php-cli-tools/tree/v0.12.1"
-            },
-            "install-path": "../wp-cli/php-cli-tools"
-        },
-        {
-            "name": "wp-cli/wp-cli",
-            "version": "dev-main",
-            "version_normalized": "dev-main",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/wp-cli/wp-cli.git",
-                "reference": "1a98480ee1c18d483ce794fbab45b8cb0725576b"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/wp-cli/wp-cli/zipball/1a98480ee1c18d483ce794fbab45b8cb0725576b",
-                "reference": "1a98480ee1c18d483ce794fbab45b8cb0725576b",
-                "shasum": ""
-            },
-            "require": {
-                "ext-curl": "*",
-                "mustache/mustache": "^2.14.1",
-                "php": "^5.6 || ^7.0 || ^8.0",
-                "symfony/finder": ">2.7",
-                "wp-cli/mustangostang-spyc": "^0.6.3",
-                "wp-cli/php-cli-tools": "~0.12.1"
-            },
-            "require-dev": {
-                "roave/security-advisories": "dev-latest",
-                "wp-cli/db-command": "^1.3 || ^2",
-                "wp-cli/entity-command": "^1.2 || ^2",
-                "wp-cli/extension-command": "^1.1 || ^2",
-                "wp-cli/package-command": "^1 || ^2",
-                "wp-cli/wp-cli-tests": "^4.0.1"
-            },
-            "suggest": {
-                "ext-readline": "Include for a better --prompt implementation",
-                "ext-zip": "Needed to support extraction of ZIP archives when doing downloads or updates"
-            },
-            "time": "2025-02-05T14:48:30+00:00",
-            "default-branch": true,
-            "bin": [
-                "bin/wp",
-                "bin/wp.bat"
-            ],
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-main": "2.12.x-dev"
-                }
-            },
-            "installation-source": "dist",
-            "autoload": {
-                "psr-0": {
-                    "WP_CLI\\": "php/"
-                },
-                "classmap": [
-                    "php/class-wp-cli.php",
-                    "php/class-wp-cli-command.php"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "WP-CLI framework",
-            "homepage": "https://wp-cli.org",
-            "keywords": [
-                "cli",
-                "wordpress"
-            ],
-            "support": {
-                "docs": "https://make.wordpress.org/cli/handbook/",
-                "issues": "https://github.com/wp-cli/wp-cli/issues",
-                "source": "https://github.com/wp-cli/wp-cli"
-            },
-            "install-path": "../wp-cli/wp-cli"
         }
     ],
     "dev": true,

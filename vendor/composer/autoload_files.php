@@ -26,7 +26,5 @@ return array(
     '59e7ff6b158ae684ddfe409645b4bc03' => $vendorDir . '/amphibee/hookable/src/Support/functions.php',
     '07b3d30d480da9938a58cfd5ad5e2cff' => $vendorDir . '/as247/wp-eloquent/src/Support/helpers.php',
     '17d016dc52a631c1e74d2eb8fdd57342' => $vendorDir . '/laravel/helpers/src/helpers.php',
-    '3937806105cc8e221b8fa8db5b70d2f2' => $vendorDir . '/wp-cli/mustangostang-spyc/includes/functions.php',
-    'be01b9b16925dcb22165c40b46681ac6' => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/cli.php',
     '80c85937a482feff515330f4d5085a75' => $vendorDir . '/tgeorgel/objectpress/src/helpers.php',
 );

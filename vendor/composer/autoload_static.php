@@ -27,8 +27,6 @@ class ComposerStaticInit5e45bd99584c1f239c23f260c05ded57
         '59e7ff6b158ae684ddfe409645b4bc03' => __DIR__ . '/..' . '/amphibee/hookable/src/Support/functions.php',
         '07b3d30d480da9938a58cfd5ad5e2cff' => __DIR__ . '/..' . '/as247/wp-eloquent/src/Support/helpers.php',
         '17d016dc52a631c1e74d2eb8fdd57342' => __DIR__ . '/..' . '/laravel/helpers/src/helpers.php',
-        '3937806105cc8e221b8fa8db5b70d2f2' => __DIR__ . '/..' . '/wp-cli/mustangostang-spyc/includes/functions.php',
-        'be01b9b16925dcb22165c40b46681ac6' => __DIR__ . '/..' . '/wp-cli/php-cli-tools/lib/cli/cli.php',
         '80c85937a482feff515330f4d5085a75' => __DIR__ . '/..' . '/tgeorgel/objectpress/src/helpers.php',
     );
 
@@ -95,7 +93,6 @@ class ComposerStaticInit5e45bd99584c1f239c23f260c05ded57
         ),
         'M' => 
         array (
-            'Mustangostang\\' => 14,
             'Monolog\\' => 8,
         ),
         'L' => 
@@ -353,10 +350,6 @@ class ComposerStaticInit5e45bd99584c1f239c23f260c05ded57
         array (
             0 => __DIR__ . '/..' . '/tgeorgel/objectpress/src',
         ),
-        'Mustangostang\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/wp-cli/mustangostang-spyc/src',
-        ),
         'Monolog\\' => 
         array (
             0 => __DIR__ . '/..' . '/monolog/monolog/src/Monolog',
@@ -542,32 +535,11 @@ class ComposerStaticInit5e45bd99584c1f239c23f260c05ded57
     );
 
     public static $prefixesPsr0 = array (
-        'c' => 
-        array (
-            'cli' => 
-            array (
-                0 => __DIR__ . '/..' . '/wp-cli/php-cli-tools/lib',
-            ),
-        ),
-        'W' => 
-        array (
-            'WP_CLI\\' => 
-            array (
-                0 => __DIR__ . '/..' . '/wp-cli/wp-cli/php',
-            ),
-        ),
         'P' => 
         array (
             'PHPMD\\' => 
             array (
                 0 => __DIR__ . '/..' . '/phpmd/phpmd/src/main/php',
-            ),
-        ),
-        'M' => 
-        array (
-            'Mustache' => 
-            array (
-                0 => __DIR__ . '/..' . '/mustache/mustache/src',
             ),
         ),
         'H' => 
@@ -673,8 +645,6 @@ class ComposerStaticInit5e45bd99584c1f239c23f260c05ded57
         'Stringable' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
         'UnhandledMatchError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/UnhandledMatchError.php',
         'ValueError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/ValueError.php',
-        'WP_CLI' => __DIR__ . '/..' . '/wp-cli/wp-cli/php/class-wp-cli.php',
-        'WP_CLI_Command' => __DIR__ . '/..' . '/wp-cli/wp-cli/php/class-wp-cli-command.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

@@ -6,9 +6,6 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'cli' => array($vendorDir . '/wp-cli/php-cli-tools/lib'),
-    'WP_CLI\\' => array($vendorDir . '/wp-cli/wp-cli/php'),
     'PHPMD\\' => array($vendorDir . '/phpmd/phpmd/src/main/php'),
-    'Mustache' => array($vendorDir . '/mustache/mustache/src'),
     'Hautelook' => array($vendorDir . '/bordoni/phpass/src'),
 );

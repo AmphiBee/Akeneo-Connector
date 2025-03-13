@@ -51,7 +51,6 @@ return array(
     'PhpCsFixer\\' => array($vendorDir . '/friendsofphp/php-cs-fixer/src'),
     'PDepend\\' => array($vendorDir . '/pdepend/pdepend/src/main/php/PDepend'),
     'OP\\' => array($vendorDir . '/tgeorgel/objectpress/src'),
-    'Mustangostang\\' => array($vendorDir . '/wp-cli/mustangostang-spyc/src'),
     'Monolog\\' => array($vendorDir . '/monolog/monolog/src/Monolog'),
     'League\\MimeTypeDetection\\' => array($vendorDir . '/league/mime-type-detection/src'),
     'League\\Flysystem\\' => array($vendorDir . '/league/flysystem/src'),

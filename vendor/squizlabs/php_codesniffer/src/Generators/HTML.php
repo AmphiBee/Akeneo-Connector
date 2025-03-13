@@ -16,6 +16,7 @@
 namespace PHP_CodeSniffer\Generators;
 
 use DOMDocument;
+use DOMElement;
 use DOMNode;
 use PHP_CodeSniffer\Config;
 
@@ -52,6 +53,19 @@ class HTML extends Generator
             margin-top: 50px;
         }
 
+        h2 a.sniffanchor,
+        h2 a.sniffanchor {
+            color: #006C95;
+            opacity: 0;
+            padding: 0 3px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        h2:hover a.sniffanchor,
+        h2:focus a.sniffanchor {
+            opacity: 1;
+        }
+
         .code-comparison {
             width: 100%;
         }
@@ -69,6 +83,11 @@ class HTML extends Generator
             width: 50%;
             background-color: #F1F1F1;
             line-height: 15px;
+        }
+
+        .code-comparison-title {
+            text-align: left;
+            font-weight: 600;
         }
 
         .code-comparison-code {
@@ -94,6 +113,13 @@ class HTML extends Generator
         }
     </style>';
 
+    /**
+     * List of seen slugified anchors to ensure uniqueness.
+     *
+     * @var array<string, true>
+     */
+    private $seenAnchors = [];
+
 
     /**
      * Generates the documentation for a standard.
@@ -112,6 +138,10 @@ class HTML extends Generator
 
         $content = ob_get_contents();
         ob_end_clean();
+
+        // Clear anchor cache after Documentation generation.
+        // The anchor generation for the TOC anchor links will use the same logic, so should end up with the same unique slugs.
+        $this->seenAnchors = [];
 
         if (trim($content) !== '') {
             echo $this->getFormattedHeader();
@@ -209,7 +239,7 @@ class HTML extends Generator
             $doc->load($file);
             $documentation = $doc->getElementsByTagName('documentation')->item(0);
             $title         = $this->getTitle($documentation);
-            $output       .= sprintf($listItemTemplate, str_replace(' ', '-', $title), $title);
+            $output       .= sprintf($listItemTemplate, $this->titleToAnchor($title), $title);
         }
 
         $output .= '  </ul>'.PHP_EOL;
@@ -284,12 +314,44 @@ class HTML extends Generator
 
         if (trim($content) !== '') {
             $title = $this->getTitle($doc);
-            echo '  <a name="'.str_replace(' ', '-', $title).'" />'.PHP_EOL;
-            echo '  <h2>'.$title.'</h2>'.PHP_EOL;
+            printf(
+                '  <h2 id="%1$s">%2$s<a class="sniffanchor" href="#%1$s"> &sect; </a></h2>'.PHP_EOL,
+                $this->titleToAnchor($title),
+                $title
+            );
             echo $content;
         }
 
     }//end processSniff()
+
+
+    /**
+     * Transform a title to a string which can be used as an HTML anchor.
+     *
+     * @param string $title The title.
+     *
+     * @since 3.12.0
+     *
+     * @return string
+     */
+    private function titleToAnchor($title)
+    {
+        // Slugify the text.
+        $title = strtolower($title);
+        $title = preg_replace('`[^a-z0-9\._-]`', '-', $title);
+
+        if (isset($this->seenAnchors[$title]) === true) {
+            // Try to find a unique anchor for this title.
+            for ($i = 2; (isset($this->seenAnchors[$title.'-'.$i]) === true); $i++);
+            $title .= '-'.$i;
+        }
+
+        // Add to "seen" list.
+        $this->seenAnchors[$title] = true;
+
+        return $title;
+
+    }//end titleToAnchor()
 
 
     /**
@@ -400,29 +462,17 @@ class HTML extends Generator
             return '';
         }
 
-        $firstTitle = trim($firstCodeElm->getAttribute('title'));
-        $firstTitle = str_replace('  ', '&nbsp;&nbsp;', $firstTitle);
-        $first      = trim($firstCodeElm->nodeValue);
-        $first      = str_replace('<?php', '&lt;?php', $first);
-        $first      = str_replace("\n", '</br>', $first);
-        $first      = str_replace(' ', '&nbsp;', $first);
-        $first      = str_replace('<em>', '<span class="code-comparison-highlight">', $first);
-        $first      = str_replace('</em>', '</span>', $first);
+        $firstTitle = $this->formatCodeTitle($firstCodeElm);
+        $first      = $this->formatCodeSample($firstCodeElm);
 
-        $secondTitle = trim($secondCodeElm->getAttribute('title'));
-        $secondTitle = str_replace('  ', '&nbsp;&nbsp;', $secondTitle);
-        $second      = trim($secondCodeElm->nodeValue);
-        $second      = str_replace('<?php', '&lt;?php', $second);
-        $second      = str_replace("\n", '</br>', $second);
-        $second      = str_replace(' ', '&nbsp;', $second);
-        $second      = str_replace('<em>', '<span class="code-comparison-highlight">', $second);
-        $second      = str_replace('</em>', '</span>', $second);
+        $secondTitle = $this->formatCodeTitle($secondCodeElm);
+        $second      = $this->formatCodeSample($secondCodeElm);
 
         $titleRow = '';
         if ($firstTitle !== '' || $secondTitle !== '') {
             $titleRow .= '   <tr>'.PHP_EOL;
-            $titleRow .= "    <td class=\"code-comparison-title\">$firstTitle</td>".PHP_EOL;
-            $titleRow .= "    <td class=\"code-comparison-title\">$secondTitle</td>".PHP_EOL;
+            $titleRow .= "    <th class=\"code-comparison-title\">$firstTitle</th>".PHP_EOL;
+            $titleRow .= "    <th class=\"code-comparison-title\">$secondTitle</th>".PHP_EOL;
             $titleRow .= '   </tr>'.PHP_EOL;
         }
 
@@ -445,6 +495,45 @@ class HTML extends Generator
         return $output;
 
     }//end getFormattedCodeComparisonBlock()
+
+
+    /**
+     * Retrieve a code block title and prepare it for output as HTML.
+     *
+     * @param \DOMElement $codeElm The DOMElement object for a code block.
+     *
+     * @since 3.12.0
+     *
+     * @return string
+     */
+    private function formatCodeTitle(DOMElement $codeElm)
+    {
+        $title = trim($codeElm->getAttribute('title'));
+        return str_replace('  ', '&nbsp;&nbsp;', $title);
+
+    }//end formatCodeTitle()
+
+
+    /**
+     * Retrieve a code block contents and prepare it for output as HTML.
+     *
+     * @param \DOMElement $codeElm The DOMElement object for a code block.
+     *
+     * @since 3.12.0
+     *
+     * @return string
+     */
+    private function formatCodeSample(DOMElement $codeElm)
+    {
+        $code = (string) $codeElm->nodeValue;
+        $code = trim($code);
+        $code = str_replace('<?php', '&lt;?php', $code);
+        $code = str_replace(["\n", ' '], ['</br>', '&nbsp;'], $code);
+        $code = str_replace(['<em>', '</em>'], ['<span class="code-comparison-highlight">', '</span>'], $code);
+
+        return $code;
+
+    }//end formatCodeSample()
 
 
 }//end class
