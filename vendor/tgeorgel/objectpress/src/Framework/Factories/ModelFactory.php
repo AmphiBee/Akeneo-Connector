@@ -3,9 +3,9 @@
 namespace OP\Framework\Factories;
 
 use Illuminate\Support\Str;
-use InvalidArgumentException;
 use OP\Framework\Models\Post;
 use OP\Framework\Models\Term;
+use OP\Framework\Models\Taxonomy;
 use OP\Support\Facades\Config;
 use Illuminate\Support\Collection;
 use OP\Framework\Helpers\PostHelper;
@@ -72,7 +72,7 @@ class ModelFactory
 
         return Post::class;
     }
-    
+
     /**
      * Resolve the class corresponding to the asked taxonomy.
      *
@@ -82,7 +82,33 @@ class ModelFactory
      * @version 2.1
      * @since 2.1
      */
-    public static function resolveTaxonomyClass(string $taxonomy = ''): string
+    public static function resolveTaxonomyClass(): string
+    {
+        $psr = Config::getFirst('object-press.theme.psr-prefix') ?: 'App';
+
+        $guess = [
+            sprintf('%s\Models\Taxonomy', $psr),
+        ];
+
+        foreach ($guess as $class) {
+            if (class_exists($class)) {
+                return $class;
+            }
+        }
+
+        return Taxonomy::class;
+    }
+
+    /**
+     * Resolve the class corresponding to the asked taxonomy.
+     *
+     * @param string $taxonomy
+     *
+     * @return string
+     * @version 2.1
+     * @since 2.1
+     */
+    public static function resolveTermClass(string $taxonomy = ''): string
     {
         $psr      = Config::getFirst('object-press.theme.psr-prefix') ?: 'App';
         $taxonomy = $taxonomy ?: 'term';
@@ -126,7 +152,7 @@ class ModelFactory
 
         return $class::find($post->ID);
     }
-    
+
     /**
      * Factory 'taxonomy' model, get the taxonomy name and initiate a corresponding Model if applicable.
      *
@@ -138,7 +164,7 @@ class ModelFactory
      */
     public static function term($term)
     {
-        $class = static::resolveTaxonomyClass($term->taxonomy);
+        $class = static::resolveTermClass($term->taxonomy);
 
         return $class::find($term->term_id);
     }
@@ -158,8 +184,8 @@ class ModelFactory
 
         return $id ? static::post($id) : null;
     }
-    
-    
+
+
     /**
      * Call the model factory on the current term.
      *
@@ -185,6 +211,10 @@ class ModelFactory
      */
     public static function current()
     {
+        if (is_home()) {
+            return static::post(get_option('page_for_posts'));
+        }
+
         if (is_single() || is_page()) {
             return static::currentPost();
         }
@@ -210,11 +240,11 @@ class ModelFactory
         foreach ($posts as $post) {
             $results[] = static::post($post);
         }
-        
+
         return new Collection($results);
     }
-    
-    
+
+
     /**
      * Factory an iterable of 'taxonomy' type model, get the post type and initiate a corresponding Model if applicable.
      *
@@ -231,7 +261,7 @@ class ModelFactory
         foreach ($posts as $post) {
             $results[] = static::term($post);
         }
-        
+
         return new Collection($results);
     }
 }
