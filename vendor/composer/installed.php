@@ -105,12 +105,14 @@
             'dev_requirement' => false,
         ),
         'composer/pcre' => array(
-            'pretty_version' => '1.x-dev',
-            'version' => '1.9999999.9999999.9999999-dev',
-            'reference' => '437d09fdc9fbce60cb9defb28473e864b33c2d28',
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => 'deb3871d20d5012eb5faa5a9caa71c44f151db49',
             'type' => 'library',
             'install_path' => __DIR__ . '/./pcre',
-            'aliases' => array(),
+            'aliases' => array(
+                0 => '3.x-dev',
+            ),
             'dev_requirement' => true,
         ),
         'composer/semver' => array(
@@ -769,14 +771,12 @@
             'dev_requirement' => true,
         ),
         'sebastian/diff' => array(
-            'pretty_version' => 'dev-main',
-            'version' => 'dev-main',
-            'reference' => '7cfff67d62706189cd165a62b7a4b5acbd47de6f',
+            'pretty_version' => '4.0.x-dev',
+            'version' => '4.0.9999999.9999999-dev',
+            'reference' => 'ba01945089c3a293b01ba9badc29ad55b106b0bc',
             'type' => 'library',
             'install_path' => __DIR__ . '/../sebastian/diff',
-            'aliases' => array(
-                0 => '7.0.x-dev',
-            ),
+            'aliases' => array(),
             'dev_requirement' => true,
         ),
         'sebastian/phpcpd' => array(
@@ -800,7 +800,7 @@
         'squizlabs/php_codesniffer' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'f1ab93f487a7f494fd4c815c3d1008bb33390826',
+            'reference' => 'd0d44116111f6e41913a16b96387910917995c35',
             'type' => 'library',
             'install_path' => __DIR__ . '/../squizlabs/php_codesniffer',
             'aliases' => array(

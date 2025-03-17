@@ -28,22 +28,29 @@ class ProductCommand extends AbstractCommand
     /**
      * Run the import command.
      */
-    public function import(): void
+    public function import(array $args, array $assocArgs): void
     {
-        # Debug
-        $this->print('Starting product import');
+        $skus = $assocArgs['skus']?? [];
 
         $provider  = AkeneoClientBuilder::create()->getProductProvider();
+        # Debug
+        if (!empty($skus)) {
+            $this->print('Importing product for SKUs: '. $skus);
+            $items = $provider->getProductsByIdentifiers(explode(',', $skus));
+        } else {
+            $this->print('Starting product import');
+            $items = $provider->getAll();
+        }
         $familyVariantDataProvider = AkeneoClientBuilder::create()->getFamilyVariantProvider();
         $adapter   = new ProductAdapter();
         $persister = new ProductDataPersister($familyVariantDataProvider);
 
-        do_action('ak/a/products/before_import', $provider->getAll());
+        do_action('ak/a/products/before_import', $items);
 
         # Allow duplicate SKUs, for translations to work properly
         add_filter('wc_product_has_unique_sku', '__return_false');
 
-        $products = (array) apply_filters('ak/f/products/import_data', iterator_to_array($provider->getAll()));
+        $products = (array) apply_filters('ak/f/products/import_data', iterator_to_array($items));
 
         # Statistiques d'import
         $stats = [
@@ -66,23 +73,23 @@ class ProductCommand extends AbstractCommand
                     $stats['skipped_disabled']++;
                     continue;
                 }
-                
+
                 $wp_product = $adapter->fromProduct($ak_product);
-                
+
                 // Vérifier si le produit a changé avant de l'importer
                 $product_id = Fetcher::getProductIdBySku($wp_product->getCode(), $persister->getDefaultLocale());
-                
+
                 if ($product_id) {
                     $stored_hash = get_post_meta($product_id, '_akeneo_hash', true);
                     $current_hash = $wp_product->getHash();
-                    
+
                     if ($stored_hash && $stored_hash === $current_hash) {
                         $this->print(sprintf('Skipping product %s - No changes detected', $code), 'line');
                         $stats['skipped_unchanged']++;
                         continue;
                     }
                 }
-                
+
                 $persister->createOrUpdate($wp_product);
                 $stats['imported']++;
             } catch (\Exception $e) {
@@ -93,7 +100,7 @@ class ProductCommand extends AbstractCommand
 
         do_action('ak/a/products/after_import', $provider->getAll());
         do_action('ak/product/after_import', $provider->getAll()); # backwards compatibility
-        
+
         $this->print(sprintf(
             'Import completed: %d products processed, %d imported, %d skipped (disabled), %d skipped (unchanged), %d errors',
             $stats['total'],

@@ -30,21 +30,29 @@ class ProductModelCommand extends AbstractCommand
     /**
      * Run the import command.
      */
-    public function import(): void
+    public function import(array $args, array $assocArgs): void
     {
-        # Debug
-        $this->print('Starting product model import');
+        $skus = $assocArgs['skus']?? [];
 
         $provider  = AkeneoClientBuilder::create()->getProductModelProvider();
+
+        if (!empty($skus)) {
+            $this->print('Importing product models for SKUs: '. $skus);
+            $items = $provider->getProductModelsByCodes(explode(',', $skus));
+        } else {
+            $this->print('Starting product model import');
+            $items = $provider->getAll();
+        }
+
         $familyVariantDataProvider = AkeneoClientBuilder::create()->getFamilyVariantProvider();
         $adapter   = new ModelAdapter();
         $persister = new ModelDataPersister($familyVariantDataProvider);
 
-        do_action('ak/a/product_models/before_import', $provider->getAll());
+        do_action('ak/a/product_models/before_import', $items);
 
         # Make sure to import models without parent first
         $models = $this->orderModelsBeforeImport(
-            iterator_to_array($provider->getAll())
+            iterator_to_array($items)
         );
 
         $models = (array) apply_filters('ak/f/product_models/import_data', $models);

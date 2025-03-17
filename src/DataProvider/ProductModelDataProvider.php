@@ -59,4 +59,33 @@ class ProductModelDataProvider extends AbstractDataProvider
             }
         }
     }
+
+    public function getProductModelsByCodes(array $codes, int $pageSize = 50): Generator
+    {
+        if (empty($codes)) {
+            return;
+        }
+
+        $queryParameters = [];
+        if (!empty($this->credentials->getChannel())) {
+            $queryParameters['scope'] = $this->credentials->getChannel();
+        }
+
+        foreach ($this->productModelApi->all($pageSize, $queryParameters) as $model) {
+            if (in_array($model['code'] ?? null, $codes, true)) {
+                try {
+                    yield $this->getSerializer()->denormalize($model, Model::class);
+                } catch (ExceptionInterface $exception) {
+                    LoggerService::log(Logger::ERROR, sprintf(
+                        'Cannot Denormalize product model (ModelCode %s) %s',
+                        $model['code'] ?? 'unknown',
+                        $exception->getMessage()
+                    ));
+
+                    continue;
+                }
+            }
+        }
+    }
+
 }

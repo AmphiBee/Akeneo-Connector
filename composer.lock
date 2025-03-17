@@ -5966,30 +5966,40 @@
         },
         {
             "name": "composer/pcre",
-            "version": "1.x-dev",
+            "version": "dev-main",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/pcre.git",
-                "reference": "437d09fdc9fbce60cb9defb28473e864b33c2d28"
+                "reference": "deb3871d20d5012eb5faa5a9caa71c44f151db49"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/pcre/zipball/437d09fdc9fbce60cb9defb28473e864b33c2d28",
-                "reference": "437d09fdc9fbce60cb9defb28473e864b33c2d28",
+                "url": "https://api.github.com/repos/composer/pcre/zipball/deb3871d20d5012eb5faa5a9caa71c44f151db49",
+                "reference": "deb3871d20d5012eb5faa5a9caa71c44f151db49",
                 "shasum": ""
             },
             "require": {
-                "php": "^5.3.2 || ^7.0 || ^8.0"
+                "php": "^7.4 || ^8.0"
+            },
+            "conflict": {
+                "phpstan/phpstan": "<1.11.10"
             },
             "require-dev": {
-                "phpstan/phpstan": "^1.3",
-                "phpstan/phpstan-strict-rules": "^1.1",
-                "symfony/phpunit-bridge": "^4.2 || ^5"
+                "phpstan/phpstan": "^1.12 || ^2",
+                "phpstan/phpstan-deprecation-rules": "^1 || ^2",
+                "phpstan/phpstan-strict-rules": "^1 || ^2",
+                "phpunit/phpunit": "^8 || ^9"
             },
+            "default-branch": true,
             "type": "library",
             "extra": {
+                "phpstan": {
+                    "includes": [
+                        "extension.neon"
+                    ]
+                },
                 "branch-alias": {
-                    "dev-main": "1.x-dev"
+                    "dev-main": "3.x-dev"
                 }
             },
             "autoload": {
@@ -6033,7 +6043,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-01-21T20:27:39+00:00"
+            "time": "2024-11-20T09:10:58+00:00"
         },
         {
             "name": "composer/semver",
@@ -7247,30 +7257,29 @@
         },
         {
             "name": "sebastian/diff",
-            "version": "dev-main",
+            "version": "4.0.x-dev",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/diff.git",
-                "reference": "7cfff67d62706189cd165a62b7a4b5acbd47de6f"
+                "reference": "ba01945089c3a293b01ba9badc29ad55b106b0bc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/diff/zipball/7cfff67d62706189cd165a62b7a4b5acbd47de6f",
-                "reference": "7cfff67d62706189cd165a62b7a4b5acbd47de6f",
+                "url": "https://api.github.com/repos/sebastianbergmann/diff/zipball/ba01945089c3a293b01ba9badc29ad55b106b0bc",
+                "reference": "ba01945089c3a293b01ba9badc29ad55b106b0bc",
                 "shasum": ""
             },
             "require": {
-                "php": ">=8.3"
+                "php": ">=7.3"
             },
             "require-dev": {
-                "phpunit/phpunit": "^12.0",
-                "symfony/process": "^7.2"
+                "phpunit/phpunit": "^9.3",
+                "symfony/process": "^4.2 || ^5"
             },
-            "default-branch": true,
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "7.0-dev"
+                    "dev-master": "4.0-dev"
                 }
             },
             "autoload": {
@@ -7302,8 +7311,7 @@
             ],
             "support": {
                 "issues": "https://github.com/sebastianbergmann/diff/issues",
-                "security": "https://github.com/sebastianbergmann/diff/security/policy",
-                "source": "https://github.com/sebastianbergmann/diff/tree/main"
+                "source": "https://github.com/sebastianbergmann/diff/tree/4.0.6"
             },
             "funding": [
                 {
@@ -7311,7 +7319,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-03-16T08:54:01+00:00"
+            "time": "2024-03-02T06:30:58+00:00"
         },
         {
             "name": "sebastian/phpcpd",
@@ -7434,12 +7442,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPCSStandards/PHP_CodeSniffer.git",
-                "reference": "f1ab93f487a7f494fd4c815c3d1008bb33390826"
+                "reference": "d0d44116111f6e41913a16b96387910917995c35"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPCSStandards/PHP_CodeSniffer/zipball/f1ab93f487a7f494fd4c815c3d1008bb33390826",
-                "reference": "f1ab93f487a7f494fd4c815c3d1008bb33390826",
+                "url": "https://api.github.com/repos/PHPCSStandards/PHP_CodeSniffer/zipball/d0d44116111f6e41913a16b96387910917995c35",
+                "reference": "d0d44116111f6e41913a16b96387910917995c35",
                 "shasum": ""
             },
             "require": {
@@ -7511,7 +7519,7 @@
                     "type": "thanks_dev"
                 }
             ],
-            "time": "2025-03-13T05:23:03+00:00"
+            "time": "2025-03-16T21:01:33+00:00"
         },
         {
             "name": "symfony/config",

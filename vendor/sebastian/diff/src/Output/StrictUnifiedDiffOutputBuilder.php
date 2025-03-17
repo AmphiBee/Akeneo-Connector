@@ -11,14 +11,12 @@ namespace SebastianBergmann\Diff\Output;
 
 use function array_merge;
 use function array_splice;
-use function assert;
 use function count;
 use function fclose;
 use function fopen;
 use function fwrite;
 use function is_bool;
 use function is_int;
-use function is_resource;
 use function is_string;
 use function max;
 use function min;
@@ -35,7 +33,7 @@ use SebastianBergmann\Diff\Differ;
  */
 final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
 {
-    private static array $default = [
+    private static $default = [
         'collapseRanges'      => true, // ranges of length one are rendered with the trailing `,1`
         'commonLineThreshold' => 6,    // number of same lines before ending a new hunk and creating a new one (if needed)
         'contextLines'        => 3,    // like `diff:  -u, -U NUM, --unified[=NUM]`, for patch/git apply compatibility best to keep at least @ 3
@@ -44,19 +42,31 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
         'toFile'              => null,
         'toFileDate'          => null,
     ];
-    private bool $changed;
-    private bool $collapseRanges;
 
     /**
-     * @var positive-int
+     * @var bool
      */
-    private int $commonLineThreshold;
-    private string $header;
+    private $changed;
 
     /**
-     * @var positive-int
+     * @var bool
      */
-    private int $contextLines;
+    private $collapseRanges;
+
+    /**
+     * @var int >= 0
+     */
+    private $commonLineThreshold;
+
+    /**
+     * @var string
+     */
+    private $header;
+
+    /**
+     * @var int >= 0
+     */
+    private $contextLines;
 
     public function __construct(array $options = [])
     {
@@ -84,7 +94,7 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
             $options['fromFile'],
             null === $options['fromFileDate'] ? '' : "\t" . $options['fromFileDate'],
             $options['toFile'],
-            null === $options['toFileDate'] ? '' : "\t" . $options['toFileDate'],
+            null === $options['toFileDate'] ? '' : "\t" . $options['toFileDate']
         );
 
         $this->collapseRanges      = $options['collapseRanges'];
@@ -101,9 +111,6 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
         $this->changed = false;
 
         $buffer = fopen('php://memory', 'r+b');
-
-        assert(is_resource($buffer));
-
         fwrite($buffer, $this->header);
 
         $this->writeDiffHunks($buffer, $diff);
@@ -127,10 +134,8 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
             : $diff;
     }
 
-    private function writeDiffHunks(mixed $output, array $diff): void
+    private function writeDiffHunks($output, array $diff): void
     {
-        assert(is_resource($output));
-
         // detect "No newline at end of file" and insert into `$diff` if needed
 
         $upperLimit = count($diff);
@@ -143,10 +148,10 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
             }
         } else {
             // search back for the last `+` and `-` line,
-            // check if it has a trailing linebreak, else add a warning under it
+            // check if has trailing linebreak, else add under it warning under it
             $toFind = [1 => true, 2 => true];
 
-            for ($i = $upperLimit - 1; $i >= 0; $i--) {
+            for ($i = $upperLimit - 1; $i >= 0; --$i) {
                 if (isset($toFind[$diff[$i][1]])) {
                     unset($toFind[$diff[$i][1]]);
                     $lc = substr($diff[$i][0], -1);
@@ -155,7 +160,7 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
                         array_splice($diff, $i + 1, 0, [["\n\\ No newline at end of file\n", Differ::NO_LINE_END_EOF_WARNING]]);
                     }
 
-                    if ($toFind === []) {
+                    if (!count($toFind)) {
                         break;
                     }
                 }
@@ -168,19 +173,21 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
         $hunkCapture = false;
         $sameCount   = $toRange = $fromRange = 0;
         $toStart     = $fromStart = 1;
+        $i           = 0;
 
+        /** @var int $i */
         foreach ($diff as $i => $entry) {
             if (0 === $entry[1]) { // same
                 if (false === $hunkCapture) {
-                    $fromStart++;
-                    $toStart++;
+                    ++$fromStart;
+                    ++$toStart;
 
                     continue;
                 }
 
-                $sameCount++;
-                $toRange++;
-                $fromRange++;
+                ++$sameCount;
+                ++$toRange;
+                ++$fromRange;
 
                 if ($sameCount === $cutOff) {
                     $contextStartOffset = ($hunkCapture - $this->contextLines) < 0
@@ -206,11 +213,11 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
                         $fromRange - $cutOff + $contextStartOffset + $this->contextLines,
                         $toStart - $contextStartOffset,
                         $toRange - $cutOff + $contextStartOffset + $this->contextLines,
-                        $output,
+                        $output
                     );
 
                     $fromStart += $fromRange;
-                    $toStart   += $toRange;
+                    $toStart += $toRange;
 
                     $hunkCapture = false;
                     $sameCount   = $toRange = $fromRange = 0;
@@ -232,11 +239,11 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
             }
 
             if (Differ::ADDED === $entry[1]) { // added
-                $toRange++;
+                ++$toRange;
             }
 
             if (Differ::REMOVED === $entry[1]) { // removed
-                $fromRange++;
+                ++$fromRange;
             }
         }
 
@@ -244,7 +251,7 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
             return;
         }
 
-        // we end here when cutoff (commonLineThreshold) was not reached, but we were capturing a hunk,
+        // we end here when cutoff (commonLineThreshold) was not reached, but we where capturing a hunk,
         // do not render hunk till end automatically because the number of context lines might be less than the commonLineThreshold
 
         $contextStartOffset = $hunkCapture - $this->contextLines < 0
@@ -256,9 +263,7 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
         $contextEndOffset = min($sameCount, $this->contextLines);
 
         $fromRange -= $sameCount;
-        $toRange   -= $sameCount;
-
-        assert(isset($i) && is_int($i));
+        $toRange -= $sameCount;
 
         $this->writeHunk(
             $diff,
@@ -268,7 +273,7 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
             $fromRange + $contextStartOffset + $contextEndOffset,
             $toStart - $contextStartOffset,
             $toRange + $contextStartOffset + $contextEndOffset,
-            $output,
+            $output
         );
     }
 
@@ -280,10 +285,8 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
         int $fromRange,
         int $toStart,
         int $toRange,
-        mixed $output
+        $output
     ): void {
-        assert(is_resource($output));
-
         fwrite($output, '@@ -' . $fromStart);
 
         if (!$this->collapseRanges || 1 !== $fromRange) {
@@ -298,7 +301,7 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
 
         fwrite($output, " @@\n");
 
-        for ($i = $diffStartIndex; $i < $diffEndIndex; $i++) {
+        for ($i = $diffStartIndex; $i < $diffEndIndex; ++$i) {
             if ($diff[$i][1] === Differ::ADDED) {
                 $this->changed = true;
                 fwrite($output, '+' . $diff[$i][0]);
@@ -311,11 +314,11 @@ final class StrictUnifiedDiffOutputBuilder implements DiffOutputBuilderInterface
                 $this->changed = true;
                 fwrite($output, $diff[$i][0]);
             }
-            // } elseif ($diff[$i][1] === Differ::DIFF_LINE_END_WARNING) { // custom comment inserted by PHPUnit/diff package
-            //  skip
-            // } else {
-            //  unknown/invalid
-            // }
+            //} elseif ($diff[$i][1] === Differ::DIFF_LINE_END_WARNING) { // custom comment inserted by PHPUnit/diff package
+                //  skip
+            //} else {
+                //  unknown/invalid
+            //}
         }
     }
 

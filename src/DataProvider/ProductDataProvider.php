@@ -59,4 +59,52 @@ class ProductDataProvider extends AbstractDataProvider
             }
         }
     }
+
+    /**
+     * Retrieve products by their identifiers.
+     *
+     * @param array $identifiers
+     * @param int   $pageSize
+     *
+     * @return Generator
+     */
+    public function getProductsByIdentifiers(array $identifiers, int $pageSize = 10): Generator
+    {
+        if (empty($identifiers)) {
+            return;
+        }
+
+        $queryParameters = [
+            'search' => [
+                'identifier' => [
+                    ['operator' => 'IN', 'value' => $identifiers],
+                ],
+            ],
+        ];
+
+        if (!empty($this->credentials->getChannel())) {
+            $queryParameters['scope'] = $this->credentials->getChannel();
+        }
+
+        $page = 1;
+        do {
+            $results = $this->api->listPerPage($pageSize, true, $queryParameters);
+
+            foreach ($results->getItems() as $product) {
+                try {
+                    yield $this->getSerializer()->denormalize($product, Product::class);
+                } catch (ExceptionInterface $exception) {
+                    LoggerService::log(Logger::ERROR, sprintf(
+                        'Cannot Denormalize product (Identifier %s): %s',
+                        $product['identifier'] ?? 'unknown',
+                        $exception->getMessage()
+                    ));
+
+                    continue;
+                }
+            }
+
+            $page++;
+        } while ($results->getNextPage());
+    }
 }
