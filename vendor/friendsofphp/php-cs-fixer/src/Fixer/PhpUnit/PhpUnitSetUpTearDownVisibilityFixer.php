@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of PHP CS Fixer.
  *
@@ -15,6 +17,7 @@ namespace PhpCsFixer\Fixer\PhpUnit;
 use PhpCsFixer\Fixer\AbstractPhpUnitFixer;
 use PhpCsFixer\FixerDefinition\CodeSample;
 use PhpCsFixer\FixerDefinition\FixerDefinition;
+use PhpCsFixer\FixerDefinition\FixerDefinitionInterface;
 use PhpCsFixer\Tokenizer\Token;
 use PhpCsFixer\Tokenizer\Tokens;
 use PhpCsFixer\Tokenizer\TokensAnalyzer;
@@ -24,10 +27,7 @@ use PhpCsFixer\Tokenizer\TokensAnalyzer;
  */
 final class PhpUnitSetUpTearDownVisibilityFixer extends AbstractPhpUnitFixer
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function getDefinition()
+    public function getDefinition(): FixerDefinitionInterface
     {
         return new FixerDefinition(
             'Changes the visibility of the `setUp()` and `tearDown()` functions of PHPUnit to `protected`, to match the PHPUnit TestCase.',
@@ -51,69 +51,61 @@ final class MyTest extends \PHPUnit_Framework_TestCase
                 ),
             ],
             null,
-            'This fixer may change functions named `setUp()` or `tearDown()` outside of PHPUnit tests, '.
-            'when a class is wrongly seen as a PHPUnit test.'
+            'This fixer may change functions named `setUp()` or `tearDown()` outside of PHPUnit tests, '
+            .'when a class is wrongly seen as a PHPUnit test.'
         );
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function isRisky()
+    public function isRisky(): bool
     {
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function applyPhpUnitClassFix(Tokens $tokens, $startIndex, $endIndex)
+    protected function applyPhpUnitClassFix(Tokens $tokens, int $startIndex, int $endIndex): void
     {
         $counter = 0;
         $tokensAnalyzer = new TokensAnalyzer($tokens);
 
-        for ($i = $endIndex - 1; $i > $startIndex; --$i) {
+        $slicesToInsert = [];
+
+        for ($index = $startIndex + 1; $index < $endIndex; ++$index) {
             if (2 === $counter) {
-                break; // we've seen both method we are interested in, so stop analyzing this class
+                break; // we've seen both methods we are interested in, so stop analyzing this class
             }
 
-            if (!$this->isSetupOrTearDownMethod($tokens, $i)) {
+            if ($tokens[$index]->equals('{')) {
+                $index = $tokens->findBlockEnd(Tokens::BLOCK_TYPE_CURLY_BRACE, $index);
+
+                continue;
+            }
+
+            if (!$tokens[$index]->isGivenKind(T_FUNCTION)) {
+                continue;
+            }
+
+            $functionNameIndex = $tokens->getNextMeaningfulToken($index);
+            $functionName = strtolower($tokens[$functionNameIndex]->getContent());
+
+            if ('setup' !== $functionName && 'teardown' !== $functionName) {
                 continue;
             }
 
             ++$counter;
-            $visibility = $tokensAnalyzer->getMethodAttributes($i)['visibility'];
+
+            $visibility = $tokensAnalyzer->getMethodAttributes($index)['visibility'];
 
             if (T_PUBLIC === $visibility) {
-                $index = $tokens->getPrevTokenOfKind($i, [[T_PUBLIC]]);
-                $tokens[$index] = new Token([T_PROTECTED, 'protected']);
+                $visibilityIndex = $tokens->getPrevTokenOfKind($index, [[T_PUBLIC]]);
+                $tokens[$visibilityIndex] = new Token([T_PROTECTED, 'protected']);
 
                 continue;
             }
 
             if (null === $visibility) {
-                $tokens->insertAt($i, [new Token([T_PROTECTED, 'protected']), new Token([T_WHITESPACE, ' '])]);
+                $slicesToInsert[$index] = [new Token([T_PROTECTED, 'protected']), new Token([T_WHITESPACE, ' '])];
             }
         }
-    }
 
-    /**
-     * @param int $index
-     *
-     * @return bool
-     */
-    private function isSetupOrTearDownMethod(Tokens $tokens, $index)
-    {
-        $tokensAnalyzer = new TokensAnalyzer($tokens);
-
-        $isMethod = $tokens[$index]->isGivenKind(T_FUNCTION) && !$tokensAnalyzer->isLambda($index);
-        if (!$isMethod) {
-            return false;
-        }
-
-        $functionNameIndex = $tokens->getNextMeaningfulToken($index);
-        $functionName = strtolower($tokens[$functionNameIndex]->getContent());
-
-        return 'setup' === $functionName || 'teardown' === $functionName;
+        $tokens->insertSlices($slicesToInsert);
     }
 }

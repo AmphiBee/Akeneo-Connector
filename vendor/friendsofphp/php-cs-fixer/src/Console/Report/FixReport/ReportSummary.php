@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of PHP CS Fixer.
  *
@@ -15,56 +17,45 @@ namespace PhpCsFixer\Console\Report\FixReport;
 /**
  * @author Dariusz Rumiński <dariusz.ruminski@gmail.com>
  *
+ * @readonly
+ *
  * @internal
  */
 final class ReportSummary
 {
     /**
-     * @var bool
+     * @var array<string, array{appliedFixers: list<string>, diff: string}>
      */
-    private $addAppliedFixers;
+    private array $changed;
+
+    private int $filesCount;
+
+    private int $time;
+
+    private int $memory;
+
+    private bool $addAppliedFixers;
+
+    private bool $isDryRun;
+
+    private bool $isDecoratedOutput;
 
     /**
-     * @var array
-     */
-    private $changed;
-
-    /**
-     * @var bool
-     */
-    private $isDecoratedOutput;
-
-    /**
-     * @var bool
-     */
-    private $isDryRun;
-
-    /**
-     * @var int
-     */
-    private $memory;
-
-    /**
-     * @var int
-     */
-    private $time;
-
-    /**
-     * @param int  $time              duration in milliseconds
-     * @param int  $memory            memory usage in bytes
-     * @param bool $addAppliedFixers
-     * @param bool $isDryRun
-     * @param bool $isDecoratedOutput
+     * @param array<string, array{appliedFixers: list<string>, diff: string}> $changed
+     * @param int                                                             $time    duration in milliseconds
+     * @param int                                                             $memory  memory usage in bytes
      */
     public function __construct(
         array $changed,
-        $time,
-        $memory,
-        $addAppliedFixers,
-        $isDryRun,
-        $isDecoratedOutput
+        int $filesCount,
+        int $time,
+        int $memory,
+        bool $addAppliedFixers,
+        bool $isDryRun,
+        bool $isDecoratedOutput
     ) {
         $this->changed = $changed;
+        $this->filesCount = $filesCount;
         $this->time = $time;
         $this->memory = $memory;
         $this->addAppliedFixers = $addAppliedFixers;
@@ -72,50 +63,40 @@ final class ReportSummary
         $this->isDecoratedOutput = $isDecoratedOutput;
     }
 
-    /**
-     * @return bool
-     */
-    public function isDecoratedOutput()
+    public function isDecoratedOutput(): bool
     {
         return $this->isDecoratedOutput;
     }
 
-    /**
-     * @return bool
-     */
-    public function isDryRun()
+    public function isDryRun(): bool
     {
         return $this->isDryRun;
     }
 
     /**
-     * @return array
+     * @return array<string, array{appliedFixers: list<string>, diff: string}>
      */
-    public function getChanged()
+    public function getChanged(): array
     {
         return $this->changed;
     }
 
-    /**
-     * @return int
-     */
-    public function getMemory()
+    public function getMemory(): int
     {
         return $this->memory;
     }
 
-    /**
-     * @return int
-     */
-    public function getTime()
+    public function getTime(): int
     {
         return $this->time;
     }
 
-    /**
-     * @return bool
-     */
-    public function shouldAddAppliedFixers()
+    public function getFilesCount(): int
+    {
+        return $this->filesCount;
+    }
+
+    public function shouldAddAppliedFixers(): bool
     {
         return $this->addAppliedFixers;
     }

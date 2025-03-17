@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of PHP CS Fixer.
  *
@@ -17,38 +19,34 @@ use PhpCsFixer\RuleSet\RuleSetDescriptionInterface;
 /**
  * @author Dariusz Rumiński <dariusz.ruminski@gmail.com>
  *
+ * @readonly
+ *
  * @internal
  */
 final class JsonReporter implements ReporterInterface
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function getFormat()
+    public function getFormat(): string
     {
         return 'json';
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function generate(ReportSummary $reportSummary)
+    public function generate(ReportSummary $reportSummary): string
     {
+        $sets = $reportSummary->getSets();
+
+        usort($sets, static fn (RuleSetDescriptionInterface $a, RuleSetDescriptionInterface $b): int => $a->getName() <=> $b->getName());
+
         $json = ['sets' => []];
 
-        $sets = $reportSummary->getSets();
-        usort($sets, function (RuleSetDescriptionInterface $a, RuleSetDescriptionInterface $b) {
-            return $a->getName() > $b->getName() ? 1 : -1;
-        });
-
         foreach ($sets as $set) {
-            $json['sets'][$set->getName()] = [
+            $setName = $set->getName();
+            $json['sets'][$setName] = [
                 'description' => $set->getDescription(),
                 'isRisky' => $set->isRisky(),
-                'name' => $set->getName(),
+                'name' => $setName,
             ];
         }
 
-        return json_encode($json, JSON_PRETTY_PRINT);
+        return json_encode($json, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
     }
 }

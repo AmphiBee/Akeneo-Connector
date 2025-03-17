@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of PHP CS Fixer.
  *
@@ -12,59 +14,51 @@
 
 namespace PhpCsFixer\Console\Report\FixReport;
 
+use PhpCsFixer\Console\Application;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 
 /**
  * @author Boris Gorbylev <ekho@ekho.name>
  *
+ * @readonly
+ *
  * @internal
  */
 final class JsonReporter implements ReporterInterface
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function getFormat()
+    public function getFormat(): string
     {
         return 'json';
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function generate(ReportSummary $reportSummary)
+    public function generate(ReportSummary $reportSummary): string
     {
-        $jFiles = [];
+        $jsonFiles = [];
 
         foreach ($reportSummary->getChanged() as $file => $fixResult) {
-            $jfile = ['name' => $file];
+            $jsonFile = ['name' => $file];
 
             if ($reportSummary->shouldAddAppliedFixers()) {
-                $jfile['appliedFixers'] = $fixResult['appliedFixers'];
+                $jsonFile['appliedFixers'] = $fixResult['appliedFixers'];
             }
 
-            if (!empty($fixResult['diff'])) {
-                $jfile['diff'] = $fixResult['diff'];
+            if ('' !== $fixResult['diff']) {
+                $jsonFile['diff'] = $fixResult['diff'];
             }
 
-            $jFiles[] = $jfile;
+            $jsonFiles[] = $jsonFile;
         }
 
         $json = [
-            'files' => $jFiles,
+            'about' => Application::getAbout(),
+            'files' => $jsonFiles,
+            'time' => [
+                'total' => round($reportSummary->getTime() / 1_000, 3),
+            ],
+            'memory' => round($reportSummary->getMemory() / 1_024 / 1_024, 3),
         ];
 
-        if (null !== $reportSummary->getTime()) {
-            $json['time'] = [
-                'total' => round($reportSummary->getTime() / 1000, 3),
-            ];
-        }
-
-        if (null !== $reportSummary->getMemory()) {
-            $json['memory'] = round($reportSummary->getMemory() / 1024 / 1024, 3);
-        }
-
-        $json = json_encode($json);
+        $json = json_encode($json, JSON_THROW_ON_ERROR);
 
         return $reportSummary->isDecoratedOutput() ? OutputFormatter::escape($json) : $json;
     }

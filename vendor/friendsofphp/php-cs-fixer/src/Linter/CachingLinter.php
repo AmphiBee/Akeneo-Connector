@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of PHP CS Fixer.
  *
@@ -12,6 +14,8 @@
 
 namespace PhpCsFixer\Linter;
 
+use PhpCsFixer\Hasher;
+
 /**
  * @author Dariusz Rumiński <dariusz.ruminski@gmail.com>
  *
@@ -19,54 +23,34 @@ namespace PhpCsFixer\Linter;
  */
 final class CachingLinter implements LinterInterface
 {
-    /**
-     * @var LinterInterface
-     */
-    private $sublinter;
+    private LinterInterface $sublinter;
 
     /**
-     * @var array<int, LintingResultInterface>
+     * @var array<string, LintingResultInterface>
      */
-    private $cache = [];
+    private array $cache = [];
 
     public function __construct(LinterInterface $linter)
     {
         $this->sublinter = $linter;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function isAsync()
+    public function isAsync(): bool
     {
         return $this->sublinter->isAsync();
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function lintFile($path)
+    public function lintFile(string $path): LintingResultInterface
     {
-        $checksum = crc32(file_get_contents($path));
+        $checksum = Hasher::calculate(file_get_contents($path));
 
-        if (!isset($this->cache[$checksum])) {
-            $this->cache[$checksum] = $this->sublinter->lintFile($path);
-        }
-
-        return $this->cache[$checksum];
+        return $this->cache[$checksum] ??= $this->sublinter->lintFile($path);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function lintSource($source)
+    public function lintSource(string $source): LintingResultInterface
     {
-        $checksum = crc32($source);
+        $checksum = Hasher::calculate($source);
 
-        if (!isset($this->cache[$checksum])) {
-            $this->cache[$checksum] = $this->sublinter->lintSource($source);
-        }
-
-        return $this->cache[$checksum];
+        return $this->cache[$checksum] ??= $this->sublinter->lintSource($source);
     }
 }

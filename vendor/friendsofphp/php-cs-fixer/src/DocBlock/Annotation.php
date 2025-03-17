@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of PHP CS Fixer.
  *
@@ -19,19 +21,17 @@ use PhpCsFixer\Tokenizer\Analyzer\Analysis\NamespaceUseAnalysis;
 /**
  * This represents an entire annotation from a docblock.
  *
- * @author Graham Campbell <graham@alt-three.com>
+ * @author Graham Campbell <hello@gjcampbell.co.uk>
  * @author Dariusz Rumiński <dariusz.ruminski@gmail.com>
- *
- * @final
  */
-class Annotation
+final class Annotation
 {
     /**
      * All the annotation tag names with types.
      *
-     * @var string[]
+     * @var list<string>
      */
-    private static $tags = [
+    private const TAGS = [
         'method',
         'param',
         'property',
@@ -46,61 +46,50 @@ class Annotation
     /**
      * The lines that make up the annotation.
      *
-     * @var Line[]
+     * @var array<int, Line>
      */
-    private $lines;
+    private array $lines;
 
     /**
      * The position of the first line of the annotation in the docblock.
-     *
-     * @var int
      */
-    private $start;
+    private int $start;
 
     /**
      * The position of the last line of the annotation in the docblock.
-     *
-     * @var int
      */
-    private $end;
+    private int $end;
 
     /**
      * The associated tag.
-     *
-     * @var null|Tag
      */
-    private $tag;
+    private ?Tag $tag = null;
 
     /**
      * Lazy loaded, cached types content.
-     *
-     * @var null|string
      */
-    private $typesContent;
+    private ?string $typesContent = null;
 
     /**
      * The cached types.
      *
-     * @var null|string[]
+     * @var null|list<string>
      */
-    private $types;
+    private ?array $types = null;
+
+    private ?NamespaceAnalysis $namespace = null;
 
     /**
-     * @var null|NamespaceAnalysis
+     * @var list<NamespaceUseAnalysis>
      */
-    private $namespace;
-
-    /**
-     * @var NamespaceUseAnalysis[]
-     */
-    private $namespaceUses;
+    private array $namespaceUses;
 
     /**
      * Create a new line instance.
      *
-     * @param Line[]                 $lines
-     * @param null|NamespaceAnalysis $namespace
-     * @param NamespaceUseAnalysis[] $namespaceUses
+     * @param array<int, Line>           $lines
+     * @param null|NamespaceAnalysis     $namespace
+     * @param list<NamespaceUseAnalysis> $namespaceUses
      */
     public function __construct(array $lines, $namespace = null, array $namespaceUses = [])
     {
@@ -108,18 +97,14 @@ class Annotation
         $this->namespace = $namespace;
         $this->namespaceUses = $namespaceUses;
 
-        $keys = array_keys($lines);
-
-        $this->start = $keys[0];
-        $this->end = end($keys);
+        $this->start = array_key_first($lines);
+        $this->end = array_key_last($lines);
     }
 
     /**
      * Get the string representation of object.
-     *
-     * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->getContent();
     }
@@ -127,39 +112,33 @@ class Annotation
     /**
      * Get all the annotation tag names with types.
      *
-     * @return string[]
+     * @return list<string>
      */
-    public static function getTagsWithTypes()
+    public static function getTagsWithTypes(): array
     {
-        return self::$tags;
+        return self::TAGS;
     }
 
     /**
      * Get the start position of this annotation.
-     *
-     * @return int
      */
-    public function getStart()
+    public function getStart(): int
     {
         return $this->start;
     }
 
     /**
      * Get the end position of this annotation.
-     *
-     * @return int
      */
-    public function getEnd()
+    public function getEnd(): int
     {
         return $this->end;
     }
 
     /**
      * Get the associated tag.
-     *
-     * @return Tag
      */
-    public function getTag()
+    public function getTag(): Tag
     {
         if (null === $this->tag) {
             $this->tag = new Tag($this->lines[0]);
@@ -169,24 +148,29 @@ class Annotation
     }
 
     /**
-     * @return TypeExpression
-     *
      * @internal
      */
-    public function getTypeExpression()
+    public function getTypeExpression(): ?TypeExpression
     {
-        return new TypeExpression($this->getTypesContent(), $this->namespace, $this->namespaceUses);
+        $typesContent = $this->getTypesContent();
+
+        return null === $typesContent
+            ? null
+            : new TypeExpression($typesContent, $this->namespace, $this->namespaceUses);
     }
 
     /**
-     * @return null|string
-     *
      * @internal
      */
-    public function getVariableName()
+    public function getVariableName(): ?string
     {
-        $type = preg_quote($this->getTypesContent(), '/');
-        $regex = "/@{$this->tag->getName()}\\s+{$type}\\s+(?<variable>\\$.+?)(?:[\\s*]|$)/";
+        $type = preg_quote($this->getTypesContent() ?? '', '/');
+        $regex = \sprintf(
+            '/@%s\s+(%s\s*)?(&\s*)?(\.{3}\s*)?(?<variable>\$%s)(?:.*|$)/',
+            $this->tag->getName(),
+            $type,
+            TypeExpression::REGEX_IDENTIFIER
+        );
 
         if (Preg::match($regex, $this->lines[0]->getContent(), $matches)) {
             return $matches['variable'];
@@ -198,12 +182,15 @@ class Annotation
     /**
      * Get the types associated with this annotation.
      *
-     * @return string[]
+     * @return list<string>
      */
-    public function getTypes()
+    public function getTypes(): array
     {
         if (null === $this->types) {
-            $this->types = $this->getTypeExpression()->getTypes();
+            $typeExpression = $this->getTypeExpression();
+            $this->types = null === $typeExpression
+                ? []
+                : $typeExpression->getTypes();
         }
 
         return $this->types;
@@ -212,13 +199,25 @@ class Annotation
     /**
      * Set the types associated with this annotation.
      *
-     * @param string[] $types
+     * @param list<string> $types
      */
-    public function setTypes(array $types)
+    public function setTypes(array $types): void
     {
-        $pattern = '/'.preg_quote($this->getTypesContent(), '/').'/';
+        $origTypesContent = $this->getTypesContent();
+        $newTypesContent = implode(
+            // Fallback to union type is provided for backward compatibility (previously glue was set to `|` by default even when type was not composite)
+            // @TODO Better handling for cases where type is fixed (original type is not composite, but was made composite during fix)
+            $this->getTypeExpression()->getTypesGlue() ?? '|',
+            $types
+        );
 
-        $this->lines[0]->setContent(Preg::replace($pattern, implode('|', $types), $this->lines[0]->getContent(), 1));
+        if ($origTypesContent === $newTypesContent) {
+            return;
+        }
+
+        $pattern = '/'.preg_quote($origTypesContent, '/').'/';
+
+        $this->lines[0]->setContent(Preg::replace($pattern, $newTypesContent, $this->lines[0]->getContent(), 1));
 
         $this->clearCache();
     }
@@ -226,23 +225,27 @@ class Annotation
     /**
      * Get the normalized types associated with this annotation, so they can easily be compared.
      *
-     * @return string[]
+     * @return list<string>
      */
-    public function getNormalizedTypes()
+    public function getNormalizedTypes(): array
     {
-        $normalized = array_map(static function ($type) {
-            return strtolower($type);
-        }, $this->getTypes());
+        $typeExpression = $this->getTypeExpression();
+        if (null === $typeExpression) {
+            return [];
+        }
 
-        sort($normalized);
+        $normalizedTypeExpression = $typeExpression
+            ->mapTypes(static fn (TypeExpression $v) => new TypeExpression(strtolower($v->toString()), null, []))
+            ->sortTypes(static fn (TypeExpression $a, TypeExpression $b) => $a->toString() <=> $b->toString())
+        ;
 
-        return $normalized;
+        return $normalizedTypeExpression->getTypes();
     }
 
     /**
      * Remove this annotation by removing all its lines.
      */
-    public function remove()
+    public function remove(): void
     {
         foreach ($this->lines as $line) {
             if ($line->isTheStart() && $line->isTheEnd()) {
@@ -269,27 +272,23 @@ class Annotation
 
     /**
      * Get the annotation content.
-     *
-     * @return string
      */
-    public function getContent()
+    public function getContent(): string
     {
         return implode('', $this->lines);
     }
 
-    public function supportTypes()
+    public function supportTypes(): bool
     {
-        return \in_array($this->getTag()->getName(), self::$tags, true);
+        return \in_array($this->getTag()->getName(), self::TAGS, true);
     }
 
     /**
      * Get the current types content.
      *
      * Be careful modifying the underlying line as that won't flush the cache.
-     *
-     * @return string
      */
-    private function getTypesContent()
+    private function getTypesContent(): ?string
     {
         if (null === $this->typesContent) {
             $name = $this->getTag()->getName();
@@ -299,20 +298,20 @@ class Annotation
             }
 
             $matchingResult = Preg::match(
-                '{^(?:\s*\*|/\*\*)\s*@'.$name.'\s+'.TypeExpression::REGEX_TYPES.'(?:[*\h\v].*)?\r?$}sx',
+                '{^(?:\h*\*|/\*\*)[\h*]*@'.$name.'\h+'.TypeExpression::REGEX_TYPES.'(?:(?:[*\h\v]|\&?[\.\$]).*)?\r?$}is',
                 $this->lines[0]->getContent(),
                 $matches
             );
 
-            $this->typesContent = 1 === $matchingResult
+            $this->typesContent = $matchingResult
                 ? $matches['types']
-                : '';
+                : null;
         }
 
         return $this->typesContent;
     }
 
-    private function clearCache()
+    private function clearCache(): void
     {
         $this->types = null;
         $this->typesContent = null;

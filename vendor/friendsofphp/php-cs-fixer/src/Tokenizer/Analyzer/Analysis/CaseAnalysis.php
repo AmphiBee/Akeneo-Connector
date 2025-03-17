@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of PHP CS Fixer.
  *
@@ -15,27 +17,28 @@ namespace PhpCsFixer\Tokenizer\Analyzer\Analysis;
 /**
  * @author Kuba Werłos <werlos@gmail.com>
  *
+ * @readonly
+ *
  * @internal
  */
 final class CaseAnalysis
 {
-    /**
-     * @var int
-     */
-    private $colonIndex;
+    private int $index;
 
-    /**
-     * @param int $colonIndex
-     */
-    public function __construct($colonIndex)
+    private int $colonIndex;
+
+    public function __construct(int $index, int $colonIndex)
     {
+        $this->index = $index;
         $this->colonIndex = $colonIndex;
     }
 
-    /**
-     * @return int
-     */
-    public function getColonIndex()
+    public function getIndex(): int
+    {
+        return $this->index;
+    }
+
+    public function getColonIndex(): int
     {
         return $this->colonIndex;
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of PHP CS Fixer.
  *
@@ -14,24 +16,22 @@ namespace PhpCsFixer;
 
 /**
  * @author Dariusz Rumiński <dariusz.ruminski@gmail.com>
+ *
+ * @readonly
  */
 final class WhitespacesFixerConfig
 {
-    /**
-     * @var string
-     */
-    private $indent;
+    /** @var non-empty-string */
+    private string $indent;
+
+    /** @var non-empty-string */
+    private string $lineEnding;
 
     /**
-     * @var string
+     * @param non-empty-string $indent
+     * @param non-empty-string $lineEnding
      */
-    private $lineEnding;
-
-    /**
-     * @param string $indent
-     * @param string $lineEnding
-     */
-    public function __construct($indent = '    ', $lineEnding = "\n")
+    public function __construct(string $indent = '    ', string $lineEnding = "\n")
     {
         if (!\in_array($indent, ['  ', '    ', "\t"], true)) {
             throw new \InvalidArgumentException('Invalid "indent" param, expected tab or two or four spaces.');
@@ -46,17 +46,17 @@ final class WhitespacesFixerConfig
     }
 
     /**
-     * @return string
+     * @return non-empty-string
      */
-    public function getIndent()
+    public function getIndent(): string
     {
         return $this->indent;
     }
 
     /**
-     * @return string
+     * @return non-empty-string
      */
-    public function getLineEnding()
+    public function getLineEnding(): string
     {
         return $this->lineEnding;
     }
