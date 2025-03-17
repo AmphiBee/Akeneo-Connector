@@ -1,48 +1,25 @@
 <?php
+
 /**
  *
- * This file is part of phpFastCache.
+ * This file is part of Phpfastcache.
  *
  * @license MIT License (MIT)
  *
- * For full copyright and license information, please see the docs/CREDITS.txt file.
+ * For full copyright and license information, please see the docs/CREDITS.txt and LICENCE files.
  *
- * @author Khoa Bui (khoaofgod)  <khoaofgod@gmail.com> https://www.phpfastcache.com
  * @author Georges.L (Geolim4)  <contact@geolim4.com>
- *
+ * @author Contributors  https://github.com/PHPSocialNetwork/phpfastcache/graphs/contributors
  */
 
 declare(strict_types=1);
 
 namespace Phpfastcache\Event;
 
-use Phpfastcache\Exceptions\PhpfastcacheInvalidArgumentException;
-
 interface EventInterface
 {
     /**
-     * @return self
+     * @return array<string, string>
      */
-    public static function getInstance(): self;
-
-    /**
-     * @param string $eventName
-     * @param array ...$args
-     */
-    public function dispatch(string $eventName, ...$args);
-
-    /**
-     * @param string $name
-     * @param array $arguments
-     * @throws PhpfastcacheInvalidArgumentException
-     * @throws \BadMethodCallException
-     */
-    public function __call(string $name, array $arguments);
-
-    /**
-     * @param string $eventName
-     * @param string $callbackName
-     * @return bool
-     */
-    public function unbindEventCallback(string $eventName, string $callbackName): bool;
+    public static function getEvents(): array;
 }

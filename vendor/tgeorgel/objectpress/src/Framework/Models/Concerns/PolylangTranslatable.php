@@ -3,10 +3,12 @@
 namespace OP\Framework\Models\Concerns;
 
 use OP\Support\Facades\ObjectPress;
+use Illuminate\Database\Eloquent\Builder;
 use OP\Framework\Contracts\LanguageDriver;
+use OP\Support\Language\Drivers\PolylangDriver;
 
 /**
- * Polylang translation plugin support.
+ * Polylang translation plugin support for post.
  *
  * @package  ObjectPress
  * @author   tgeorgel <thomas@hydrat.agency>
@@ -15,6 +17,70 @@ use OP\Framework\Contracts\LanguageDriver;
  */
 trait PolylangTranslatable
 {
+    /**
+     * Filter query to take posts with a defined language code.
+     */
+    public function scopeHasLanguage(Builder $query)
+    {
+        $app = ObjectPress::app();
+
+        # No supported lang plugin detected
+        if (!$app->bound(LanguageDriver::class)) {
+            return $query;
+        }
+
+        return $query->whereHas(
+            'taxonomies',
+            fn ($tx) => $tx->where('taxonomy', 'language')
+        );
+    }
+
+    /**
+     * Filter query to take posts with a specified language code.
+     *
+     * @param string $lang The desired language. 'current', 'default' or language alpha2 code.
+     */
+    public function scopeLanguage(Builder $query, string $language = 'current')
+    {
+        $app = ObjectPress::app();
+
+        # No supported lang plugin detected
+        if (!$app->bound(LanguageDriver::class)) {
+            return $query;
+        }
+
+        $driver = $app->make(LanguageDriver::class);
+
+        if (!is_a($driver, PolylangDriver::class)) {
+            return $query;
+        }
+
+        # Get the current lang slug
+        if ($language === 'current') {
+            $language = $driver->getCurrentLang();
+        }
+
+        # Get the default/primary lang slug
+        if ($language === 'default') {
+            $language = $driver->getPrimaryLang();
+        }
+
+        return $query->whereHas(
+            'taxonomies',
+            fn ($tx) => $tx
+                ->where('taxonomy', 'language')
+                ->whereHas('term', fn ($q) => $q->whereIn('slug', [$language, 'pll_'.$language]))
+        );
+    }
+
+    /**
+     * @deprecated Use language scope instead.
+     */
+    public function scopeLang(Builder $query, string $lang = 'current')
+    {
+        return $this->scopeLanguage($query, $lang);
+    }
+
     /**
      * Get the post language.
      *
@@ -28,27 +94,22 @@ trait PolylangTranslatable
 
         return $taxo ? $taxo->term->slug : null;
     }
-    
+
     /**
      * Set the post language.
      *
      * @param  string  $value
      * @return void
      */
-    public function setLanguageAttribute($value)
+    public function setLanguageAttribute($value): void
     {
-        $app = ObjectPress::app();
+        $driver = ObjectPress::app()->make(LanguageDriver::class);
 
-        # No supported lang plugin detected
-        if (!$app->bound(LanguageDriver::class)) {
-            return;
-        }
+        optional($driver)->setPostLang($this->id, $value);
 
-        $driver = $app->make(LanguageDriver::class);
-        $driver->setPostLang($this->id, $value);
         $this->refresh();
     }
-    
+
     /**
      * Get the post translation in the asked language.
      *
@@ -58,6 +119,7 @@ trait PolylangTranslatable
     public function translation(string $lang)
     {
         $app = ObjectPress::app();
+        $id = null;
 
         # No supported lang plugin detected
         if (!$app->bound(LanguageDriver::class)) {
@@ -70,13 +132,16 @@ trait PolylangTranslatable
         if ($lang == 'current') {
             $lang = $driver->getCurrentLang();
         }
-        
+
         # Get the default/primary lang slug
         if ($lang == 'default') {
             $lang = $driver->getPrimaryLang();
         }
 
         $id = $driver->getPostIn($this->id, $lang);
-        return $id ? static::find($id) : null;
+
+        return $id
+            ? static::find($id)
+            : null;
     }
 }
