@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of PHP CS Fixer.
  *
@@ -12,28 +14,25 @@
 
 namespace PhpCsFixer\Console\Report\FixReport;
 
+use PhpCsFixer\Console\Application;
 use PhpCsFixer\Preg;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 
 /**
  * @author Boris Gorbylev <ekho@ekho.name>
  *
+ * @readonly
+ *
  * @internal
  */
 final class JunitReporter implements ReporterInterface
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function getFormat()
+    public function getFormat(): string
     {
         return 'junit';
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function generate(ReportSummary $reportSummary)
+    public function generate(ReportSummary $reportSummary): string
     {
         if (!\extension_loaded('dom')) {
             throw new \RuntimeException('Cannot generate report! `ext-dom` is not available!');
@@ -41,22 +40,30 @@ final class JunitReporter implements ReporterInterface
 
         $dom = new \DOMDocument('1.0', 'UTF-8');
         $testsuites = $dom->appendChild($dom->createElement('testsuites'));
-        /** @var \DomElement $testsuite */
+
+        /** @var \DOMElement $testsuite */
         $testsuite = $testsuites->appendChild($dom->createElement('testsuite'));
         $testsuite->setAttribute('name', 'PHP CS Fixer');
 
-        if (\count($reportSummary->getChanged())) {
+        $properties = $dom->createElement('properties');
+        $property = $dom->createElement('property');
+        $property->setAttribute('name', 'about');
+        $property->setAttribute('value', Application::getAbout());
+        $properties->appendChild($property);
+        $testsuite->appendChild($properties);
+
+        if (\count($reportSummary->getChanged()) > 0) {
             $this->createFailedTestCases($dom, $testsuite, $reportSummary);
         } else {
             $this->createSuccessTestCase($dom, $testsuite);
         }
 
-        if ($reportSummary->getTime()) {
+        if ($reportSummary->getTime() > 0) {
             $testsuite->setAttribute(
                 'time',
-                sprintf(
+                \sprintf(
                     '%.3f',
-                    $reportSummary->getTime() / 1000
+                    $reportSummary->getTime() / 1_000
                 )
             );
         }
@@ -66,7 +73,7 @@ final class JunitReporter implements ReporterInterface
         return $reportSummary->isDecoratedOutput() ? OutputFormatter::escape($dom->saveXML()) : $dom->saveXML();
     }
 
-    private function createSuccessTestCase(\DOMDocument $dom, \DOMElement $testsuite)
+    private function createSuccessTestCase(\DOMDocument $dom, \DOMElement $testsuite): void
     {
         $testcase = $dom->createElement('testcase');
         $testcase->setAttribute('name', 'All OK');
@@ -79,7 +86,7 @@ final class JunitReporter implements ReporterInterface
         $testsuite->setAttribute('errors', '0');
     }
 
-    private function createFailedTestCases(\DOMDocument $dom, \DOMElement $testsuite, ReportSummary $reportSummary)
+    private function createFailedTestCases(\DOMDocument $dom, \DOMElement $testsuite, ReportSummary $reportSummary): void
     {
         $assertionsCount = 0;
         foreach ($reportSummary->getChanged() as $file => $fixResult) {
@@ -100,12 +107,9 @@ final class JunitReporter implements ReporterInterface
     }
 
     /**
-     * @param string $file
-     * @param bool   $shouldAddAppliedFixers
-     *
-     * @return \DOMElement
+     * @param array{appliedFixers: list<string>, diff: string} $fixResult
      */
-    private function createFailedTestCase(\DOMDocument $dom, $file, array $fixResult, $shouldAddAppliedFixers)
+    private function createFailedTestCase(\DOMDocument $dom, string $file, array $fixResult, bool $shouldAddAppliedFixers): \DOMElement
     {
         $appliedFixersCount = \count($fixResult['appliedFixers']);
 
@@ -130,7 +134,7 @@ final class JunitReporter implements ReporterInterface
             $failureContent = "Wrong code style\n";
         }
 
-        if (!empty($fixResult['diff'])) {
+        if ('' !== $fixResult['diff']) {
             $failureContent .= "\nDiff:\n---------------\n\n".$fixResult['diff'];
         }
 

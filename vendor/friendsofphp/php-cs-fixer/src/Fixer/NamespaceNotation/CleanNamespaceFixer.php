@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of PHP CS Fixer.
  *
@@ -12,25 +14,23 @@
 
 namespace PhpCsFixer\Fixer\NamespaceNotation;
 
-use PhpCsFixer\AbstractLinesBeforeNamespaceFixer;
+use PhpCsFixer\AbstractFixer;
 use PhpCsFixer\FixerDefinition\FixerDefinition;
+use PhpCsFixer\FixerDefinition\FixerDefinitionInterface;
 use PhpCsFixer\FixerDefinition\VersionSpecification;
 use PhpCsFixer\FixerDefinition\VersionSpecificCodeSample;
 use PhpCsFixer\Tokenizer\Tokens;
 
-final class CleanNamespaceFixer extends AbstractLinesBeforeNamespaceFixer
+final class CleanNamespaceFixer extends AbstractFixer
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function getDefinition()
+    public function getDefinition(): FixerDefinitionInterface
     {
         $samples = [];
 
-        foreach (['namespace Foo \\ Bar;', 'echo foo /* comment */ \\ bar();'] as $sample) {
+        foreach (['namespace Foo \ Bar;', 'echo foo /* comment */ \ bar();'] as $sample) {
             $samples[] = new VersionSpecificCodeSample(
                 "<?php\n".$sample."\n",
-                new VersionSpecification(null, 80000 - 1)
+                new VersionSpecification(null, 8_00_00 - 1)
             );
         }
 
@@ -40,18 +40,22 @@ final class CleanNamespaceFixer extends AbstractLinesBeforeNamespaceFixer
         );
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function isCandidate(Tokens $tokens)
+    public function isCandidate(Tokens $tokens): bool
     {
-        return \PHP_VERSION_ID < 80000 && $tokens->isTokenKindFound(T_NS_SEPARATOR);
+        return \PHP_VERSION_ID < 8_00_00 && $tokens->isTokenKindFound(T_NS_SEPARATOR);
     }
 
     /**
      * {@inheritdoc}
+     *
+     * Must run before PhpUnitDataProviderReturnTypeFixer.
      */
-    protected function applyFix(\SplFileInfo $file, Tokens $tokens)
+    public function getPriority(): int
+    {
+        return 10;
+    }
+
+    protected function applyFix(\SplFileInfo $file, Tokens $tokens): void
     {
         $count = $tokens->count();
 
@@ -69,10 +73,8 @@ final class CleanNamespaceFixer extends AbstractLinesBeforeNamespaceFixer
 
     /**
      * @param int $index start of namespace
-     *
-     * @return int
      */
-    private function fixNamespace(Tokens $tokens, $index)
+    private function fixNamespace(Tokens $tokens, int $index): int
     {
         $tillIndex = $index;
 
@@ -83,21 +85,21 @@ final class CleanNamespaceFixer extends AbstractLinesBeforeNamespaceFixer
 
         $tillIndex = $tokens->getPrevMeaningfulToken($tillIndex);
 
-        $spaceIndexes = [];
+        $spaceIndices = [];
 
         for (; $index <= $tillIndex; ++$index) {
             if ($tokens[$index]->isGivenKind(T_WHITESPACE)) {
-                $spaceIndexes[] = $index;
+                $spaceIndices[] = $index;
             } elseif ($tokens[$index]->isComment()) {
                 $tokens->clearAt($index);
             }
         }
 
-        if ($tokens[$index - 1]->isWhiteSpace()) {
-            array_pop($spaceIndexes);
+        if ($tokens[$index - 1]->isWhitespace()) {
+            array_pop($spaceIndices);
         }
 
-        foreach ($spaceIndexes as $i) {
+        foreach ($spaceIndices as $i) {
             $tokens->clearAt($i);
         }
 

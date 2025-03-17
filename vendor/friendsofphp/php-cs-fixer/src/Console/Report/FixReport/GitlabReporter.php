@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of PHP CS Fixer.
  *
@@ -12,49 +14,83 @@
 
 namespace PhpCsFixer\Console\Report\FixReport;
 
+use PhpCsFixer\Console\Application;
+use SebastianBergmann\Diff\Chunk;
+use SebastianBergmann\Diff\Diff;
+use SebastianBergmann\Diff\Parser;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 
 /**
  * Generates a report according to gitlabs subset of codeclimate json files.
  *
- * @see https://github.com/codeclimate/spec/blob/master/SPEC.md#data-types
+ * @see https://github.com/codeclimate/platform/blob/master/spec/analyzers/SPEC.md#data-types
  *
  * @author Hans-Christian Otto <c.otto@suora.com>
+ *
+ * @readonly
  *
  * @internal
  */
 final class GitlabReporter implements ReporterInterface
 {
-    public function getFormat()
+    private Parser $diffParser;
+
+    public function __construct()
+    {
+        $this->diffParser = new Parser();
+    }
+
+    public function getFormat(): string
     {
         return 'gitlab';
     }
 
     /**
      * Process changed files array. Returns generated report.
-     *
-     * @return string
      */
-    public function generate(ReportSummary $reportSummary)
+    public function generate(ReportSummary $reportSummary): string
     {
+        $about = Application::getAbout();
+
         $report = [];
         foreach ($reportSummary->getChanged() as $fileName => $change) {
             foreach ($change['appliedFixers'] as $fixerName) {
                 $report[] = [
-                    'description' => $fixerName,
+                    'check_name' => 'PHP-CS-Fixer.'.$fixerName,
+                    'description' => 'PHP-CS-Fixer.'.$fixerName.' by '.$about,
+                    'categories' => ['Style'],
                     'fingerprint' => md5($fileName.$fixerName),
+                    'severity' => 'minor',
                     'location' => [
                         'path' => $fileName,
-                        'lines' => [
-                            'begin' => 0, // line numbers are required in the format, but not available to reports
-                        ],
+                        'lines' => self::getLines($this->diffParser->parse($change['diff'])),
                     ],
                 ];
             }
         }
 
-        $jsonString = json_encode($report);
+        $jsonString = json_encode($report, JSON_THROW_ON_ERROR);
 
         return $reportSummary->isDecoratedOutput() ? OutputFormatter::escape($jsonString) : $jsonString;
+    }
+
+    /**
+     * @param list<Diff> $diffs
+     *
+     * @return array{begin: int, end: int}
+     */
+    private static function getLines(array $diffs): array
+    {
+        if (isset($diffs[0])) {
+            $firstDiff = $diffs[0];
+
+            $firstChunk = \Closure::bind(static fn (Diff $diff) => array_shift($diff->chunks), null, $firstDiff)($firstDiff);
+
+            if ($firstChunk instanceof Chunk) {
+                return \Closure::bind(static fn (Chunk $chunk): array => ['begin' => $chunk->start, 'end' => $chunk->startRange], null, $firstChunk)($firstChunk);
+            }
+        }
+
+        return ['begin' => 0, 'end' => 0];
     }
 }

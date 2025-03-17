@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of PHP CS Fixer.
  *
@@ -13,7 +15,6 @@
 namespace PhpCsFixer\Console\Report\ListSetsReport;
 
 use Symfony\Component\Finder\Finder as SymfonyFinder;
-use Symfony\Component\Finder\SplFileInfo;
 
 /**
  * @author Boris Gorbylev <ekho@ekho.name>
@@ -22,24 +23,25 @@ use Symfony\Component\Finder\SplFileInfo;
  */
 final class ReporterFactory
 {
-    /** @var ReporterInterface[] */
-    private $reporters = [];
+    /**
+     * @var array<string, ReporterInterface>
+     */
+    private array $reporters = [];
 
-    public function registerBuiltInReporters()
+    public function registerBuiltInReporters(): self
     {
-        /** @var null|string[] $builtInReporters */
+        /** @var null|list<string> $builtInReporters */
         static $builtInReporters;
 
         if (null === $builtInReporters) {
             $builtInReporters = [];
 
-            /** @var SplFileInfo $file */
             foreach (SymfonyFinder::create()->files()->name('*Reporter.php')->in(__DIR__) as $file) {
                 $relativeNamespace = $file->getRelativePath();
-                $builtInReporters[] = sprintf(
-                    '%s\\%s%s',
+                $builtInReporters[] = \sprintf(
+                    '%s\%s%s',
                     __NAMESPACE__,
-                    $relativeNamespace ? $relativeNamespace.'\\' : '',
+                    '' !== $relativeNamespace ? $relativeNamespace.'\\' : '',
                     $file->getBasename('.php')
                 );
             }
@@ -52,15 +54,12 @@ final class ReporterFactory
         return $this;
     }
 
-    /**
-     * @return $this
-     */
-    public function registerReporter(ReporterInterface $reporter)
+    public function registerReporter(ReporterInterface $reporter): self
     {
         $format = $reporter->getFormat();
 
         if (isset($this->reporters[$format])) {
-            throw new \UnexpectedValueException(sprintf('Reporter for format "%s" is already registered.', $format));
+            throw new \UnexpectedValueException(\sprintf('Reporter for format "%s" is already registered.', $format));
         }
 
         $this->reporters[$format] = $reporter;
@@ -69,9 +68,9 @@ final class ReporterFactory
     }
 
     /**
-     * @return string[]
+     * @return list<string>
      */
-    public function getFormats()
+    public function getFormats(): array
     {
         $formats = array_keys($this->reporters);
         sort($formats);
@@ -79,15 +78,10 @@ final class ReporterFactory
         return $formats;
     }
 
-    /**
-     * @param string $format
-     *
-     * @return ReporterInterface
-     */
-    public function getReporter($format)
+    public function getReporter(string $format): ReporterInterface
     {
         if (!isset($this->reporters[$format])) {
-            throw new \UnexpectedValueException(sprintf('Reporter for format "%s" is not registered.', $format));
+            throw new \UnexpectedValueException(\sprintf('Reporter for format "%s" is not registered.', $format));
         }
 
         return $this->reporters[$format];

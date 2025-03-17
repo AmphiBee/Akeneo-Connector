@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of PHP CS Fixer.
  *
@@ -15,6 +17,7 @@ namespace PhpCsFixer\Fixer\StringNotation;
 use PhpCsFixer\AbstractFixer;
 use PhpCsFixer\FixerDefinition\CodeSample;
 use PhpCsFixer\FixerDefinition\FixerDefinition;
+use PhpCsFixer\FixerDefinition\FixerDefinitionInterface;
 use PhpCsFixer\Preg;
 use PhpCsFixer\Tokenizer\Token;
 use PhpCsFixer\Tokenizer\Tokens;
@@ -24,26 +27,17 @@ use PhpCsFixer\Tokenizer\Tokens;
  */
 final class NoTrailingWhitespaceInStringFixer extends AbstractFixer
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function isCandidate(Tokens $tokens)
+    public function isCandidate(Tokens $tokens): bool
     {
         return $tokens->isAnyTokenKindsFound([T_CONSTANT_ENCAPSED_STRING, T_ENCAPSED_AND_WHITESPACE, T_INLINE_HTML]);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function isRisky()
+    public function isRisky(): bool
     {
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getDefinition()
+    public function getDefinition(): FixerDefinitionInterface
     {
         return new FixerDefinition(
             'There must be no trailing whitespace in strings.',
@@ -57,10 +51,7 @@ final class NoTrailingWhitespaceInStringFixer extends AbstractFixer
         );
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function applyFix(\SplFileInfo $file, Tokens $tokens)
+    protected function applyFix(\SplFileInfo $file, Tokens $tokens): void
     {
         for ($index = $tokens->count() - 1, $last = true; $index >= 0; --$index, $last = false) {
             /** @var Token $token */
@@ -96,11 +87,7 @@ final class NoTrailingWhitespaceInStringFixer extends AbstractFixer
         }
     }
 
-    /**
-     * @param int    $index
-     * @param string $content
-     */
-    private function updateContent(Tokens $tokens, $index, $content)
+    private function updateContent(Tokens $tokens, int $index, string $content): void
     {
         if ('' === $content) {
             $tokens->clearAt($index);

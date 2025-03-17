@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of PHP CS Fixer.
  *
@@ -19,24 +21,22 @@ use PhpCsFixer\Utils;
  * Set of rules to be used by fixer.
  *
  * @author Dariusz Rumiński <dariusz.ruminski@gmail.com>
- * @author SpacePossum
+ *
+ * @readonly
  *
  * @internal
- * @final
- *
- * TODO on 3.0 make final after PhpCsFixer\RuleSet has been removed
  */
-class RuleSet implements RuleSetInterface
+final class RuleSet implements RuleSetInterface
 {
     /**
      * Group of rules generated from input set.
      *
-     * The key is name of rule, value is bool if the rule/set should be used.
+     * The key is name of rule, value is configuration array or true.
      * The key must not point to any set.
      *
-     * @var array
+     * @var array<string, array<string, mixed>|true>
      */
-    private $rules;
+    private array $rules;
 
     public function __construct(array $set = [])
     {
@@ -46,44 +46,32 @@ class RuleSet implements RuleSetInterface
             }
 
             if (\is_int($name)) {
-                throw new \InvalidArgumentException(sprintf('Missing value for "%s" rule/set.', $value));
+                throw new \InvalidArgumentException(\sprintf('Missing value for "%s" rule/set.', $value));
             }
 
             if (!\is_bool($value) && !\is_array($value)) {
-                // @TODO drop me on 3.0
+                $message = str_starts_with($name, '@') ? 'Set must be enabled (true) or disabled (false). Other values are not allowed.' : 'Rule must be enabled (true), disabled (false) or configured (non-empty, assoc array). Other values are not allowed.';
+
                 if (null === $value) {
-                    Utils::triggerDeprecation(new InvalidFixerConfigurationException(
-                        $name,
-                        'To disable the rule, use "FALSE" instead of "NULL".'
-                    ));
-
-                    continue;
+                    $message .= ' To disable the '.(str_starts_with($name, '@') ? 'set' : 'rule').', use "FALSE" instead of "NULL".';
                 }
-
-                $message = '@' === $name[0] ? 'Set must be enabled (true) or disabled (false). Other values are not allowed.' : 'Rule must be enabled (true), disabled (false) or configured (non-empty, assoc array). Other values are not allowed.';
 
                 throw new InvalidFixerConfigurationException($name, $message);
             }
         }
 
-        $this->resolveSet($set);
+        $this->rules = $this->resolveSet($set);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function hasRule($rule)
+    public function hasRule(string $rule): bool
     {
         return \array_key_exists($rule, $this->rules);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getRuleConfiguration($rule)
+    public function getRuleConfiguration(string $rule): ?array
     {
         if (!$this->hasRule($rule)) {
-            throw new \InvalidArgumentException(sprintf('Rule "%s" is not in the set.', $rule));
+            throw new \InvalidArgumentException(\sprintf('Rule "%s" is not in the set.', $rule));
         }
 
         if (true === $this->rules[$rule]) {
@@ -93,48 +81,27 @@ class RuleSet implements RuleSetInterface
         return $this->rules[$rule];
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getRules()
+    public function getRules(): array
     {
         return $this->rules;
     }
 
     /**
-     * @deprecated will be removed in 3.0 Use the constructor.
-     */
-    public static function create(array $set = [])
-    {
-        Utils::triggerDeprecation(new \RuntimeException(__METHOD__.' is deprecated and will be removed in 3.0, use the constructor.'));
-
-        return new self($set);
-    }
-
-    /**
-     * @deprecated will be removed in 3.0 Use PhpCsFixer\RuleSet\RuleSets::getSetDefinitionNames
-     */
-    public function getSetDefinitionNames()
-    {
-        Utils::triggerDeprecation(new \RuntimeException(__METHOD__.' is deprecated and will be removed in 3.0, use PhpCsFixer\RuleSet\RuleSets::getSetDefinitionNames.'));
-
-        return RuleSets::getSetDefinitionNames();
-    }
-
-    /**
      * Resolve input set into group of rules.
      *
-     * @return $this
+     * @param array<string, array<string, mixed>|bool> $rules
+     *
+     * @return array<string, array<string, mixed>|true>
      */
-    private function resolveSet(array $rules)
+    private function resolveSet(array $rules): array
     {
         $resolvedRules = [];
 
         // expand sets
         foreach ($rules as $name => $value) {
-            if ('@' === $name[0]) {
+            if (str_starts_with($name, '@')) {
                 if (!\is_bool($value)) {
-                    throw new \UnexpectedValueException(sprintf('Nested rule set "%s" configuration must be a boolean.', $name));
+                    throw new \UnexpectedValueException(\sprintf('Nested rule set "%s" configuration must be a boolean.', $name));
                 }
 
                 $set = $this->resolveSubset($name, $value);
@@ -145,11 +112,12 @@ class RuleSet implements RuleSetInterface
         }
 
         // filter out all resolvedRules that are off
-        $resolvedRules = array_filter($resolvedRules);
+        $resolvedRules = array_filter(
+            $resolvedRules,
+            static fn ($value): bool => false !== $value
+        );
 
-        $this->rules = $resolvedRules;
-
-        return $this;
+        return $resolvedRules;
     }
 
     /**
@@ -158,17 +126,24 @@ class RuleSet implements RuleSetInterface
      * If set value is false then disable all fixers in set,
      * if not then get value from set item.
      *
-     * @param string $setName
-     * @param bool   $setValue
-     *
-     * @return array
+     * @return array<string, array<string, mixed>|bool>
      */
-    private function resolveSubset($setName, $setValue)
+    private function resolveSubset(string $setName, bool $setValue): array
     {
-        $rules = RuleSets::getSetDefinition($setName)->getRules();
+        $ruleSet = RuleSets::getSetDefinition($setName);
+
+        if ($ruleSet instanceof DeprecatedRuleSetDescriptionInterface) {
+            $messageEnd = [] === $ruleSet->getSuccessorsNames()
+                ? 'No replacement available'
+                : \sprintf('Use %s instead', Utils::naturalLanguageJoin($ruleSet->getSuccessorsNames()));
+
+            Utils::triggerDeprecation(new \RuntimeException("Rule set \"{$setName}\" is deprecated. {$messageEnd}."));
+        }
+
+        $rules = $ruleSet->getRules();
 
         foreach ($rules as $name => $value) {
-            if ('@' === $name[0]) {
+            if (str_starts_with($name, '@')) {
                 $set = $this->resolveSubset($name, $setValue);
                 unset($rules[$name]);
                 $rules = array_merge($rules, $set);

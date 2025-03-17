@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of PHP CS Fixer.
  *
@@ -12,9 +14,12 @@
 
 namespace PhpCsFixer\Console\Command;
 
-use PhpCsFixer\Documentation\DocumentationGenerator;
+use PhpCsFixer\Documentation\DocumentationLocator;
+use PhpCsFixer\Documentation\FixerDocumentGenerator;
+use PhpCsFixer\Documentation\RuleSetDocumentationGenerator;
 use PhpCsFixer\FixerFactory;
 use PhpCsFixer\RuleSet\RuleSets;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -25,50 +30,39 @@ use Symfony\Component\Finder\SplFileInfo;
 /**
  * @internal
  */
+#[AsCommand(name: 'documentation')]
 final class DocumentationCommand extends Command
 {
-    /**
-     * @var string
-     */
     protected static $defaultName = 'documentation';
 
-    /**
-     * @var DocumentationGenerator
-     */
-    private $generator;
+    private Filesystem $filesystem;
 
-    public function __construct($name = null)
+    public function __construct(Filesystem $filesystem)
     {
-        parent::__construct($name);
-
-        $this->generator = new DocumentationGenerator();
+        parent::__construct();
+        $this->filesystem = $filesystem;
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setAliases(['doc'])
-            ->setDescription('Dumps the documentation of the project into its /doc directory.')
+            ->setDescription('Dumps the documentation of the project into its "/doc" directory.')
         ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $locator = new DocumentationLocator();
+
         $fixerFactory = new FixerFactory();
         $fixerFactory->registerBuiltInFixers();
         $fixers = $fixerFactory->getFixers();
 
-        $this->generateFixersDocs($fixers);
-        $this->generateRuleSetsDocs($fixers);
+        $setDefinitions = RuleSets::getSetDefinitions();
 
-        $output->writeln('Docs updated.');
-
-        return 0;
-    }
-
-    private function generateFixersDocs(array $fixers)
-    {
-        $filesystem = new Filesystem();
+        $fixerDocumentGenerator = new FixerDocumentGenerator($locator);
+        $ruleSetDocumentationGenerator = new RuleSetDocumentationGenerator($locator);
 
         // Array of existing fixer docs.
         // We first override existing files, and then we will delete files that are no longer needed.
@@ -77,48 +71,53 @@ final class DocumentationCommand extends Command
         $docForFixerRelativePaths = [];
 
         foreach ($fixers as $fixer) {
-            $docForFixerRelativePaths[] = $this->generator->getFixerDocumentationFileRelativePath($fixer);
-            $filesystem->dumpFile(
-                $this->generator->getFixerDocumentationFilePath($fixer),
-                $this->generator->generateFixerDocumentation($fixer)
+            $docForFixerRelativePaths[] = $locator->getFixerDocumentationFileRelativePath($fixer);
+            $this->filesystem->dumpFile(
+                $locator->getFixerDocumentationFilePath($fixer),
+                $fixerDocumentGenerator->generateFixerDocumentation($fixer)
             );
         }
 
         /** @var SplFileInfo $file */
         foreach (
             (new Finder())->files()
-                ->in($this->generator->getFixersDocumentationDirectoryPath())
+                ->in($locator->getFixersDocumentationDirectoryPath())
                 ->notPath($docForFixerRelativePaths) as $file
         ) {
-            $filesystem->remove($file->getPathname());
+            $this->filesystem->remove($file->getPathname());
         }
 
-        $index = $this->generator->getFixersDocumentationIndexFilePath();
+        // Fixer doc. index
 
-        if (false === @file_put_contents($index, $this->generator->generateFixersDocumentationIndex($fixers))) {
-            throw new \RuntimeException("Failed updating file {$index}.");
-        }
-    }
+        $this->filesystem->dumpFile(
+            $locator->getFixersDocumentationIndexFilePath(),
+            $fixerDocumentGenerator->generateFixersDocumentationIndex($fixers)
+        );
 
-    private function generateRuleSetsDocs(array $fixers)
-    {
-        $filesystem = new Filesystem();
+        // RuleSet docs.
 
         /** @var SplFileInfo $file */
-        foreach ((new Finder())->files()->in($this->generator->getRuleSetsDocumentationDirectoryPath()) as $file) {
-            $filesystem->remove($file->getPathname());
+        foreach ((new Finder())->files()->in($locator->getRuleSetsDocumentationDirectoryPath()) as $file) {
+            $this->filesystem->remove($file->getPathname());
         }
 
-        $index = $this->generator->getRuleSetsDocumentationIndexFilePath();
         $paths = [];
 
-        foreach (RuleSets::getSetDefinitions() as $name => $definition) {
-            $paths[$name] = $path = $this->generator->getRuleSetsDocumentationFilePath($name);
-            $filesystem->dumpFile($path, $this->generator->generateRuleSetsDocumentation($definition, $fixers));
+        foreach ($setDefinitions as $name => $definition) {
+            $path = $locator->getRuleSetsDocumentationFilePath($name);
+            $paths[$path] = $definition;
+            $this->filesystem->dumpFile($path, $ruleSetDocumentationGenerator->generateRuleSetsDocumentation($definition, $fixers));
         }
 
-        if (false === @file_put_contents($index, $this->generator->generateRuleSetsDocumentationIndex($paths))) {
-            throw new \RuntimeException("Failed updating file {$index}.");
-        }
+        // RuleSet doc. index
+
+        $this->filesystem->dumpFile(
+            $locator->getRuleSetsDocumentationIndexFilePath(),
+            $ruleSetDocumentationGenerator->generateRuleSetsDocumentationIndex($paths)
+        );
+
+        $output->writeln('Docs updated.');
+
+        return 0;
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of PHP CS Fixer.
  *
@@ -17,54 +19,52 @@ use Symfony\Component\Finder\Finder;
 /**
  * Set of rule sets to be used by fixer.
  *
- * @author SpacePossum
- *
  * @internal
  */
 final class RuleSets
 {
-    private static $setDefinitions;
+    /**
+     * @var null|array<string, RuleSetDescriptionInterface>
+     */
+    private static ?array $setDefinitions = null;
 
     /**
      * @return array<string, RuleSetDescriptionInterface>
      */
-    public static function getSetDefinitions()
+    public static function getSetDefinitions(): array
     {
         if (null === self::$setDefinitions) {
             self::$setDefinitions = [];
 
             foreach (Finder::create()->files()->in(__DIR__.'/Sets') as $file) {
                 $class = 'PhpCsFixer\RuleSet\Sets\\'.$file->getBasename('.php');
+
+                /** @var RuleSetDescriptionInterface */
                 $set = new $class();
 
                 self::$setDefinitions[$set->getName()] = $set;
             }
 
-            ksort(self::$setDefinitions);
+            uksort(self::$setDefinitions, static fn (string $x, string $y): int => strnatcmp($x, $y));
         }
 
         return self::$setDefinitions;
     }
 
     /**
-     * @return string[]
+     * @return list<string>
      */
-    public static function getSetDefinitionNames()
+    public static function getSetDefinitionNames(): array
     {
         return array_keys(self::getSetDefinitions());
     }
 
-    /**
-     * @param string $name
-     *
-     * @return RuleSetDescriptionInterface
-     */
-    public static function getSetDefinition($name)
+    public static function getSetDefinition(string $name): RuleSetDescriptionInterface
     {
         $definitions = self::getSetDefinitions();
 
         if (!isset($definitions[$name])) {
-            throw new \InvalidArgumentException(sprintf('Set "%s" does not exist.', $name));
+            throw new \InvalidArgumentException(\sprintf('Set "%s" does not exist.', $name));
         }
 
         return $definitions[$name];

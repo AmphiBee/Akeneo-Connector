@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of PHP CS Fixer.
  *
@@ -18,6 +20,8 @@ use PhpCsFixer\Console\Report\ListSetsReport\ReporterInterface;
 use PhpCsFixer\Console\Report\ListSetsReport\ReportSummary;
 use PhpCsFixer\Console\Report\ListSetsReport\TextReporter;
 use PhpCsFixer\RuleSet\RuleSets;
+use PhpCsFixer\Utils;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputInterface;
@@ -29,17 +33,12 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * @internal
  */
+#[AsCommand(name: 'list-sets')]
 final class ListSetsCommand extends Command
 {
-    /**
-     * @var string
-     */
     protected static $defaultName = 'list-sets';
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setDefinition(
@@ -51,31 +50,27 @@ final class ListSetsCommand extends Command
         ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $reporter = $this->resolveReporterWithFactory(
             $input->getOption('format'),
             new ReporterFactory()
         );
+
         $reportSummary = new ReportSummary(
             array_values(RuleSets::getSetDefinitions())
         );
+
         $report = $reporter->generate($reportSummary);
 
         $output->isDecorated()
             ? $output->write(OutputFormatter::escape($report))
-            : $output->write($report, false, OutputInterface::OUTPUT_RAW)
-        ;
+            : $output->write($report, false, OutputInterface::OUTPUT_RAW);
 
         return 0;
     }
 
-    /**
-     * @param string $format
-     *
-     * @return ReporterInterface
-     */
-    private function resolveReporterWithFactory($format, ReporterFactory $factory)
+    private function resolveReporterWithFactory(string $format, ReporterFactory $factory): ReporterInterface
     {
         try {
             $factory->registerBuiltInReporters();
@@ -84,7 +79,7 @@ final class ListSetsCommand extends Command
             $formats = $factory->getFormats();
             sort($formats);
 
-            throw new InvalidConfigurationException(sprintf('The format "%s" is not defined, supported are "%s".', $format, implode('", "', $formats)));
+            throw new InvalidConfigurationException(\sprintf('The format "%s" is not defined, supported are %s.', $format, Utils::naturalLanguageJoin($formats)));
         }
 
         return $reporter;
