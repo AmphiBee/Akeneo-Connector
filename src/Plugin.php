@@ -160,8 +160,8 @@ class Plugin
 
             $sql = "CREATE TABLE $table (
                 id mediumint(9) NOT NULL AUTO_INCREMENT,
-                product_id mediumint(9) DEFAULT NULL,
-                parent_id mediumint(9) DEFAULT NULL,
+                product_id bigint(9) DEFAULT NULL,
+                parent_id bigint(9) DEFAULT NULL,
                 model_code varchar(45) DEFAULT NULL,
                 family_code varchar(45) DEFAULT NULL,
                 variant_code varchar(45) DEFAULT NULL,
