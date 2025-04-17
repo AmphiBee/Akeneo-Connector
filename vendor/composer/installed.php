@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'amphibee/akeneo-connector',
-        'pretty_version' => '1.21',
-        'version' => '1.21.0.0',
+        'pretty_version' => '1.22.2',
+        'version' => '1.22.2.0',
         'reference' => null,
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
@@ -29,8 +29,8 @@
             'dev_requirement' => false,
         ),
         'amphibee/akeneo-connector' => array(
-            'pretty_version' => '1.21',
-            'version' => '1.21.0.0',
+            'pretty_version' => '1.22.2',
+            'version' => '1.22.2.0',
             'reference' => null,
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
@@ -183,9 +183,9 @@
             'dev_requirement' => true,
         ),
         'friendsofphp/php-cs-fixer' => array(
-            'pretty_version' => 'v3.72.0',
-            'version' => '3.72.0.0',
-            'reference' => '900389362c43d116fee1ffc51f7878145fa61b57',
+            'pretty_version' => 'v3.75.0',
+            'version' => '3.75.0.0',
+            'reference' => '399a128ff2fdaf4281e4e79b755693286cdf325c',
             'type' => 'application',
             'install_path' => __DIR__ . '/../friendsofphp/php-cs-fixer',
             'aliases' => array(),

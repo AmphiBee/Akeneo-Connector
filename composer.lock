@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a02ff1f6921b160e5901adac463adc08",
+    "content-hash": "13b2a77b58dd3f1e3735a085468bd07b",
     "packages": [
         {
             "name": "akeneo/api-php-client",
@@ -6303,16 +6303,16 @@
         },
         {
             "name": "friendsofphp/php-cs-fixer",
-            "version": "v3.72.0",
+            "version": "v3.75.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer.git",
-                "reference": "900389362c43d116fee1ffc51f7878145fa61b57"
+                "reference": "399a128ff2fdaf4281e4e79b755693286cdf325c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/900389362c43d116fee1ffc51f7878145fa61b57",
-                "reference": "900389362c43d116fee1ffc51f7878145fa61b57",
+                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/399a128ff2fdaf4281e4e79b755693286cdf325c",
+                "reference": "399a128ff2fdaf4281e4e79b755693286cdf325c",
                 "shasum": ""
             },
             "require": {
@@ -6320,6 +6320,7 @@
                 "composer/semver": "^3.4",
                 "composer/xdebug-handler": "^3.0.3",
                 "ext-filter": "*",
+                "ext-hash": "*",
                 "ext-json": "*",
                 "ext-tokenizer": "*",
                 "fidry/cpu-core-counter": "^1.2",
@@ -6394,7 +6395,7 @@
             ],
             "support": {
                 "issues": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/issues",
-                "source": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/tree/v3.72.0"
+                "source": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/tree/v3.75.0"
             },
             "funding": [
                 {
@@ -6402,7 +6403,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-03-13T11:25:37+00:00"
+            "time": "2025-03-31T18:40:42+00:00"
         },
         {
             "name": "pdepend/pdepend",
