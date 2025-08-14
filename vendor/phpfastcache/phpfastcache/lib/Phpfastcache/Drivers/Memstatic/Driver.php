@@ -1,43 +1,41 @@
 <?php
+
 /**
  *
- * This file is part of phpFastCache.
+ * This file is part of Phpfastcache.
  *
  * @license MIT License (MIT)
  *
- * For full copyright and license information, please see the docs/CREDITS.txt file.
+ * For full copyright and license information, please see the docs/CREDITS.txt and LICENCE files.
  *
- * @author Khoa Bui (khoaofgod)  <khoaofgod@gmail.com> https://www.phpfastcache.com
  * @author Georges.L (Geolim4)  <contact@geolim4.com>
- *
+ * @author Contributors  https://github.com/PHPSocialNetwork/phpfastcache/graphs/contributors
  */
+
 declare(strict_types=1);
 
 namespace Phpfastcache\Drivers\Memstatic;
 
-use Phpfastcache\Core\Pool\{
-    DriverBaseTrait, ExtendedCacheItemPoolInterface
-};
+use Phpfastcache\Core\Pool\ExtendedCacheItemPoolInterface;
+use Phpfastcache\Core\Pool\TaggableCacheItemPoolTrait;
+use Phpfastcache\Core\Item\ExtendedCacheItemInterface;
 use Phpfastcache\Entities\DriverStatistic;
-use Phpfastcache\Exceptions\{
-    PhpfastcacheInvalidArgumentException
-};
+use Phpfastcache\Exceptions\PhpfastcacheInvalidArgumentException;
+use Phpfastcache\Exceptions\PhpfastcacheLogicException;
 use Psr\Cache\CacheItemInterface;
 
 /**
  * Class Driver
- * @package phpFastCache\Drivers
- * @property Config $config Config object
- * @method Config getConfig() Return the config object
+ * @method Config getConfig()
  */
 class Driver implements ExtendedCacheItemPoolInterface
 {
-    use DriverBaseTrait;
+    use TaggableCacheItemPoolTrait;
 
     /**
-     * @var array
+     * @var array<string, array<string, mixed>>
      */
-    protected $staticStack = [];
+    protected array $staticStack = [];
 
     /**
      * @return bool
@@ -56,56 +54,43 @@ class Driver implements ExtendedCacheItemPoolInterface
     }
 
     /**
-     * @param \Psr\Cache\CacheItemInterface $item
-     * @return null|array
+     * @param ExtendedCacheItemInterface $item
+     * @return ?array<string, mixed>
      */
-    protected function driverRead(CacheItemInterface $item)
+    protected function driverRead(ExtendedCacheItemInterface $item): ?array
     {
-        $key = \md5($item->getKey());
-        if (isset($this->staticStack[$key])) {
-            return $this->staticStack[$key];
-        }
-        return null;
+        return $this->staticStack[$item->getKey()] ?? null;
     }
 
     /**
-     * @param \Psr\Cache\CacheItemInterface $item
+     * @param ExtendedCacheItemInterface $item
+     * @return bool
+     * @throws PhpfastcacheInvalidArgumentException
+     * @throws PhpfastcacheLogicException
+     */
+    protected function driverWrite(ExtendedCacheItemInterface $item): bool
+    {
+        $this->assertCacheItemType($item, Item::class);
+
+        $this->staticStack[$item->getKey()] = $this->driverPreWrap($item);
+        return true;
+    }
+
+    /**
+     * @param ExtendedCacheItemInterface $item
      * @return bool
      * @throws PhpfastcacheInvalidArgumentException
      */
-    protected function driverWrite(CacheItemInterface $item): bool
+    protected function driverDelete(ExtendedCacheItemInterface $item): bool
     {
-        /**
-         * Check for Cross-Driver type confusion
-         */
-        if ($item instanceof Item) {
-            $this->staticStack[\md5($item->getKey())] = $this->driverPreWrap($item);
+        $this->assertCacheItemType($item, Item::class);
+
+        $key = $item->getKey();
+        if (isset($this->staticStack[$key])) {
+            unset($this->staticStack[$key]);
             return true;
         }
-
-        throw new PhpfastcacheInvalidArgumentException('Cross-Driver type confusion detected');
-    }
-
-    /**
-     * @param \Psr\Cache\CacheItemInterface $item
-     * @return bool
-     * @throws PhpfastcacheInvalidArgumentException
-     */
-    protected function driverDelete(CacheItemInterface $item): bool
-    {
-        /**
-         * Check for Cross-Driver type confusion
-         */
-        if ($item instanceof Item) {
-            $key = \md5($item->getKey());
-            if (isset($this->staticStack[$key])) {
-                unset($this->staticStack[$key]);
-                return true;
-            }
-            return false;
-        }
-
-        throw new PhpfastcacheInvalidArgumentException('Cross-Driver type confusion detected');
+        return false;
     }
 
     /**
@@ -118,12 +103,6 @@ class Driver implements ExtendedCacheItemPoolInterface
         return true;
     }
 
-    /********************
-     *
-     * PSR-6 Extended Methods
-     *
-     *******************/
-
     /**
      * @return DriverStatistic
      */
@@ -131,8 +110,8 @@ class Driver implements ExtendedCacheItemPoolInterface
     {
         $stat = new DriverStatistic();
         $stat->setInfo('[Memstatic] A memory static driver')
-            ->setSize(mb_strlen(\serialize($this->staticStack)))
-            ->setData(\implode(', ', \array_keys($this->itemInstances)))
+            ->setSize(mb_strlen(serialize($this->staticStack)))
+            ->setData(implode(', ', array_keys($this->itemInstances)))
             ->setRawData($this->staticStack);
 
         return $stat;

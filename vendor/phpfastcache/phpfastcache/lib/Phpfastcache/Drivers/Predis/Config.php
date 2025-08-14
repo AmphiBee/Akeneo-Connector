@@ -1,15 +1,15 @@
 <?php
+
 /**
  *
- * This file is part of phpFastCache.
+ * This file is part of Phpfastcache.
  *
  * @license MIT License (MIT)
  *
- * For full copyright and license information, please see the docs/CREDITS.txt file.
+ * For full copyright and license information, please see the docs/CREDITS.txt and LICENCE files.
  *
- * @author Khoa Bui (khoaofgod)  <khoaofgod@gmail.com> https://www.phpfastcache.com
  * @author Georges.L (Geolim4)  <contact@geolim4.com>
- *
+ * @author Contributors  https://github.com/PHPSocialNetwork/phpfastcache/graphs/contributors
  */
 
 declare(strict_types=1);
@@ -18,53 +18,33 @@ namespace Phpfastcache\Drivers\Predis;
 
 use Phpfastcache\Config\ConfigurationOption;
 use Phpfastcache\Exceptions\PhpfastcacheInvalidConfigurationException;
+use Phpfastcache\Exceptions\PhpfastcacheLogicException;
+use Predis\Client;
 
 class Config extends ConfigurationOption
 {
-    /**
-     * @var string
+    protected string $host = '127.0.0.1';
+    protected int $port = 6379;
+    protected string $password = '';
+    protected int $database = 0;
+    protected ?Client $predisClient = null;
+    protected string $optPrefix = '';
+    protected int $timeout = 5;
+    protected bool $persistent = false;
+    protected string $scheme = 'unix';
+/**
+     * @return array<string, mixed>
      */
-    protected $host = '127.0.0.1';
-
-    /**
-     * @var int
-     */
-    protected $port = 6379;
-
-    /**
-     * @var string
-     */
-    protected $password = '';
-
-    /**
-     * @var int
-     */
-    protected $database = 0;
-
-    /**
-     * @var \Predis\Client
-     */
-    protected $predisClient;
-
-    /**
-     * @var string
-     */
-    protected $optPrefix = '';
-
-    /**
-     * @var int
-     */
-    protected $timeout = 5;
-
-    /**
-     * @var bool
-     */
-    protected $persistent = false;
-
-    /**
-     * @var string
-     */
-    protected $scheme = 'unix';
+    public function getPredisConfigArray(): array
+    {
+        return [
+            'host' => $this->getHost(),
+            'port' => $this->getPort(),
+            'password' => $this->getPassword() ?: null,
+            'database' => $this->getDatabase(),
+            'timeout' => $this->getTimeout(),
+        ];
+    }
 
     /**
      * @return string
@@ -77,9 +57,11 @@ class Config extends ConfigurationOption
     /**
      * @param string $host
      * @return Config
+     * @throws PhpfastcacheLogicException
      */
-    public function setHost(string $host): self
+    public function setHost(string $host): static
     {
+        $this->enforceLockedProperty(__FUNCTION__);
         $this->host = $host;
         return $this;
     }
@@ -95,27 +77,31 @@ class Config extends ConfigurationOption
     /**
      * @param int $port
      * @return Config
+     * @throws PhpfastcacheLogicException
      */
-    public function setPort(int $port): self
+    public function setPort(int $port): static
     {
+        $this->enforceLockedProperty(__FUNCTION__);
         $this->port = $port;
         return $this;
     }
 
     /**
-     * @return null
+     * @return string
      */
-    public function getPassword()
+    public function getPassword(): string
     {
         return $this->password;
     }
 
     /**
-     * @param null $password
+     * @param string $password
      * @return self
+     * @throws PhpfastcacheLogicException
      */
-    public function setPassword(string $password): self
+    public function setPassword(string $password): static
     {
+        $this->enforceLockedProperty(__FUNCTION__);
         $this->password = $password;
         return $this;
     }
@@ -131,41 +117,51 @@ class Config extends ConfigurationOption
     /**
      * @param int $database
      * @return Config
+     * @throws PhpfastcacheLogicException
      */
-    public function setDatabase(int $database): self
+    public function setDatabase(int $database): static
     {
+        $this->enforceLockedProperty(__FUNCTION__);
         $this->database = $database;
         return $this;
     }
 
     /**
-     * @return array
+     * @return int
      */
-    public function getPredisConfigArray(): array
+    public function getTimeout(): int
     {
-        return [
-            'host' => $this->getHost(),
-            'port' => $this->getPort(),
-            'password' => $this->getPassword() ?: null,
-            'database' => $this->getDatabase(),
-            'timeout' => $this->getTimeout(),
-        ];
+        return $this->timeout;
     }
 
     /**
-     * @return \Predis\Client|null
+     * @param int $timeout
+     * @return self
+     * @throws PhpfastcacheLogicException
      */
-    public function getPredisClient()
+    public function setTimeout(int $timeout): static
+    {
+        $this->enforceLockedProperty(__FUNCTION__);
+        $this->timeout = $timeout;
+        return $this;
+    }
+
+    /**
+     * @return Client|null
+     */
+    public function getPredisClient(): ?Client
     {
         return $this->predisClient;
     }
 
     /**
-     * @param \Predis\Client $predisClient |null
+     * @param Client|null $predisClient
      * @return Config
+     * @throws PhpfastcacheLogicException
      */
-    public function setPredisClient(\Predis\Client $predisClient = null): Config
+    public function setPredisClient(?Client $predisClient = null): Config
     {
+        $this->enforceLockedProperty(__FUNCTION__);
         $this->predisClient = $predisClient;
         return $this;
     }
@@ -182,29 +178,13 @@ class Config extends ConfigurationOption
     /**
      * @param string $optPrefix
      * @return Config
+     * @throws PhpfastcacheLogicException
      * @since 7.0.2
      */
     public function setOptPrefix(string $optPrefix): Config
     {
+        $this->enforceLockedProperty(__FUNCTION__);
         $this->optPrefix = trim($optPrefix);
-        return $this;
-    }
-
-    /**
-     * @return int
-     */
-    public function getTimeout(): int
-    {
-        return $this->timeout;
-    }
-
-    /**
-     * @param int $timeout
-     * @return self
-     */
-    public function setTimeout(int $timeout): self
-    {
-        $this->timeout = $timeout;
         return $this;
     }
 
@@ -219,9 +199,11 @@ class Config extends ConfigurationOption
     /**
      * @param bool $persistent
      * @return Config
+     * @throws PhpfastcacheLogicException
      */
     public function setPersistent(bool $persistent): Config
     {
+        $this->enforceLockedProperty(__FUNCTION__);
         $this->persistent = $persistent;
         return $this;
     }
@@ -238,10 +220,12 @@ class Config extends ConfigurationOption
      * @param string $scheme
      * @return Config
      * @throws PhpfastcacheInvalidConfigurationException
+     * @throws PhpfastcacheLogicException
      */
     public function setScheme(string $scheme): Config
     {
-        if(!\in_array($scheme, ['unix', 'tls'], true)){
+        $this->enforceLockedProperty(__FUNCTION__);
+        if (!in_array($scheme, ['unix', 'tls'], true)) {
             throw new PhpfastcacheInvalidConfigurationException('Invalid scheme: ' . $scheme);
         }
         $this->scheme = $scheme;
