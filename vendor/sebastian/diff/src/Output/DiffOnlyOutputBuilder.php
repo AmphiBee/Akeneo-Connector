@@ -9,9 +9,12 @@
  */
 namespace SebastianBergmann\Diff\Output;
 
+use function assert;
 use function fclose;
 use function fopen;
 use function fwrite;
+use function is_resource;
+use function str_ends_with;
 use function stream_get_contents;
 use function substr;
 use SebastianBergmann\Diff\Differ;
@@ -22,41 +25,47 @@ use SebastianBergmann\Diff\Differ;
  */
 final class DiffOnlyOutputBuilder implements DiffOutputBuilderInterface
 {
-    /**
-     * @var string
-     */
-    private $header;
+    private string $header;
 
     public function __construct(string $header = "--- Original\n+++ New\n")
     {
         $this->header = $header;
     }
 
+    /**
+     * @param list<array{0: mixed, 1: int}> $diff
+     */
     public function getDiff(array $diff): string
     {
         $buffer = fopen('php://memory', 'r+b');
 
+        assert(is_resource($buffer));
+
         if ('' !== $this->header) {
             fwrite($buffer, $this->header);
 
-            if ("\n" !== substr($this->header, -1, 1)) {
+            if (!str_ends_with($this->header, "\n")) {
                 fwrite($buffer, "\n");
             }
         }
 
         foreach ($diff as $diffEntry) {
             if ($diffEntry[1] === Differ::ADDED) {
+                /** @phpstan-ignore binaryOp.invalid */
                 fwrite($buffer, '+' . $diffEntry[0]);
             } elseif ($diffEntry[1] === Differ::REMOVED) {
+                /** @phpstan-ignore binaryOp.invalid */
                 fwrite($buffer, '-' . $diffEntry[0]);
             } elseif ($diffEntry[1] === Differ::DIFF_LINE_END_WARNING) {
+                /** @phpstan-ignore binaryOp.invalid */
                 fwrite($buffer, ' ' . $diffEntry[0]);
 
                 continue; // Warnings should not be tested for line break, it will always be there
             } else { /* Not changed (old) 0 */
-                continue; // we didn't write the non changs line, so do not add a line break either
+                continue; // we didn't write the not-changed line, so do not add a line break either
             }
 
+            /** @phpstan-ignore argument.type */
             $lc = substr($diffEntry[0], -1);
 
             if ($lc !== "\n" && $lc !== "\r") {
