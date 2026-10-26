@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'amphibee/akeneo-connector',
-        'pretty_version' => '1.21',
-        'version' => '1.21.0.0',
+        'pretty_version' => '1.22.2',
+        'version' => '1.22.2.0',
         'reference' => null,
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
@@ -29,8 +29,8 @@
             'dev_requirement' => false,
         ),
         'amphibee/akeneo-connector' => array(
-            'pretty_version' => '1.21',
-            'version' => '1.21.0.0',
+            'pretty_version' => '1.22.2',
+            'version' => '1.22.2.0',
             'reference' => null,
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
@@ -87,7 +87,7 @@
         'clue/ndjson-react' => array(
             'pretty_version' => '1.x-dev',
             'version' => '1.9999999.9999999.9999999-dev',
-            'reference' => '8fc557eaa902e4f1de171b5b4eaa6246fbe4118e',
+            'reference' => '60c4f980a4f7fb5d415be2ab4ad4d41522110d19',
             'type' => 'library',
             'install_path' => __DIR__ . '/../clue/ndjson-react',
             'aliases' => array(),
@@ -107,7 +107,7 @@
         'composer/pcre' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'deb3871d20d5012eb5faa5a9caa71c44f151db49',
+            'reference' => 'c21668cb2bcc78b7137374534a041dc0f6ad7152',
             'type' => 'library',
             'install_path' => __DIR__ . '/./pcre',
             'aliases' => array(
@@ -118,7 +118,7 @@
         'composer/semver' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '4313d26ada5e0c4edfbd1dc481a92ff7bff91f12',
+            'reference' => '9dfce66f1e97360ea5e6d3e38ab14277e4cc591e',
             'type' => 'library',
             'install_path' => __DIR__ . '/./semver',
             'aliases' => array(
@@ -164,6 +164,17 @@
             ),
             'dev_requirement' => false,
         ),
+        'ergebnis/agent-detector' => array(
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '0cd815cec1207873c37624d33f0f2853523152f3',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../ergebnis/agent-detector',
+            'aliases' => array(
+                0 => '1.3.x-dev',
+            ),
+            'dev_requirement' => true,
+        ),
         'evenement/evenement' => array(
             'pretty_version' => 'v3.0.2',
             'version' => '3.0.2.0',
@@ -174,18 +185,18 @@
             'dev_requirement' => true,
         ),
         'fidry/cpu-core-counter' => array(
-            'pretty_version' => '1.2.0',
-            'version' => '1.2.0.0',
-            'reference' => '8520451a140d3f46ac33042715115e290cf5785f',
+            'pretty_version' => '1.4.1',
+            'version' => '1.4.1.0',
+            'reference' => 'd384a7d0d6e67aa497327260ca95023e92dc2032',
             'type' => 'library',
             'install_path' => __DIR__ . '/../fidry/cpu-core-counter',
             'aliases' => array(),
             'dev_requirement' => true,
         ),
         'friendsofphp/php-cs-fixer' => array(
-            'pretty_version' => 'v3.72.0',
-            'version' => '3.72.0.0',
-            'reference' => '900389362c43d116fee1ffc51f7878145fa61b57',
+            'pretty_version' => 'v3.95.27',
+            'version' => '3.95.27.0',
+            'reference' => '1d0c68ee5f37446d8ad5970b82384cd1bb0a3317',
             'type' => 'application',
             'install_path' => __DIR__ . '/../friendsofphp/php-cs-fixer',
             'aliases' => array(),
@@ -701,7 +712,7 @@
         'react/cache' => array(
             'pretty_version' => '1.x-dev',
             'version' => '1.9999999.9999999.9999999-dev',
-            'reference' => '36c51f36d5f3c23cfcc2b5dc5e443bb5ff085605',
+            'reference' => 'eace2ae5d409b05720f34c79ec027d79d84dd1c4',
             'type' => 'library',
             'install_path' => __DIR__ . '/../react/cache',
             'aliases' => array(),
@@ -710,7 +721,7 @@
         'react/child-process' => array(
             'pretty_version' => '0.6.x-dev',
             'version' => '0.6.9999999.9999999-dev',
-            'reference' => '1721e2b93d89b745664353b9cfc8f155ba8a6159',
+            'reference' => 'b7cd3f5e81ddf19b897ad58f1beddc594917a62f',
             'type' => 'library',
             'install_path' => __DIR__ . '/../react/child-process',
             'aliases' => array(),
@@ -719,7 +730,7 @@
         'react/dns' => array(
             'pretty_version' => '1.x-dev',
             'version' => '1.9999999.9999999.9999999-dev',
-            'reference' => 'eb8ae001b5a455665c89c1df97f6fb682f8fb0f5',
+            'reference' => '36922a39aa94ec4351712f183e3e67449d71b6d7',
             'type' => 'library',
             'install_path' => __DIR__ . '/../react/dns',
             'aliases' => array(),
@@ -728,7 +739,7 @@
         'react/event-loop' => array(
             'pretty_version' => '1.x-dev',
             'version' => '1.9999999.9999999.9999999-dev',
-            'reference' => 'bbe0bd8c51ffc05ee43f1729087ed3bdf7d53354',
+            'reference' => '4751c445578037e1d0eae4480642e616222d546c',
             'type' => 'library',
             'install_path' => __DIR__ . '/../react/event-loop',
             'aliases' => array(),
@@ -737,7 +748,7 @@
         'react/promise' => array(
             'pretty_version' => '3.x-dev',
             'version' => '3.9999999.9999999.9999999-dev',
-            'reference' => '5f80055cc21ba7bcd3989e4902061fc12e2bcc1d',
+            'reference' => '63cde9c050a876ac25d2d2880c0a2a000b26e211',
             'type' => 'library',
             'install_path' => __DIR__ . '/../react/promise',
             'aliases' => array(),
@@ -746,7 +757,7 @@
         'react/socket' => array(
             'pretty_version' => '1.x-dev',
             'version' => '1.9999999.9999999.9999999-dev',
-            'reference' => '23e4ff33ea3e160d2d1f59a0e6050e4b0fb0eac1',
+            'reference' => '23fc284c3a38ad4866aaf8c50ca21b83d62df818',
             'type' => 'library',
             'install_path' => __DIR__ . '/../react/socket',
             'aliases' => array(),
@@ -755,7 +766,7 @@
         'react/stream' => array(
             'pretty_version' => '1.x-dev',
             'version' => '1.9999999.9999999.9999999-dev',
-            'reference' => '1e5b0acb8fe55143b5b426817155190eb6f5b18d',
+            'reference' => 'c5dabd004f52eb725b29adee1c95fc8d0842f5c1',
             'type' => 'library',
             'install_path' => __DIR__ . '/../react/stream',
             'aliases' => array(),
@@ -771,12 +782,14 @@
             'dev_requirement' => true,
         ),
         'sebastian/diff' => array(
-            'pretty_version' => '4.0.x-dev',
-            'version' => '4.0.9999999.9999999-dev',
-            'reference' => 'ba01945089c3a293b01ba9badc29ad55b106b0bc',
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '165a3a78361647053f0d68f7b38b9ce7b9391e74',
             'type' => 'library',
             'install_path' => __DIR__ . '/../sebastian/diff',
-            'aliases' => array(),
+            'aliases' => array(
+                0 => '9.0.x-dev',
+            ),
             'dev_requirement' => true,
         ),
         'sebastian/phpcpd' => array(
@@ -820,7 +833,7 @@
         'symfony/console' => array(
             'pretty_version' => '5.4.x-dev',
             'version' => '5.4.9999999.9999999-dev',
-            'reference' => 'c4ba980ca61a9eb18ee6bcc73f28e475852bb1ed',
+            'reference' => 'b4c35f5f50d251bf635746a836122f04f34889ea',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/console',
             'aliases' => array(),
@@ -880,7 +893,7 @@
         'symfony/filesystem' => array(
             'pretty_version' => '5.4.x-dev',
             'version' => '5.4.9999999.9999999-dev',
-            'reference' => '57c8294ed37d4a055b77057827c67f9558c95c54',
+            'reference' => 'c4a6cc5733386414f6d17d744ee5ad8b445e349d',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/filesystem',
             'aliases' => array(),
@@ -889,7 +902,7 @@
         'symfony/finder' => array(
             'pretty_version' => '5.4.x-dev',
             'version' => '5.4.9999999.9999999-dev',
-            'reference' => '63741784cd7b9967975eec610b256eed3ede022b',
+            'reference' => 'c5d2eb9bee29f15dfb13602fe2a8d5f7a44b20a0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/finder',
             'aliases' => array(),
@@ -934,7 +947,7 @@
         'symfony/polyfill-ctype' => array(
             'pretty_version' => '1.x-dev',
             'version' => '1.9999999.9999999.9999999-dev',
-            'reference' => 'a3cc8b044a6ea513310cbd48ef7333b384945638',
+            'reference' => '141046a8f9477948ff284fa65be2095baafb94f2',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/polyfill-ctype',
             'aliases' => array(),
@@ -943,7 +956,7 @@
         'symfony/polyfill-intl-grapheme' => array(
             'pretty_version' => '1.x-dev',
             'version' => '1.9999999.9999999.9999999-dev',
-            'reference' => 'b9123926e3b7bc2f98c02ad54f6a4b02b91a8abe',
+            'reference' => '5a8f33c87aeecffce24e721b5064fab05f4becf8',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/polyfill-intl-grapheme',
             'aliases' => array(),
@@ -961,7 +974,7 @@
         'symfony/polyfill-intl-normalizer' => array(
             'pretty_version' => '1.x-dev',
             'version' => '1.9999999.9999999.9999999-dev',
-            'reference' => '3833d7255cc303546435cb650316bff708a1c75c',
+            'reference' => 'ebd57ccc7edb93d632e184efbe7693d2517bab3b',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/polyfill-intl-normalizer',
             'aliases' => array(),
@@ -970,7 +983,7 @@
         'symfony/polyfill-mbstring' => array(
             'pretty_version' => '1.x-dev',
             'version' => '1.9999999.9999999.9999999-dev',
-            'reference' => '6d857f4d76bd4b343eac26d6b539585d2bc56493',
+            'reference' => '4d5d331bf731e0aedbc6b2f5e61135b7b7996a72',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/polyfill-mbstring',
             'aliases' => array(),
@@ -988,7 +1001,7 @@
         'symfony/polyfill-php80' => array(
             'pretty_version' => '1.x-dev',
             'version' => '1.9999999.9999999.9999999-dev',
-            'reference' => '0cc9dd0f17f61d8131e7df6b84bd344899fe2608',
+            'reference' => '9c6a5d6b01ca51d486c813e9a9c0ed55f208bb74',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/polyfill-php80',
             'aliases' => array(),
@@ -997,16 +1010,25 @@
         'symfony/polyfill-php81' => array(
             'pretty_version' => '1.x-dev',
             'version' => '1.9999999.9999999.9999999-dev',
-            'reference' => '4a4cfc2d253c21a5ad0e53071df248ed48c6ce5c',
+            'reference' => '6bfb9c766cacffbc8e118cb87217d08ed84e5cd7',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/polyfill-php81',
+            'aliases' => array(),
+            'dev_requirement' => true,
+        ),
+        'symfony/polyfill-php84' => array(
+            'pretty_version' => '1.x-dev',
+            'version' => '1.9999999.9999999.9999999-dev',
+            'reference' => '22c6548499cbe5c5bb072fc0c42312dff062a015',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../symfony/polyfill-php84',
             'aliases' => array(),
             'dev_requirement' => true,
         ),
         'symfony/process' => array(
             'pretty_version' => '5.4.x-dev',
             'version' => '5.4.9999999.9999999-dev',
-            'reference' => '5d1662fb32ebc94f17ddb8d635454a776066733d',
+            'reference' => '485d7b3f15ae329058d2407c9772c57ed4f564de',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/process',
             'aliases' => array(),
