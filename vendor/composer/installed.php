@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'amphibee/akeneo-connector',
-        'pretty_version' => '1.21',
-        'version' => '1.21.0.0',
+        'pretty_version' => '1.22.2',
+        'version' => '1.22.2.0',
         'reference' => null,
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
@@ -29,8 +29,8 @@
             'dev_requirement' => false,
         ),
         'amphibee/akeneo-connector' => array(
-            'pretty_version' => '1.21',
-            'version' => '1.21.0.0',
+            'pretty_version' => '1.22.2',
+            'version' => '1.22.2.0',
             'reference' => null,
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
@@ -210,9 +210,9 @@
             'dev_requirement' => false,
         ),
         'guzzlehttp/psr7' => array(
-            'pretty_version' => '2.7.x-dev',
-            'version' => '2.7.9999999.9999999-dev',
-            'reference' => 'ca06f23f35cf0b70a6f56d3d95c51bbc1062fade',
+            'pretty_version' => '2.13.x-dev',
+            'version' => '2.13.9999999.9999999-dev',
+            'reference' => 'adee536f95101929f262b8c59e8a61472f347d58',
             'type' => 'library',
             'install_path' => __DIR__ . '/../guzzlehttp/psr7',
             'aliases' => array(),
@@ -225,9 +225,9 @@
             ),
         ),
         'http-interop/http-factory-guzzle' => array(
-            'pretty_version' => '1.2.0',
-            'version' => '1.2.0.0',
-            'reference' => '8f06e92b95405216b237521cc64c804dd44c4a81',
+            'pretty_version' => '1.2.1',
+            'version' => '1.2.1.0',
+            'reference' => 'c2c859ceb05c3f42e710b60555f4c35b6a4a3995',
             'type' => 'library',
             'install_path' => __DIR__ . '/../http-interop/http-factory-guzzle',
             'aliases' => array(),
@@ -988,7 +988,7 @@
         'symfony/polyfill-php80' => array(
             'pretty_version' => '1.x-dev',
             'version' => '1.9999999.9999999.9999999-dev',
-            'reference' => '0cc9dd0f17f61d8131e7df6b84bd344899fe2608',
+            'reference' => '9c6a5d6b01ca51d486c813e9a9c0ed55f208bb74',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/polyfill-php80',
             'aliases' => array(),
