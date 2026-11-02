@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'amphibee/akeneo-connector',
-        'pretty_version' => '1.21',
-        'version' => '1.21.0.0',
+        'pretty_version' => '1.22.2',
+        'version' => '1.22.2.0',
         'reference' => null,
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
@@ -29,8 +29,8 @@
             'dev_requirement' => false,
         ),
         'amphibee/akeneo-connector' => array(
-            'pretty_version' => '1.21',
-            'version' => '1.21.0.0',
+            'pretty_version' => '1.22.2',
+            'version' => '1.22.2.0',
             'reference' => null,
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
@@ -798,14 +798,12 @@
             'dev_requirement' => true,
         ),
         'squizlabs/php_codesniffer' => array(
-            'pretty_version' => 'dev-master',
-            'version' => 'dev-master',
-            'reference' => 'd0d44116111f6e41913a16b96387910917995c35',
+            'pretty_version' => '4.0.4',
+            'version' => '4.0.4.0',
+            'reference' => 'bbdc3d0532623e21838b7041a4364383a8126f96',
             'type' => 'library',
             'install_path' => __DIR__ . '/../squizlabs/php_codesniffer',
-            'aliases' => array(
-                0 => '3.x-dev',
-            ),
+            'aliases' => array(),
             'dev_requirement' => true,
         ),
         'symfony/config' => array(

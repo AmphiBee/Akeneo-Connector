@@ -3,15 +3,15 @@
  * Checks that all PHP keywords are lowercase.
  *
  * @author    Greg Sherwood <gsherwood@squiz.net>
- * @copyright 2006-2015 Squiz Pty Ltd (ABN 77 084 670 600)
- * @license   https://github.com/PHPCSStandards/PHP_CodeSniffer/blob/master/licence.txt BSD Licence
+ * @copyright 2006-2023 Squiz Pty Ltd (ABN 77 084 670 600)
+ * @copyright 2023 PHPCSStandards and contributors
+ * @license   https://github.com/PHPCSStandards/PHP_CodeSniffer/blob/HEAD/licence.txt BSD Licence
  */
 
 namespace PHP_CodeSniffer\Standards\Generic\Sniffs\PHP;
 
 use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;
-use PHP_CodeSniffer\Util\Common;
 use PHP_CodeSniffer\Util\Tokens;
 
 class LowerCaseKeywordSniff implements Sniff
@@ -25,7 +25,7 @@ class LowerCaseKeywordSniff implements Sniff
      */
     public function register()
     {
-        $targets  = Tokens::$contextSensitiveKeywords;
+        $targets  = Tokens::CONTEXT_SENSITIVE_KEYWORDS;
         $targets += [
             T_ANON_CLASS    => T_ANON_CLASS,
             T_CLOSURE       => T_CLOSURE,
@@ -33,11 +33,13 @@ class LowerCaseKeywordSniff implements Sniff
             T_MATCH_DEFAULT => T_MATCH_DEFAULT,
             T_PARENT        => T_PARENT,
             T_SELF          => T_SELF,
+            T_PUBLIC_SET    => T_PUBLIC_SET,
+            T_PROTECTED_SET => T_PROTECTED_SET,
+            T_PRIVATE_SET   => T_PRIVATE_SET,
         ];
 
         return $targets;
-
-    }//end register()
+    }
 
 
     /**
@@ -49,7 +51,7 @@ class LowerCaseKeywordSniff implements Sniff
      *
      * @return void
      */
-    public function process(File $phpcsFile, $stackPtr)
+    public function process(File $phpcsFile, int $stackPtr)
     {
         $tokens  = $phpcsFile->getTokens();
         $keyword = $tokens[$stackPtr]['content'];
@@ -60,12 +62,10 @@ class LowerCaseKeywordSniff implements Sniff
                 $phpcsFile->recordMetric($stackPtr, 'PHP keyword case', 'mixed');
             }
 
-            $messageKeyword = Common::prepareForOutput($keyword);
-
             $error = 'PHP keywords must be lowercase; expected "%s" but found "%s"';
             $data  = [
-                strtolower($messageKeyword),
-                $messageKeyword,
+                strtolower($keyword),
+                $keyword,
             ];
 
             $fix = $phpcsFile->addFixableError($error, $stackPtr, 'Found', $data);
@@ -74,9 +74,6 @@ class LowerCaseKeywordSniff implements Sniff
             }
         } else {
             $phpcsFile->recordMetric($stackPtr, 'PHP keyword case', 'lower');
-        }//end if
-
-    }//end process()
-
-
-}//end class
+        }
+    }
+}
