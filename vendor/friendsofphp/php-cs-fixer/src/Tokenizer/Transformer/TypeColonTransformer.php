@@ -16,6 +16,7 @@ namespace PhpCsFixer\Tokenizer\Transformer;
 
 use PhpCsFixer\Tokenizer\AbstractTransformer;
 use PhpCsFixer\Tokenizer\CT;
+use PhpCsFixer\Tokenizer\FCT;
 use PhpCsFixer\Tokenizer\Token;
 use PhpCsFixer\Tokenizer\Tokens;
 
@@ -25,6 +26,8 @@ use PhpCsFixer\Tokenizer\Tokens;
  * @author Dariusz Rumiński <dariusz.ruminski@gmail.com>
  *
  * @internal
+ *
+ * @no-named-arguments Parameter names are not covered by the backward compatibility promise.
  */
 final class TypeColonTransformer extends AbstractTransformer
 {
@@ -40,39 +43,43 @@ final class TypeColonTransformer extends AbstractTransformer
         return 7_00_00;
     }
 
-    public function process(Tokens $tokens, Token $token, int $index): void
+    public function isCandidate(Tokens $tokens): bool
     {
-        if (!$token->equals(':')) {
-            return;
-        }
+        return $tokens->isTokenKindFound(':');
+    }
 
-        $endIndex = $tokens->getPrevMeaningfulToken($index);
+    public function process(Tokens $tokens): void
+    {
+        foreach ($tokens as $index => $token) {
+            if (!$tokens[$index]->equals(':')) {
+                continue;
+            }
 
-        if (
-            \defined('T_ENUM') // @TODO: drop condition when PHP 8.1+ is required
-            && $tokens[$tokens->getPrevMeaningfulToken($endIndex)]->isGivenKind(T_ENUM)
-        ) {
-            $tokens[$index] = new Token([CT::T_TYPE_COLON, ':']);
+            $endIndex = $tokens->getPrevMeaningfulToken($index);
 
-            return;
-        }
+            if ($tokens[$tokens->getPrevMeaningfulToken($endIndex)]->isGivenKind(FCT::T_ENUM)) {
+                $tokens[$index] = new Token([CT::T_TYPE_COLON, ':']);
 
-        if (!$tokens[$endIndex]->equals(')')) {
-            return;
-        }
+                continue;
+            }
 
-        $startIndex = $tokens->findBlockStart(Tokens::BLOCK_TYPE_PARENTHESIS_BRACE, $endIndex);
-        $prevIndex = $tokens->getPrevMeaningfulToken($startIndex);
-        $prevToken = $tokens[$prevIndex];
+            if (!$tokens[$endIndex]->equals(')')) {
+                continue;
+            }
 
-        // if this could be a function name we need to take one more step
-        if ($prevToken->isGivenKind(T_STRING)) {
-            $prevIndex = $tokens->getPrevMeaningfulToken($prevIndex);
+            $startIndex = $tokens->findBlockStart(Tokens::BLOCK_TYPE_PARENTHESIS, $endIndex);
+            $prevIndex = $tokens->getPrevMeaningfulToken($startIndex);
             $prevToken = $tokens[$prevIndex];
-        }
 
-        if ($prevToken->isGivenKind([T_FUNCTION, CT::T_RETURN_REF, CT::T_USE_LAMBDA, T_FN])) {
-            $tokens[$index] = new Token([CT::T_TYPE_COLON, ':']);
+            // if this could be a function name we need to take one more step
+            if ($prevToken->isGivenKind(\T_STRING)) {
+                $prevIndex = $tokens->getPrevMeaningfulToken($prevIndex);
+                $prevToken = $tokens[$prevIndex];
+            }
+
+            if ($prevToken->isGivenKind([\T_FUNCTION, CT::T_RETURN_REF, CT::T_USE_LAMBDA, \T_FN])) {
+                $tokens[$index] = new Token([CT::T_TYPE_COLON, ':']);
+            }
         }
     }
 
