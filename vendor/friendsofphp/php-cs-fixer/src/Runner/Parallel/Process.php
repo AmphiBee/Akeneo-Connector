@@ -29,6 +29,8 @@ use React\Stream\WritableStreamInterface;
  * @author Greg Korba <greg@codito.dev>
  *
  * @internal
+ *
+ * @no-named-arguments Parameter names are not covered by the backward compatibility promise.
  */
 final class Process
 {
@@ -63,12 +65,20 @@ final class Process
     }
 
     /**
-     * @param callable(array<array-key, mixed> $json): void  $onData  callback to be called when data is received from the parallelisation operator
-     * @param callable(\Throwable $exception): void          $onError callback to be called when an exception occurs
-     * @param callable(?int $exitCode, string $output): void $onExit  callback to be called when the process exits
+     * @param callable(array<array-key, mixed> $json): void                    $onData  callback to be called when data is received from the parallelisation operator
+     * @param callable(\Throwable $exception): void                            $onError callback to be called when an exception occurs
+     * @param callable(?int $exitCode, string $output, ?int $termSignal): void $onExit  callback to be called when the process exits
      */
     public function start(callable $onData, callable $onError, callable $onExit): void
     {
+        $sysTempDir = sys_get_temp_dir();
+        if (!is_writable($sysTempDir)) {
+            throw new ParallelisationException(\sprintf(
+                'Failed creating temp file as sys_get_temp_dir="%s" is not writable.',
+                $sysTempDir,
+            ));
+        }
+
         $stdOut = tmpfile();
         if (false === $stdOut) {
             throw new ParallelisationException('Failed creating temp file for stdOut.');
@@ -89,7 +99,7 @@ final class Process
             2 => $this->stdErr,
         ]);
         $this->process->start($this->loop);
-        $this->process->on('exit', function ($exitCode) use ($onExit): void {
+        $this->process->on('exit', function ($exitCode, $termSignal = null) use ($onExit): void {
             $this->cancelTimer();
 
             $output = '';
@@ -105,7 +115,7 @@ final class Process
                 $output .= $stdErr;
             }
 
-            $onExit($exitCode, $output);
+            $onExit($exitCode, $output, $termSignal);
 
             fclose($this->stdOut);
             fclose($this->stdErr);
@@ -123,7 +133,7 @@ final class Process
 
         if (null === $this->in) {
             throw new ParallelisationException(
-                'Process not connected with parallelisation operator, ensure `bindConnection()` was called'
+                'Process not connected with parallelisation operator, ensure `bindConnection()` was called',
             );
         }
 
@@ -133,8 +143,8 @@ final class Process
                 new \Exception(
                     \sprintf(
                         'Child process timed out after %d seconds. Try making it longer using `ParallelConfig`.',
-                        $this->timeoutSeconds
-                    )
+                        $this->timeoutSeconds,
+                    ),
                 )
             );
         });

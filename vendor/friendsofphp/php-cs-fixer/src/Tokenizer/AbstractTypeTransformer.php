@@ -15,55 +15,75 @@ declare(strict_types=1);
 namespace PhpCsFixer\Tokenizer;
 
 /**
+ * @phpstan-import-type _PhpTokenPrototype from Token
+ *
  * @author Dariusz Rumiński <dariusz.ruminski@gmail.com>
  *
  * @internal
+ *
+ * @no-named-arguments Parameter names are not covered by the backward compatibility promise.
  */
 abstract class AbstractTypeTransformer extends AbstractTransformer
 {
-    private const TYPE_END_TOKENS = [')', [T_CALLABLE], [T_NS_SEPARATOR], [T_STATIC], [T_STRING], [CT::T_ARRAY_TYPEHINT]];
+    private const TYPE_END_TOKENS = [')', [\T_CALLABLE], [\T_NS_SEPARATOR], [\T_STATIC], [\T_STRING], [CT::T_ARRAY_TYPEHINT]];
 
     private const TYPE_TOKENS = [
         '|', '&', '(',
         ...self::TYPE_END_TOKENS,
         [CT::T_TYPE_ALTERNATION], [CT::T_TYPE_INTERSECTION], // some siblings may already be transformed
-        [T_WHITESPACE], [T_COMMENT], [T_DOC_COMMENT], // technically these can be inside of type tokens array
+        [\T_WHITESPACE], [\T_COMMENT], [\T_DOC_COMMENT], // technically these can be inside of type tokens array
     ];
 
-    abstract protected function replaceToken(Tokens $tokens, int $index): void;
+    /**
+     * @var _PhpTokenPrototype
+     *
+     * @readonly
+     */
+    private $originalToken;
 
     /**
-     * @param array{0: int, 1: string}|string $originalToken
+     * @readonly
      */
-    protected function doProcess(Tokens $tokens, int $index, $originalToken): void
+    private Token $replacementToken;
+
+    /**
+     * @param _PhpTokenPrototype $originalToken
+     * @param _PhpTokenPrototype $replacementToken
+     */
+    public function __construct($originalToken, $replacementToken)
     {
-        if (!$tokens[$index]->equals($originalToken)) {
-            return;
-        }
+        $this->originalToken = $originalToken;
+        $this->replacementToken = new Token($replacementToken);
+    }
 
-        if (!$this->isPartOfType($tokens, $index)) {
-            return;
+    public function process(Tokens $tokens): void
+    {
+        foreach ($tokens as $index => $token) {
+            if (
+                $token->equals($this->originalToken)
+                && $this->isPartOfType($tokens, $index)
+            ) {
+                $tokens[$index] = clone $this->replacementToken;
+            }
         }
-
-        $this->replaceToken($tokens, $index);
     }
 
     private function isPartOfType(Tokens $tokens, int $index): bool
     {
         // return types and non-capturing catches
         $typeColonIndex = $tokens->getTokenNotOfKindSibling($index, -1, self::TYPE_TOKENS);
-        if ($tokens[$typeColonIndex]->isGivenKind([T_CATCH, CT::T_TYPE_COLON, T_CONST])) {
+        if ($tokens[$typeColonIndex]->isGivenKind([\T_CATCH, CT::T_TYPE_COLON, \T_CONST])) {
             return true;
         }
 
         // for parameter there will be splat operator or variable after the type ("&" is ambiguous and can be reference or bitwise and)
         $afterTypeIndex = $tokens->getTokenNotOfKindSibling($index, 1, self::TYPE_TOKENS);
 
-        if ($tokens[$afterTypeIndex]->isGivenKind(T_ELLIPSIS)) {
+        if ($tokens[$afterTypeIndex]->isGivenKind(\T_ELLIPSIS)) {
             return true;
         }
 
-        if (!$tokens[$afterTypeIndex]->isGivenKind(T_VARIABLE)) {
+        if (!$tokens[$afterTypeIndex]->isGivenKind(\T_VARIABLE)) {
             return false;
         }
 
@@ -75,13 +95,13 @@ abstract class AbstractTypeTransformer extends AbstractTransformer
                     '{',
                     '}',
                     ';',
-                    [T_CLOSE_TAG],
-                    [T_FN],
-                    [T_FUNCTION],
+                    [\T_CLOSE_TAG],
+                    [\T_FN],
+                    [\T_FUNCTION],
                 ],
             );
 
-            return null !== $prevIndex && $tokens[$prevIndex]->isGivenKind([T_FN, T_FUNCTION]);
+            return null !== $prevIndex && $tokens[$prevIndex]->isGivenKind([\T_FN, \T_FUNCTION]);
         }
 
         return $tokens[$beforeVariableIndex]->equalsAny(self::TYPE_END_TOKENS);

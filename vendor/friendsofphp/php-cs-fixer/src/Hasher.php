@@ -18,6 +18,8 @@ namespace PhpCsFixer;
  * @author Dariusz Rumiński <dariusz.ruminski@gmail.com>
  *
  * @internal
+ *
+ * @no-named-arguments Parameter names are not covered by the backward compatibility promise.
  */
 final class Hasher
 {
@@ -31,6 +33,8 @@ final class Hasher
      */
     public static function calculate(string $code): string
     {
-        return md5($code);
+        return \PHP_VERSION_ID >= 8_01_00
+            ? hash('xxh128', $code)
+            : md5($code);
     }
 }
