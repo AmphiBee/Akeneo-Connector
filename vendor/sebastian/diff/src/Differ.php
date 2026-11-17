@@ -9,156 +9,74 @@
  */
 namespace SebastianBergmann\Diff;
 
-use const PHP_INT_SIZE;
 use const PREG_SPLIT_DELIM_CAPTURE;
 use const PREG_SPLIT_NO_EMPTY;
-use function array_shift;
+use function array_any;
 use function array_unshift;
 use function array_values;
 use function count;
 use function current;
 use function end;
-use function get_class;
-use function gettype;
-use function is_array;
-use function is_object;
 use function is_string;
 use function key;
-use function min;
 use function preg_split;
 use function prev;
 use function reset;
-use function sprintf;
+use function str_ends_with;
 use function substr;
 use SebastianBergmann\Diff\Output\DiffOutputBuilderInterface;
-use SebastianBergmann\Diff\Output\UnifiedDiffOutputBuilder;
 
 final class Differ
 {
-    public const OLD                     = 0;
+    public const int OLD                     = 0;
+    public const int ADDED                   = 1;
+    public const int REMOVED                 = 2;
+    public const int DIFF_LINE_END_WARNING   = 3;
+    public const int NO_LINE_END_EOF_WARNING = 4;
+    private DiffOutputBuilderInterface $outputBuilder;
 
-    public const ADDED                   = 1;
-
-    public const REMOVED                 = 2;
-
-    public const DIFF_LINE_END_WARNING   = 3;
-
-    public const NO_LINE_END_EOF_WARNING = 4;
-
-    /**
-     * @var DiffOutputBuilderInterface
-     */
-    private $outputBuilder;
-
-    /**
-     * @param DiffOutputBuilderInterface $outputBuilder
-     *
-     * @throws InvalidArgumentException
-     */
-    public function __construct($outputBuilder = null)
+    public function __construct(DiffOutputBuilderInterface $outputBuilder)
     {
-        if ($outputBuilder instanceof DiffOutputBuilderInterface) {
-            $this->outputBuilder = $outputBuilder;
-        } elseif (null === $outputBuilder) {
-            $this->outputBuilder = new UnifiedDiffOutputBuilder;
-        } elseif (is_string($outputBuilder)) {
-            // PHPUnit 6.1.4, 6.2.0, 6.2.1, 6.2.2, and 6.2.3 support
-            // @see https://github.com/sebastianbergmann/phpunit/issues/2734#issuecomment-314514056
-            // @deprecated
-            $this->outputBuilder = new UnifiedDiffOutputBuilder($outputBuilder);
-        } else {
-            throw new InvalidArgumentException(
-                sprintf(
-                    'Expected builder to be an instance of DiffOutputBuilderInterface, <null> or a string, got %s.',
-                    is_object($outputBuilder) ? 'instance of "' . get_class($outputBuilder) . '"' : gettype($outputBuilder) . ' "' . $outputBuilder . '"'
-                )
-            );
-        }
+        $this->outputBuilder = $outputBuilder;
     }
 
     /**
-     * Returns the diff between two arrays or strings as string.
-     *
-     * @param array|string $from
-     * @param array|string $to
+     * @param array<int|string, int|string>|string $from
+     * @param array<int|string, int|string>|string $to
      */
-    public function diff($from, $to, ?LongestCommonSubsequenceCalculator $lcs = null): string
+    public function diff(array|string $from, array|string $to): string
     {
-        $diff = $this->diffToArray(
-            $this->normalizeDiffInput($from),
-            $this->normalizeDiffInput($to),
-            $lcs
-        );
+        $diff = $this->diffToArray($from, $to);
 
         return $this->outputBuilder->getDiff($diff);
     }
 
     /**
-     * Returns the diff between two arrays or strings as array.
+     * @param array<int|string, int|string>|string $from
+     * @param array<int|string, int|string>|string $to
      *
-     * Each array element contains two elements:
-     *   - [0] => mixed $token
-     *   - [1] => 2|1|0
-     *
-     * - 2: REMOVED: $token was removed from $from
-     * - 1: ADDED: $token was added to $from
-     * - 0: OLD: $token is not changed in $to
-     *
-     * @param array|string                       $from
-     * @param array|string                       $to
-     * @param LongestCommonSubsequenceCalculator $lcs
+     * @return list<array{0: mixed, 1: int}>
      */
-    public function diffToArray($from, $to, ?LongestCommonSubsequenceCalculator $lcs = null): array
+    public function diffToArray(array|string $from, array|string $to): array
     {
         if (is_string($from)) {
             $from = $this->splitStringByLines($from);
-        } elseif (!is_array($from)) {
-            throw new InvalidArgumentException('"from" must be an array or string.');
         }
 
         if (is_string($to)) {
             $to = $this->splitStringByLines($to);
-        } elseif (!is_array($to)) {
-            throw new InvalidArgumentException('"to" must be an array or string.');
         }
 
         [$from, $to, $start, $end] = self::getArrayDiffParted($from, $to);
 
-        if ($lcs === null) {
-            $lcs = $this->selectLcsImplementation($from, $to);
-        }
-
-        $common = $lcs->calculate(array_values($from), array_values($to));
-        $diff   = [];
+        $diff = [];
 
         foreach ($start as $token) {
             $diff[] = [$token, self::OLD];
         }
 
-        reset($from);
-        reset($to);
-
-        foreach ($common as $token) {
-            while (($fromToken = reset($from)) !== $token) {
-                $diff[] = [array_shift($from), self::REMOVED];
-            }
-
-            while (($toToken = reset($to)) !== $token) {
-                $diff[] = [array_shift($to), self::ADDED];
-            }
-
-            $diff[] = [$token, self::OLD];
-
-            array_shift($from);
-            array_shift($to);
-        }
-
-        while (($token = array_shift($from)) !== null) {
-            $diff[] = [$token, self::REMOVED];
-        }
-
-        while (($token = array_shift($to)) !== null) {
-            $diff[] = [$token, self::ADDED];
+        foreach ((new MyersDiff)->calculate(array_values($from), array_values($to)) as $entry) {
+            $diff[] = $entry;
         }
 
         foreach ($end as $token) {
@@ -173,56 +91,21 @@ final class Differ
     }
 
     /**
-     * Casts variable to string if it is not a string or array.
-     *
-     * @return array|string
-     */
-    private function normalizeDiffInput($input)
-    {
-        if (!is_array($input) && !is_string($input)) {
-            return (string) $input;
-        }
-
-        return $input;
-    }
-
-    /**
-     * Checks if input is string, if so it will split it line-by-line.
+     * @return list<string>
      */
     private function splitStringByLines(string $input): array
     {
-        return preg_split('/(.*\R)/', $input, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
-    }
+        $result = preg_split('/(.*\R)/', $input, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
 
-    private function selectLcsImplementation(array $from, array $to): LongestCommonSubsequenceCalculator
-    {
-        // We do not want to use the time-efficient implementation if its memory
-        // footprint will probably exceed this value. Note that the footprint
-        // calculation is only an estimation for the matrix and the LCS method
-        // will typically allocate a bit more memory than this.
-        $memoryLimit = 100 * 1024 * 1024;
-
-        if ($this->calculateEstimatedFootprint($from, $to) > $memoryLimit) {
-            return new MemoryEfficientLongestCommonSubsequenceCalculator;
+        if ($result === false) {
+            return [];
         }
 
-        return new TimeEfficientLongestCommonSubsequenceCalculator;
+        return $result;
     }
 
     /**
-     * Calculates the estimated memory footprint for the DP-based method.
-     *
-     * @return float|int
-     */
-    private function calculateEstimatedFootprint(array $from, array $to)
-    {
-        $itemSize = PHP_INT_SIZE === 4 ? 76 : 144;
-
-        return $itemSize * min(count($from), count($to)) ** 2;
-    }
-
-    /**
-     * Returns true if line ends don't match in a diff.
+     * @param list<array{0: mixed, 1: int}> $diff
      */
     private function detectUnmatchedLineEndings(array $diff): bool
     {
@@ -231,38 +114,33 @@ final class Differ
 
         foreach ($diff as $entry) {
             if (self::OLD === $entry[1]) {
+                /** @phpstan-ignore argument.type */
                 $ln                 = $this->getLinebreak($entry[0]);
                 $oldLineBreaks[$ln] = true;
                 $newLineBreaks[$ln] = true;
             } elseif (self::ADDED === $entry[1]) {
+                /** @phpstan-ignore argument.type */
                 $newLineBreaks[$this->getLinebreak($entry[0])] = true;
             } elseif (self::REMOVED === $entry[1]) {
+                /** @phpstan-ignore argument.type */
                 $oldLineBreaks[$this->getLinebreak($entry[0])] = true;
             }
         }
 
         // if either input or output is a single line without breaks than no warning should be raised
-        if (['' => true] === $newLineBreaks || ['' => true] === $oldLineBreaks) {
+        if (count($newLineBreaks) === 1 || count($oldLineBreaks) === 1) {
             return false;
         }
 
-        // two way compare
-        foreach ($newLineBreaks as $break => $set) {
-            if (!isset($oldLineBreaks[$break])) {
-                return true;
-            }
+        // two-way compare
+        if (array_any($newLineBreaks, static fn (bool $set, string $break) => !isset($oldLineBreaks[$break]))) {
+            return true;
         }
 
-        foreach ($oldLineBreaks as $break => $set) {
-            if (!isset($newLineBreaks[$break])) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($oldLineBreaks, static fn (bool $set, string $break) => !isset($newLineBreaks[$break]));
     }
 
-    private function getLinebreak($line): string
+    private function getLinebreak(int|string $line): string
     {
         if (!is_string($line)) {
             return '';
@@ -278,13 +156,19 @@ final class Differ
             return '';
         }
 
-        if ("\r\n" === substr($line, -2)) {
+        if (str_ends_with($line, "\r\n")) {
             return "\r\n";
         }
 
         return "\n";
     }
 
+    /**
+     * @param array<int|string, int|string> $from
+     * @param array<int|string, int|string> $to
+     *
+     * @return array{0: array<int|string, int|string>, 1: array<int|string, int|string>, 2: array<int|string, int|string>, 3: array<int|string, int|string>}
+     */
     private static function getArrayDiffParted(array &$from, array &$to): array
     {
         $start = [];
@@ -295,6 +179,7 @@ final class Differ
         foreach ($from as $k => $v) {
             $toK = key($to);
 
+            /** @phpstan-ignore offsetAccess.notFound */
             if ($toK === $k && $v === $to[$k]) {
                 $start[$k] = $v;
 
@@ -318,6 +203,7 @@ final class Differ
             prev($from);
             prev($to);
 
+            /** @phpstan-ignore offsetAccess.notFound */
             $end = [$fromK => $from[$fromK]] + $end;
             unset($from[$fromK], $to[$toK]);
         } while (true);
